@@ -318,11 +318,134 @@ artifacts/kri8-mobile/
 
 ---
 
-## Questions for approval
+---
 
-Before starting Phase 2, please confirm:
+## Confirmed Configuration ✅
 
-1. **API base URL** — Is the Kri8 API already deployed to a public URL, or should the mobile dev environment point to a local/tunneled instance?
-2. **Clerk instance** — Should the mobile app share the same Clerk instance (same publishable key) as the web app, or use a separate one?
-3. **Media storage** — For image/voice attachments, is there an existing S3/CDN bucket, or should we use Expo FileSystem + a new upload endpoint?
-4. **App name / bundle ID** — Confirm: `com.kri8.app` for iOS bundle ID and Android application ID?
+| Item | Value |
+|---|---|
+| API base URL | `https://kri8-obvh.onrender.com` |
+| Clerk instance | Shared with web app (same publishable key) |
+| Bundle ID (iOS / Android) | `space.kri8.mobile` |
+| Media storage provider | Cloudflare R2 (S3-compatible), behind `StorageService` abstraction |
+
+---
+
+## Storage Architecture — `StorageService` Abstraction
+
+Per the user's requirement: provider-specific logic must be isolated behind a single interface. Application code — mobile and backend — never calls R2/S3 SDKs directly.
+
+### Interface
+
+```ts
+interface StorageService {
+  /** Generate a signed URL the client uploads directly to (PUT). */
+  getUploadUrl(key: string, contentType: string, expiresInSeconds?: number): Promise<string>
+
+  /** Generate a signed URL for time-limited download access (GET). */
+  getDownloadUrl(key: string, expiresInSeconds?: number): Promise<string>
+
+  /** Delete an object. */
+  delete(key: string): Promise<void>
+
+  /** Derive the permanent public-CDN URL for a key (read-only bucket / CDN). */
+  publicUrl(key: string): string
+}
+```
+
+### Key naming convention
+
+```
+<mediaType>/<userId>/<uuid>.<ext>
+
+Examples:
+  avatars/usr_abc123/f47ac10b.jpg
+  ideas/usr_abc123/idea_456/a3f8c2d1.jpg
+  voice/usr_abc123/idea_456/rec_9b2e3f01.m4a
+  ocr/usr_abc123/idea_456/scan_7c4d5a02.jpg
+```
+
+### Backend endpoints updated with StorageService
+
+| Method | Path | What it does |
+|---|---|---|
+| POST | `/media/upload-url` | Mobile calls this → gets a signed PUT URL → uploads directly to R2 → sends back the key |
+| GET | `/media/download-url/:key` | Returns short-lived signed GET URL for private objects |
+| DELETE | `/media/:key` | Deletes object from R2; requires ownership check |
+| PATCH | `/users/me` | Existing endpoint; `avatarUrl` is now a stored object key (resolved to URL server-side) |
+| POST | `/ideas/:id/media` | Stores object key + mediaType in a new `idea_media` table |
+
+### New `idea_media` table
+
+```sql
+idea_media (
+  id          serial PRIMARY KEY,
+  ideaId      integer NOT NULL REFERENCES ideas(id) ON DELETE CASCADE,
+  userId      integer NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  mediaType   text NOT NULL,   -- 'image' | 'voice' | 'ocr_image'
+  storageKey  text NOT NULL,   -- object key in R2 (never the full URL)
+  mimeType    text,
+  durationMs  integer,         -- voice recordings
+  transcript  text,            -- voice/OCR extracted text
+  createdAt   timestamptz DEFAULT now()
+)
+```
+
+PostgreSQL stores **only object keys**. URLs are generated on demand via `StorageService.getDownloadUrl()` or `StorageService.publicUrl()`.
+
+### Provider implementations
+
+```
+lib/storage/
+├── src/
+│   ├── index.ts            # exports StorageService interface + factory
+│   ├── r2.ts               # Cloudflare R2 implementation (aws4fetch + R2 S3 API)
+│   ├── s3.ts               # AWS S3 implementation (future swap)
+│   └── local.ts            # Local filesystem mock (development / testing)
+├── package.json
+└── tsconfig.json
+```
+
+`STORAGE_PROVIDER=r2|s3|local` env var selects the implementation at startup. Required R2 env vars: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `R2_PUBLIC_URL` (CDN domain).
+
+### Mobile upload flow
+
+```
+1. Mobile picks file (camera / voice / files picker)
+2. POST /media/upload-url  { contentType, mediaType }
+   ← { uploadUrl, key }
+3. Mobile PUT <file> directly to uploadUrl (R2 presigned)
+4. POST /ideas/:id/media   { key, mediaType, mimeType, durationMs? }
+   ← IdeaMedia record
+5. React Query invalidates idea detail cache
+```
+
+Direct-to-R2 upload avoids proxying large files through the Express server.
+
+---
+
+## Updated New Backend Endpoints
+
+| Phase | Method | Path | Purpose |
+|---|---|---|---|
+| 2 | POST | `/notifications/register` | Store Expo push token |
+| 2 | DELETE | `/notifications/register/:token` | Unregister on logout |
+| 2 | POST | `/media/upload-url` | Presigned PUT URL for direct R2 upload |
+| 2 | GET | `/media/download-url/:key` | Presigned GET URL for private media |
+| 2 | DELETE | `/media/:key` | Delete media object + DB record |
+| 3 | POST | `/capture/voice` | Voice upload key → AI-structured idea |
+| 3 | POST | `/ideas/:id/media` | Attach media key to idea |
+| 3 | POST | `/sync/bulk` | Batch upsert offline queue |
+| 4 | POST | `/capture/ocr` | Image key → OCR text → AI idea |
+
+---
+
+## Architecture Approval Checklist
+
+- [ ] API base URL confirmed (`https://kri8-obvh.onrender.com`)
+- [ ] Clerk shared instance confirmed
+- [ ] Bundle ID confirmed (`space.kri8.mobile`)
+- [ ] StorageService abstraction design approved
+- [ ] `idea_media` table design approved
+- [ ] New endpoint list approved
+- [ ] **Approved to begin Phase 2 (scaffold + auth + navigation + themes)**
