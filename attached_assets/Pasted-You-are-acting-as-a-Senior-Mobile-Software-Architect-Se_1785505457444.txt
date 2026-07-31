@@ -1,0 +1,607 @@
+You are acting as a Senior Mobile Software Architect, Senior React Native Engineer, Senior Expo Engineer, Product Designer, AI Systems Architect, and UX Specialist.
+
+You are designing and building the **official Kri8 Mobile App**.
+
+The existing Kri8 web application already exists and is production-ready.
+
+This mobile application is **NOT** a responsive version of the website.
+
+It is a completely new mobile-first product designed specifically around how creators naturally use their phones.
+
+The mobile app must become the fastest place to capture, organize, expand and execute creative ideas.
+
+---
+
+# IMPORTANT
+
+Do NOT redesign the existing web application.
+
+Do NOT replace the backend.
+
+Do NOT duplicate business logic.
+
+The mobile app must reuse the existing backend APIs wherever possible.
+
+The backend remains the single source of truth.
+
+---
+
+# TECHNOLOGY
+
+Build using:
+
+• React Native
+
+• Expo
+
+• TypeScript
+
+• Expo Router
+
+• React Query
+
+• Clerk Authentication
+
+• Existing Kri8 REST API
+
+The mobile application must remain completely independent from Replit.
+
+No Replit SDKs.
+
+No Replit authentication.
+
+No Replit deployment assumptions.
+
+It must be deployable to:
+
+• Android
+
+• iOS
+
+using Expo EAS.
+
+---
+
+# DESIGN PHILOSOPHY
+
+This is NOT a website inside a phone.
+
+Everything should feel native.
+
+Fast.
+
+Fluid.
+
+Beautiful.
+
+Premium.
+
+Creator-first.
+
+The user should feel like the application understands inspiration.
+
+The design language should revolve around:
+
+Glassmorphism
+
+Floating cards
+
+Soft blur
+
+Premium depth
+
+Large touch targets
+
+Fluid motion
+
+Thumb-friendly navigation
+
+Natural gestures
+
+Haptic feedback
+
+Subtle animations
+
+---
+
+# THEMES
+
+Reuse the Kri8 design language.
+
+Support:
+
+• Midnight
+
+• Ocean Deep
+
+• Monochrome
+
+• Cyber
+
+• Aurora
+
+• Nature
+
+• Sky
+
+• Crimson
+
+Every theme must use premium glassmorphism.
+
+No contrast issues.
+
+No unreadable text.
+
+Every screen must remain beautiful regardless of theme.
+
+---
+
+# CORE PRINCIPLE
+
+The mobile application should make capturing ideas dramatically easier than the website.
+
+The phone is where inspiration happens.
+
+Everything should be optimized around that fact.
+
+---
+
+# FEATURE 1 — OFFLINE-FIRST
+
+The user should never know when they are offline.
+
+If there is no internet:
+
+Ideas still save.
+
+Notes still save.
+
+Voice recordings still save.
+
+Photos still save.
+
+Everything queues locally.
+
+When internet returns:
+
+Automatically synchronize everything.
+
+Resolve conflicts safely.
+
+Show subtle synchronization indicators.
+
+Never lose user data.
+
+---
+
+# FEATURE 2 — CAMERA-FIRST CREATION
+
+Instead of:
+
+"New Idea"
+
+The mobile app should encourage:
+
+Scan Something
+
+Capture Inspiration
+
+Take Photo
+
+Upload Screenshot
+
+Create Mood Board
+
+The camera becomes the fastest input method.
+
+---
+
+# FEATURE 3 — VOICE CAPTURE
+
+One tap.
+
+Start talking.
+
+AI automatically converts speech into:
+
+Title
+
+Idea
+
+Summary
+
+Tags
+
+Action items
+
+Suggested content format
+
+Suggested platforms
+
+Suggested posting time
+
+Store the original transcript.
+
+Allow editing.
+
+---
+
+# FEATURE 4 — PUSH NOTIFICATIONS
+
+Notifications should provide value.
+
+Examples:
+
+🔥 This trend is accelerating.
+
+You haven't created anything in 3 days.
+
+Your collaborator finished editing.
+
+A saved trend is gaining momentum.
+
+Your scheduled content goes live tomorrow.
+
+Friend accepted your request.
+
+New message.
+
+Never spam users.
+
+Notifications should feel intelligent.
+
+---
+
+# FEATURE 5 — HOME SCREEN WIDGETS
+
+Support widgets.
+
+Examples:
+
+Today's Ideas
+
+Quick Capture
+
+Trending
+
+Continue Writing
+
+Calendar
+
+AI Inspiration
+
+The widget should let users interact without opening the app.
+
+---
+
+# FEATURE 6 — SHARE SHEET
+
+Allow users to save content directly into Kri8.
+
+Examples:
+
+Instagram
+
+TikTok
+
+YouTube
+
+Safari
+
+Chrome
+
+Twitter/X
+
+Photos
+
+Files
+
+The workflow:
+
+Share
+
+↓
+
+Kri8
+
+↓
+
+Saved instantly
+
+↓
+
+AI organizes later
+
+---
+
+# FEATURE 7 — LOCK SCREEN QUICK CAPTURE
+
+The fastest possible workflow.
+
+Unlock phone.
+
+Tap widget.
+
+Type.
+
+Save.
+
+Done.
+
+No unnecessary navigation.
+
+---
+
+# FEATURE 8 — CAMERA OCR
+
+User photographs:
+
+Book
+
+Billboard
+
+Poster
+
+Notebook
+
+Whiteboard
+
+Magazine
+
+OCR extracts text.
+
+AI organizes it.
+
+Creates an idea.
+
+Adds tags.
+
+Stores original image.
+
+---
+
+# FEATURE 9 — AI EVERYWHERE
+
+AI should not live on a single screen.
+
+Instead AI should quietly assist everywhere.
+
+Examples:
+
+Rewrite
+
+Improve hooks
+
+Generate titles
+
+Summarize notes
+
+Generate captions
+
+Generate hashtags
+
+Suggest better wording
+
+Suggest content structure
+
+Suggest posting strategy
+
+Generate video outlines
+
+Generate carousel ideas
+
+Generate scripts
+
+Trend analysis
+
+Competitive inspiration
+
+The AI should feel like a creative partner.
+
+---
+
+# FEATURE 10 — PREMIUM MOBILE INTERACTIONS
+
+Use native mobile capabilities.
+
+Haptic feedback.
+
+Swipe gestures.
+
+Pull to refresh.
+
+Long press menus.
+
+Context menus.
+
+Drag and drop.
+
+Smooth page transitions.
+
+Animated tab changes.
+
+Shared element transitions.
+
+Native-feeling scrolling.
+
+Micro animations.
+
+Everything should feel polished.
+
+---
+
+# MOBILE INFORMATION ARCHITECTURE
+
+The navigation must be designed specifically for creators.
+
+Bottom Navigation:
+
+Home
+
+Ideas
+
+Capture
+
+Community
+
+AI
+
+Profile
+
+Capture should always remain the central action.
+
+---
+
+# PERFORMANCE
+
+The application must launch quickly.
+
+Use lazy loading.
+
+Use image optimization.
+
+Cache intelligently.
+
+Minimize API requests.
+
+Background synchronization.
+
+Smooth animations.
+
+60 FPS interactions.
+
+---
+
+# ACCESSIBILITY
+
+Support:
+
+Large text
+
+Screen readers
+
+High contrast
+
+Reduced motion
+
+Keyboard navigation where appropriate
+
+---
+
+# BACKEND
+
+Before writing code:
+
+Audit every existing API.
+
+Determine what can be reused.
+
+Document missing endpoints.
+
+Avoid unnecessary backend changes.
+
+Only add APIs if absolutely necessary.
+
+---
+
+# IMPLEMENTATION STRATEGY
+
+DO NOT attempt to build everything at once.
+
+Phase 1
+
+Audit existing backend
+
+Audit authentication
+
+Audit reusable APIs
+
+Produce architecture
+
+Phase 2
+
+Create project structure
+
+Authentication
+
+Navigation
+
+Theme engine
+
+Offline engine
+
+Phase 3
+
+Ideas
+
+Capture
+
+Camera
+
+Voice
+
+Community
+
+Messages
+
+Phase 4
+
+AI
+
+Widgets
+
+Share Sheet
+
+OCR
+
+Notifications
+
+Premium interactions
+
+Phase 5
+
+Testing
+
+Optimization
+
+Performance
+
+Accessibility
+
+Deployment
+
+Each phase must compile successfully before beginning the next.
+
+---
+
+# OUTPUT
+
+Step 1
+
+Audit existing backend
+
+Step 2
+
+Audit reusable APIs
+
+Step 3
+
+Authentication audit
+
+Step 4
+
+Architecture proposal
+
+Step 5
+
+Folder structure
+
+Step 6
+
+Implementation roadmap
+
+STOP.
+
+Do NOT generate code until the architecture has been approved.
+
+The goal is to make Kri8 one of the best creator-focused mobile applications available, built around capturing inspiration instantly, intelligently organizing it with AI, and syncing seamlessly with the existing Kri8 ecosystem.
