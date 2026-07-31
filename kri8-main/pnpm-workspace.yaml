@@ -43,6 +43,9 @@ packages:
 allowBuilds:
   '@clerk/shared': true
   esbuild: true
+  react-native-reanimated: true
+  react-native-mmkv: true
+  react-native-gesture-handler: true
 
 catalog:
   '@replit/vite-plugin-cartographer': ^0.5.21

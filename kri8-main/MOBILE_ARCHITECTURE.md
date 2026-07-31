@@ -448,4 +448,5 @@ Direct-to-R2 upload avoids proxying large files through the Express server.
 - [ ] StorageService abstraction design approved
 - [ ] `idea_media` table design approved
 - [ ] New endpoint list approved
-- [ ] **Approved to begin Phase 2 (scaffold + auth + navigation + themes)**
+- [x] **Approved to begin Phase 2 (scaffold + auth + navigation + themes)**
+- [x] **Phase 2 COMPLETE** — scaffold, auth, navigation, all 8 themes, offline queue

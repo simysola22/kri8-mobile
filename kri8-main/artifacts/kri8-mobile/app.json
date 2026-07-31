@@ -1,0 +1,79 @@
+{
+  "expo": {
+    "name": "Kri8",
+    "slug": "kri8-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "kri8",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0D0D1A"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "space.kri8.mobile",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Kri8 uses your camera to capture ideas and scan text from the world around you.",
+        "NSMicrophoneUsageDescription": "Kri8 uses your microphone to capture voice ideas hands-free.",
+        "NSPhotoLibraryUsageDescription": "Kri8 accesses your photo library to attach images to your ideas."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0D0D1A"
+      },
+      "package": "space.kri8.mobile",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ]
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#0D0D1A"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#7C6EF5",
+          "defaultChannel": "default"
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Kri8 uses your camera to capture ideas and scan text.",
+          "microphonePermission": "Kri8 uses your microphone to capture voice ideas."
+        }
+      ],
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Kri8 uses your microphone to record voice ideas."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

@@ -1,0 +1,185 @@
+import React from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuth } from '@clerk/clerk-expo';
+import { useActiveTheme, useTheme } from '@/stores/theme';
+import { GlassCard } from '@/components/ui/GlassCard';
+import { GlassButton } from '@/components/ui/GlassButton';
+import { Avatar } from '@/components/ui/Avatar';
+import { Badge } from '@/components/ui/Badge';
+import { useCurrentUser, useUpdateUser } from '@/hooks/useUser';
+import { useIdeaStats } from '@/hooks/useIdeas';
+import { clearQueue } from '@/stores/offlineQueue';
+import { THEME_LIST } from '@/themes';
+import { tapLight, tapHeavy } from '@/lib/haptics';
+import type { ThemeName } from '@/types';
+
+export default function ProfileScreen() {
+  const theme = useActiveTheme();
+  const { setTheme, themeName } = useTheme();
+  const insets = useSafeAreaInsets();
+  const { signOut } = useAuth();
+  const { data: user } = useCurrentUser();
+  const { data: stats } = useIdeaStats();
+  const updateUser = useUpdateUser();
+
+  const handleSignOut = () => {
+    Alert.alert('Sign out?', 'You will need to sign in again.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Sign Out',
+        style: 'destructive',
+        onPress: async () => {
+          await tapHeavy();
+          clearQueue();
+          await signOut();
+        },
+      },
+    ]);
+  };
+
+  const handleThemeChange = async (name: ThemeName) => {
+    await tapLight();
+    setTheme(name);
+    // Sync theme preference to backend
+    updateUser.mutate({ themePreference: name });
+  };
+
+  return (
+    <LinearGradient colors={theme.gradient} style={styles.root}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.scroll,
+          { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 100 },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Profile header */}
+        <GlassCard style={styles.profileCard}>
+          <Avatar
+            uri={user?.avatarUrl}
+            name={user?.name ?? user?.username}
+            size="xl"
+          />
+          <Text style={[styles.userName, { color: theme.text }]}>
+            {user?.name ?? 'Creator'}
+          </Text>
+          {user?.username && (
+            <Text style={[styles.userHandle, { color: theme.textMuted }]}>
+              @{user.username}
+            </Text>
+          )}
+          {user?.bio && (
+            <Text style={[styles.userBio, { color: theme.textMuted }]}>
+              {user.bio}
+            </Text>
+          )}
+          {user?.isPublic && <Badge variant="success">Public Profile</Badge>}
+        </GlassCard>
+
+        {/* Stats */}
+        {stats && (
+          <GlassCard style={styles.statsCard}>
+            <View style={styles.statsRow}>
+              {[
+                { label: 'Ideas', value: stats.total },
+                { label: 'Used', value: stats.used },
+                { label: 'Branches', value: stats.totalBranches },
+              ].map(({ label, value }, idx) => (
+                <React.Fragment key={label}>
+                  {idx > 0 && (
+                    <View style={[styles.divider, { backgroundColor: theme.border }]} />
+                  )}
+                  <View style={styles.statItem}>
+                    <Text style={[styles.statVal, { color: theme.text }]}>{value}</Text>
+                    <Text style={[styles.statLbl, { color: theme.textMuted }]}>{label}</Text>
+                  </View>
+                </React.Fragment>
+              ))}
+            </View>
+          </GlassCard>
+        )}
+
+        {/* Theme picker */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Theme</Text>
+          <View style={styles.themeGrid}>
+            {THEME_LIST.map((t) => (
+              <TouchableOpacity
+                key={t.name}
+                onPress={() => void handleThemeChange(t.name)}
+                style={[
+                  styles.themeChip,
+                  {
+                    backgroundColor: t.bg,
+                    borderColor: themeName === t.name ? t.accent : t.border,
+                    borderWidth: themeName === t.name ? 2 : 1,
+                  },
+                ]}
+              >
+                {/* Colour swatch */}
+                <View style={[styles.themeSwatch, { backgroundColor: t.accent }]} />
+                <Text
+                  style={[styles.themeLabel, { color: t.text }]}
+                  numberOfLines={1}
+                >
+                  {t.label}
+                </Text>
+                {themeName === t.name && (
+                  <Text style={{ color: t.accent, fontSize: 10 }}>✓</Text>
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Sign out */}
+        <GlassButton
+          onPress={handleSignOut}
+          variant="ghost"
+          fullWidth
+          size="lg"
+        >
+          Sign Out
+        </GlassButton>
+      </ScrollView>
+    </LinearGradient>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+  scroll: { paddingHorizontal: 20, gap: 16 },
+  profileCard: { alignItems: 'center', gap: 8 },
+  userName: { fontSize: 24, fontWeight: '800', marginTop: 4 },
+  userHandle: { fontSize: 15, marginTop: -4 },
+  userBio: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
+  statsCard: {},
+  statsRow: { flexDirection: 'row', alignItems: 'center' },
+  statItem: { flex: 1, alignItems: 'center', gap: 2 },
+  statVal: { fontSize: 26, fontWeight: '800' },
+  statLbl: { fontSize: 12, fontWeight: '500' },
+  divider: { width: 1, height: 40 },
+  section: { gap: 12 },
+  sectionTitle: { fontSize: 20, fontWeight: '700' },
+  themeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  themeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    minWidth: '45%',
+  },
+  themeSwatch: { width: 10, height: 10, borderRadius: 5 },
+  themeLabel: { fontSize: 13, fontWeight: '600', flex: 1 },
+});
