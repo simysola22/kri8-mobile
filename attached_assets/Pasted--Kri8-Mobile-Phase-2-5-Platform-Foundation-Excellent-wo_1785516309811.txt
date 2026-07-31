@@ -1,0 +1,441 @@
+# Kri8 Mobile — Phase 2.5 (Platform Foundation)
+
+Excellent work on Phase 2.
+
+The architecture is clean and should remain the foundation of the mobile application.
+
+Do **NOT** redesign the UI.
+
+Do **NOT** rebuild the navigation.
+
+Do **NOT** rewrite the authentication.
+
+Do **NOT** duplicate existing code.
+
+Instead, continue building on the existing architecture.
+
+The goal of this phase is to strengthen the platform before beginning Camera, Voice, OCR and other advanced mobile features.
+
+---
+
+# IMPORTANT
+
+Do NOT break any existing functionality.
+
+Everything completed in Phase 2 must continue working.
+
+The application must continue compiling successfully after every major change.
+
+If a new feature requires architectural changes, implement them in a backwards-compatible manner.
+
+---
+
+# FEATURE 1 — BIOMETRIC SECURITY
+
+Implement native biometric authentication.
+
+Support:
+
+• Face ID
+
+• Touch ID
+
+• Android Fingerprint
+
+Allow users to enable biometric unlock from Settings.
+
+After successful authentication with Clerk, users should be able to unlock the app using biometrics instead of repeatedly entering credentials.
+
+If biometrics fail:
+
+Fall back to device PIN or Clerk authentication.
+
+The feature should be optional.
+
+---
+
+# FEATURE 2 — LOCAL DRAFT RECOVERY
+
+Implement automatic draft persistence.
+
+If the application crashes while the user is writing:
+
+Idea text
+
+Notes
+
+AI prompts
+
+Voice transcript
+
+must all be restored automatically.
+
+Users should never lose work because the application closed unexpectedly.
+
+---
+
+# FEATURE 3 — UNIVERSAL SEARCH
+
+Create a global search architecture.
+
+Searching should simultaneously search:
+
+Ideas
+
+Friends
+
+Messages
+
+AI conversations
+
+Trends
+
+Tags
+
+Calendar
+
+Saved inspiration
+
+The user should only have one search box.
+
+Results should be grouped by category.
+
+Searching should be extremely fast.
+
+Prepare the architecture for server-side search later.
+
+---
+
+# FEATURE 4 — SMART CAPTURE DETECTION
+
+Prepare the Capture workflow to intelligently identify content.
+
+Examples:
+
+Plain text
+
+URLs
+
+YouTube links
+
+TikTok links
+
+Instagram links
+
+X posts
+
+Voice recordings
+
+Images
+
+Screenshots
+
+The application should automatically determine the correct workflow without asking unnecessary questions.
+
+Do not fully implement OCR yet.
+
+Only build the intelligent routing architecture.
+
+---
+
+# FEATURE 5 — BACKGROUND SYNCHRONIZATION
+
+Improve the existing offline queue.
+
+When connectivity returns:
+
+Synchronize automatically.
+
+Do not require users to reopen the app.
+
+Support:
+
+App resumes
+
+Network reconnect
+
+Background refresh where supported
+
+Display subtle synchronization indicators.
+
+Never interrupt the user.
+
+---
+
+# FEATURE 6 — AI ASSISTANT EVERYWHERE
+
+AI should become an invisible assistant.
+
+While the user types:
+
+Suggest:
+
+Better titles
+
+Hooks
+
+Descriptions
+
+Tags
+
+Content categories
+
+Posting platforms
+
+Posting times
+
+Improve clarity
+
+Generate alternative wording
+
+Do NOT create a separate AI page for these actions.
+
+AI assistance should feel contextual and automatic.
+
+---
+
+# FEATURE 7 — INTERACTIVE PUSH NOTIFICATIONS
+
+Prepare notification architecture.
+
+Support:
+
+Friend requests
+
+Messages
+
+Trend alerts
+
+Reminders
+
+Collaboration updates
+
+Content schedule reminders
+
+Notifications should support actions directly from the notification.
+
+Examples:
+
+Accept Friend
+
+Reply
+
+Open Idea
+
+Dismiss
+
+Mark Read
+
+Do not spam users.
+
+Notifications must always provide value.
+
+---
+
+# FEATURE 8 — DEEP LINKING
+
+Configure deep linking.
+
+Support:
+
+kri8://idea/{id}
+
+kri8://profile/{username}
+
+kri8://community
+
+kri8://calendar
+
+kri8://capture
+
+Also support universal links from:
+
+https://kri8.space
+
+Opening a Kri8 link should automatically launch the mobile application.
+
+---
+
+# FEATURE 9 — ANALYTICS ARCHITECTURE
+
+Create an AnalyticsService.
+
+Track:
+
+Idea created
+
+Idea edited
+
+Voice capture
+
+Camera capture
+
+Search
+
+Friend request
+
+Message
+
+Trend viewed
+
+Export
+
+Theme changes
+
+AI usage
+
+Offline sync
+
+Notification opened
+
+The analytics layer must remain provider-independent.
+
+Do not hardcode Firebase or any analytics vendor.
+
+Analytics providers should be swappable.
+
+---
+
+# FEATURE 10 — SUBSCRIPTION FOUNDATION
+
+Although Kri8 remains free during launch, prepare the architecture.
+
+Create:
+
+SubscriptionService
+
+FeatureFlagService
+
+EntitlementService
+
+PremiumGate component
+
+No premium restrictions should be enabled yet.
+
+The objective is only to prepare the architecture.
+
+---
+
+# FEATURE 11 — MEDIA ARCHITECTURE
+
+Continue using Cloudflare R2 through StorageService.
+
+Do not expose provider-specific code.
+
+Prepare support for:
+
+Profile photos
+
+Idea images
+
+Voice recordings
+
+OCR images
+
+Future video uploads
+
+Only object keys should be stored in PostgreSQL.
+
+Generate signed upload/download URLs.
+
+---
+
+# FEATURE 12 — CREATOR REPUTATION SYSTEM
+
+Prepare a Creator Score architecture.
+
+The system should eventually calculate reputation using:
+
+Ideas created
+
+Consistency
+
+Community engagement
+
+Helpful feedback
+
+Trend accuracy
+
+Collaboration
+
+Do NOT expose the score publicly yet.
+
+Only build the backend model and mobile architecture.
+
+---
+
+# PERFORMANCE
+
+Maintain:
+
+60 FPS animations
+
+Smooth scrolling
+
+Fast startup
+
+Offline-first behavior
+
+Minimal API requests
+
+Efficient React Query cache usage
+
+No duplicated requests
+
+---
+
+# CODE QUALITY
+
+Do not create duplicate services.
+
+Reuse existing architecture.
+
+Keep the code modular.
+
+Document every new service.
+
+Keep provider-specific implementations behind interfaces.
+
+---
+
+# TESTING
+
+Verify:
+
+Offline queue still works
+
+Authentication still works
+
+Navigation still works
+
+Theme switching still works
+
+Deep links resolve correctly
+
+Analytics events fire correctly
+
+Background synchronization succeeds
+
+Biometric unlock works on supported devices
+
+No regressions should be introduced.
+
+---
+
+# OUTPUT
+
+1. Platform Foundation Audit
+
+2. Files to Modify
+
+3. Architecture Changes
+
+4. Implementation Plan
+
+5. Implement incrementally
+
+6. Verify each feature after implementation
+
+Do not begin Camera, Voice, OCR, Widgets or Share Sheet until this Platform Foundation phase has been completed successfully.
+
+The objective is to make Kri8 feel like a premium, world-class mobile application before adding advanced creator tools.
