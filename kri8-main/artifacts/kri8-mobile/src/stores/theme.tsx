@@ -5,12 +5,12 @@ import React, {
   useCallback,
   type ReactNode,
 } from 'react';
-import { MMKV } from 'react-native-mmkv';
+import { createStorage } from '@/lib/kv';
 import { getTheme, type Theme } from '@/themes';
 import type { ThemeName } from '@/types';
 
 // ── Persistent storage ────────────────────────────────────────
-const storage = new MMKV({ id: 'kri8-theme' });
+const storage = createStorage('kri8-theme');
 const THEME_KEY = 'theme';
 
 function getPersistedTheme(): ThemeName {

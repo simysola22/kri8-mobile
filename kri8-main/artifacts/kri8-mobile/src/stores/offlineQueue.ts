@@ -1,13 +1,16 @@
 /**
- * Offline mutation queue backed by MMKV.
+ * Offline mutation queue.
+ *
+ * Backed by MMKV on native (via kv.native.ts) and localStorage on web
+ * (via kv.web.ts). Metro resolves the correct implementation automatically.
  *
  * Mutations that fail because the device is offline are stored here.
  * The SyncEngine processes them in order when connectivity returns.
  */
-import { MMKV } from 'react-native-mmkv';
+import { createStorage } from '@/lib/kv';
 import type { QueuedMutation } from '@/types';
 
-const storage = new MMKV({ id: 'kri8-offline-queue' });
+const storage = createStorage('kri8-offline-queue');
 const QUEUE_KEY = 'queue';
 
 function readQueue(): QueuedMutation[] {

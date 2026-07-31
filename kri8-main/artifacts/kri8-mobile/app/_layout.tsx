@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View } from 'react-native';
+import { View, Text, Platform, StyleSheet } from 'react-native';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ClerkProvider, ClerkLoaded, useAuth } from '@clerk/clerk-expo';
@@ -11,12 +11,32 @@ import { queryClient } from '@/api/queryClient';
 import { ThemeProvider, useActiveTheme } from '@/stores/theme';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
 
-const PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
+const PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ?? '';
 
-if (!PUBLISHABLE_KEY) {
+// On native, crash early so developers see the error immediately.
+// On web, render a setup screen instead.
+if (!PUBLISHABLE_KEY && Platform.OS !== 'web') {
   throw new Error(
     'Missing EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY. ' +
       'Copy .env.example to .env.local and fill in your Clerk publishable key.',
+  );
+}
+
+// ── Setup screen (web-only, shown when Clerk key is not configured) ──
+function SetupScreen() {
+  return (
+    <View style={styles.setup}>
+      <Text style={styles.setupEmoji}>🔑</Text>
+      <Text style={styles.setupTitle}>Kri8 Mobile</Text>
+      <Text style={styles.setupSubtitle}>One environment variable needed</Text>
+      <View style={styles.setupCard}>
+        <Text style={styles.setupCode}>EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY</Text>
+        <Text style={styles.setupHint}>
+          Add your Clerk publishable key (pk_test_…) as a Replit Secret, then
+          restart the workflow.
+        </Text>
+      </View>
+    </View>
   );
 }
 
@@ -50,6 +70,10 @@ function ThemedStatusBar() {
 
 // ── Root layout ───────────────────────────────────────────────
 export default function RootLayout() {
+  if (!PUBLISHABLE_KEY) {
+    return <SetupScreen />;
+  }
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
@@ -67,3 +91,50 @@ export default function RootLayout() {
     </GestureHandlerRootView>
   );
 }
+
+const styles = StyleSheet.create({
+  setup: {
+    flex: 1,
+    backgroundColor: '#0a0a0f',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 32,
+    gap: 12,
+  },
+  setupEmoji: {
+    fontSize: 48,
+    marginBottom: 8,
+  },
+  setupTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#ffffff',
+    letterSpacing: -0.5,
+  },
+  setupSubtitle: {
+    fontSize: 16,
+    color: 'rgba(255,255,255,0.5)',
+    marginBottom: 8,
+  },
+  setupCard: {
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+    borderRadius: 16,
+    padding: 20,
+    width: '100%',
+    maxWidth: 480,
+    gap: 10,
+  },
+  setupCode: {
+    fontFamily: Platform.OS === 'web' ? 'monospace' : 'Courier',
+    fontSize: 13,
+    color: '#a78bfa',
+    fontWeight: '600',
+  },
+  setupHint: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.6)',
+    lineHeight: 20,
+  },
+});
