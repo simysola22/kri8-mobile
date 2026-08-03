@@ -73,8 +73,8 @@ export function scaleIn() {
 /** Pulse animation — e.g. for recording indicator */
 export function pulse() {
   return withSequence(
-    withTiming(1.08, { duration: 500, easing: Easing.inOut(Easing.sine) }),
-    withTiming(1.0, { duration: 500, easing: Easing.inOut(Easing.sine) }),
+    withTiming(1.08, { duration: 500, easing: Easing.inOut(Easing.sin) }),
+    withTiming(1.0, { duration: 500, easing: Easing.inOut(Easing.sin) }),
   );
 }
 

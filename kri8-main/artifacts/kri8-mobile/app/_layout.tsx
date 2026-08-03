@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { View, Text, Platform, StyleSheet } from 'react-native';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { ClerkProvider, ClerkLoaded, useAuth } from '@clerk/clerk-expo';
+import { ClerkProvider, ClerkLoaded, useAuth, useUser } from '@clerk/clerk-expo';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -10,6 +10,9 @@ import { tokenCache } from '@/lib/tokenCache';
 import { queryClient } from '@/api/queryClient';
 import { ThemeProvider, useActiveTheme } from '@/stores/theme';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
+import { analytics } from '@/services/analytics/AnalyticsService';
+import { setupNotifications, onNotificationAction } from '@/services/NotificationService';
+import { parseDeepLink, routeToExpoPath } from '@/lib/deepLinking';
 
 const PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ?? '';
 
@@ -42,13 +45,70 @@ function SetupScreen() {
 
 // ── Auth guard — redirects based on sign-in state ─────────────
 function AuthGuard() {
-  const { isSignedIn, isLoaded } = useAuth();
+  const { isSignedIn, isLoaded, getToken } = useAuth();
+  const { user } = useUser();
   const router = useRouter();
   const segments = useSegments();
 
-  // Start offline sync engine
+  // Start offline sync engine (Phase 2 — unchanged)
   useOfflineSync();
 
+  // ── Analytics identity ──────────────────────────────────────
+  useEffect(() => {
+    if (isSignedIn && user) {
+      analytics.identify(String(user.id), {
+        name: user.fullName ?? '',
+        email: user.primaryEmailAddress?.emailAddress ?? '',
+      });
+    } else if (!isSignedIn) {
+      analytics.reset();
+    }
+  }, [isSignedIn, user]);
+
+  // ── Push notifications setup ────────────────────────────────
+  useEffect(() => {
+    if (!isSignedIn || !user) return;
+
+    // Fire-and-forget — non-fatal if push token registration fails
+    void (async () => {
+      const token = await getToken();
+      if (!token) return;
+      // user.id is a string like "user_xxxxxxxx" — pass a stable numeric-ish identifier
+      const numericId = Math.abs(user.id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0));
+      await setupNotifications(token, numericId);
+    })();
+  }, [isSignedIn, user, getToken]);
+
+  // ── Notification action routing ─────────────────────────────
+  useEffect(() => {
+    const unsubscribe = onNotificationAction((action, data) => {
+      switch (action) {
+        case 'open_idea':
+        case 'open': {
+          const ideaId = data.ideaId;
+          if (ideaId) router.push(`/(tabs)/ideas/${ideaId}` as never);
+          break;
+        }
+        case 'reply': {
+          const senderId = data.senderId;
+          if (senderId) router.push(`/(tabs)/community` as never);
+          break;
+        }
+        default:
+          break;
+      }
+
+      // Route from deep link data if present
+      if (data.deepLink && typeof data.deepLink === 'string') {
+        const route = parseDeepLink(data.deepLink);
+        if (route) router.push(routeToExpoPath(route) as never);
+        analytics.track('deep_link_opened', { source: 'notification' });
+      }
+    });
+    return unsubscribe;
+  }, [router]);
+
+  // ── Auth redirect ───────────────────────────────────────────
   useEffect(() => {
     if (!isLoaded) return;
     const inAuthGroup = segments[0] === '(auth)';

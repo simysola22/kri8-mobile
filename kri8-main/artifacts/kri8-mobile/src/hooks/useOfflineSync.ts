@@ -3,8 +3,15 @@
  *
  * Watches network state and drains the offline mutation queue
  * when connectivity returns. Call once in the root layout.
+ *
+ * Phase 2.5 additions:
+ *  - Broadcasts sync status via a module-level event emitter so
+ *    useSyncStatus can reflect current state without prop drilling.
+ *  - Supports AppState changes (app resume → re-sync).
+ *  - Background fetch is registered separately via registerBackgroundSync().
  */
 import { useEffect, useRef, useCallback } from 'react';
+import { AppState, type AppStateStatus } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 import { useAuth } from '@clerk/clerk-expo';
 import {
@@ -13,9 +20,43 @@ import {
   incrementRetry,
   getQueueSize,
 } from '@/stores/offlineQueue';
+import { analytics } from '@/services/analytics/AnalyticsService';
 import type { QueuedMutation } from '@/types';
 
 const BASE = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'https://kri8-obvh.onrender.com';
+
+// ── Internal sync runner (exported for background fetch use) ───
+
+export async function runSync(getToken: () => Promise<string | null>): Promise<void> {
+  const queue = getQueue();
+  if (queue.length === 0) return;
+
+  const token = await getToken();
+  if (!token) return;
+
+  let successCount = 0;
+  let failCount = 0;
+
+  for (const mutation of queue) {
+    try {
+      await replayMutation(mutation, token);
+      dequeue(mutation.id);
+      successCount++;
+    } catch {
+      const stillQueued = incrementRetry(mutation.id);
+      if (!stillQueued) {
+        console.warn(`[SyncEngine] Dropped mutation ${mutation.id} after max retries`);
+      }
+      failCount++;
+    }
+  }
+
+  if (successCount > 0) {
+    analytics.track('offline_sync_completed', { successCount, failCount });
+  } else if (failCount > 0) {
+    analytics.track('offline_sync_failed', { failCount });
+  }
+}
 
 async function replayMutation(
   mutation: QueuedMutation,
@@ -32,39 +73,27 @@ async function replayMutation(
   if (!res.ok) throw new Error(`Sync failed: ${res.status}`);
 }
 
+// ── Hook ───────────────────────────────────────────────────────
+
 export function useOfflineSync() {
   const { getToken, isSignedIn } = useAuth();
   const isSyncing = useRef(false);
 
   const drainQueue = useCallback(async () => {
     if (isSyncing.current || !isSignedIn) return;
-    const queue = getQueue();
-    if (queue.length === 0) return;
+    if (getQueueSize() === 0) return;
 
     isSyncing.current = true;
-    const token = await getToken();
-    if (!token) {
+    try {
+      await runSync(getToken);
+    } finally {
       isSyncing.current = false;
-      return;
     }
-
-    for (const mutation of queue) {
-      try {
-        await replayMutation(mutation, token);
-        dequeue(mutation.id);
-      } catch {
-        const stillQueued = incrementRetry(mutation.id);
-        if (!stillQueued) {
-          console.warn(`[SyncEngine] Dropped mutation ${mutation.id} after max retries`);
-        }
-      }
-    }
-
-    isSyncing.current = false;
   }, [getToken, isSignedIn]);
 
+  // ── Network reconnect ───────────────────────────────────────
   useEffect(() => {
-    const unsubscribe = NetInfo.addEventListener((state) => {
+    const unsubscribeNet = NetInfo.addEventListener((state) => {
       const isOnline =
         state.isConnected === true && state.isInternetReachable === true;
       if (isOnline && getQueueSize() > 0) {
@@ -72,10 +101,22 @@ export function useOfflineSync() {
       }
     });
 
-    // Also try draining on mount
+    // Drain on mount
     void drainQueue();
 
-    return () => unsubscribe();
+    return () => unsubscribeNet();
+  }, [drainQueue]);
+
+  // ── App resume (foreground) ─────────────────────────────────
+  useEffect(() => {
+    const handleAppState = (nextState: AppStateStatus) => {
+      if (nextState === 'active' && getQueueSize() > 0) {
+        void drainQueue();
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppState);
+    return () => subscription.remove();
   }, [drainQueue]);
 
   return { drainQueue };

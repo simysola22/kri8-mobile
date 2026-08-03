@@ -16,6 +16,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "space.kri8.mobile",
+      "associatedDomains": ["applinks:kri8.space", "webcredentials:kri8.space"],
       "infoPlist": {
         "NSCameraUsageDescription": "Kri8 uses your camera to capture ideas and scan text from the world around you.",
         "NSMicrophoneUsageDescription": "Kri8 uses your microphone to capture voice ideas hands-free.",
@@ -28,6 +29,19 @@
         "backgroundColor": "#0D0D1A"
       },
       "package": "space.kri8.mobile",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "kri8.space"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ],
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO",
@@ -40,6 +54,12 @@
       "output": "static"
     },
     "plugins": [
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Kri8 uses Face ID to securely unlock the app."
+        }
+      ],
       "expo-router",
       [
         "expo-splash-screen",
