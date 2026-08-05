@@ -1,0 +1,372 @@
+# Kri8 Recovery & Mobile Stabilization Prompt
+
+You are continuing development on **Kri8**, an AI-powered creator workspace.
+
+The previous development environment has been deleted before the latest mobile improvements were pushed to GitHub.
+
+Your objective is to **recreate the missing work exactly**, while preserving the current repository.
+
+**DO NOT redesign anything.**
+
+**DO NOT remove any existing functionality.**
+
+Your first responsibility is to audit the repository and determine what is already present.
+
+---
+
+# PHASE 1 — REPOSITORY AUDIT
+
+Inspect the entire monorepo.
+
+Current structure includes:
+
+* artifacts/kri8 (React + Vite web app)
+* artifacts/api-server (Express backend)
+* artifacts/kri8-mobile (Expo mobile app)
+* lib/* shared packages
+
+Determine:
+
+* what already exists
+* what was previously implemented
+* what is missing
+
+Do NOT duplicate code.
+
+Do NOT overwrite working implementations.
+
+Produce a report before making changes.
+
+---
+
+# PHASE 2 — VERIFY CURRENT STATE
+
+Verify the following:
+
+## Web
+
+Authentication
+
+Ideas
+
+Branches
+
+Calendar
+
+Community
+
+Messages
+
+Exports
+
+Profile
+
+Themes
+
+Notifications
+
+Dashboard
+
+Settings
+
+Confirm they still work.
+
+---
+
+## Backend
+
+Verify:
+
+Storage endpoints
+
+Push token endpoints
+
+Creator score endpoints
+
+Authentication
+
+Social
+
+Messages
+
+Ideas
+
+Calendar
+
+Export APIs
+
+Only recreate missing endpoints.
+
+Do NOT rewrite working ones.
+
+---
+
+## Mobile
+
+Audit the Expo application.
+
+Determine which of these already exist:
+
+* Clerk authentication
+* Offline queue
+* MMKV
+* Theme engine
+* Glass UI
+* Navigation
+* TanStack Query
+* Analytics
+* Push notification service
+* Draft recovery
+* Universal search
+* StorageService abstraction
+* CreatorScoreService
+* NotificationService
+* AI Assistant
+* CaptureDetectionService
+
+Only recreate what is missing.
+
+---
+
+# PHASE 3 — RESTORE MISSING MOBILE WORK
+
+Restore the previously completed architecture.
+
+The mobile application should contain:
+
+## Authentication
+
+Shared Clerk instance
+
+SecureStore sessions
+
+Protected routes
+
+Public routes
+
+Email verification
+
+Persistent login
+
+---
+
+## Navigation
+
+Custom glass tab bar
+
+6 tabs
+
+Home
+
+Ideas
+
+Capture
+
+Community
+
+AI
+
+Profile
+
+Animated transitions
+
+Haptic feedback
+
+---
+
+## Themes
+
+Exactly eight themes:
+
+* Midnight
+* Ocean Deep
+* Monochrome
+* Cyber
+* Aurora
+* Nature
+* Sky
+* Crimson
+
+Requirements:
+
+Glassmorphism
+
+Consistent text contrast
+
+No unreadable text
+
+Shared design language with web
+
+Theme persistence
+
+---
+
+## Services
+
+Ensure these services exist:
+
+StorageService
+
+NotificationService
+
+CreatorScoreService
+
+DraftService
+
+SearchService
+
+CaptureDetectionService
+
+AnalyticsService
+
+SubscriptionService
+
+FeatureFlagService
+
+EntitlementService
+
+AIAssistantService
+
+BiometricService
+
+Offline Sync Engine
+
+Do NOT duplicate services already present.
+
+---
+
+## Offline
+
+MMKV persistence
+
+Offline mutation queue
+
+Automatic sync
+
+Reconnect sync
+
+Foreground resume sync
+
+---
+
+## Components
+
+Restore:
+
+GlassCard
+
+GlassButton
+
+PremiumGate
+
+UniversalSearchBar
+
+SyncStatusIndicator
+
+LoadingSpinner
+
+Avatar
+
+Badge
+
+---
+
+# PHASE 4 — WIRE EXISTING SERVICES
+
+Reconnect any missing integrations.
+
+Specifically verify:
+
+Draft recovery
+
+Universal Search
+
+Sync indicator
+
+Creator Score
+
+Notification registration
+
+AI Assistant suggestions
+
+Capture Detection
+
+Biometric unlock
+
+If services already exist but are not used by screens,
+
+wire them into the appropriate screens.
+
+Do NOT rewrite service implementations.
+
+---
+
+# PHASE 5 — TYPECHECK
+
+Install dependencies if required.
+
+Run:
+
+pnpm install
+
+Run:
+
+pnpm --filter @workspace/kri8-mobile typecheck
+
+Fix all compile errors.
+
+Do not ignore warnings.
+
+Ensure zero TypeScript errors.
+
+---
+
+# PHASE 6 — BUILD VERIFICATION
+
+Verify:
+
+Expo builds
+
+No import errors
+
+No duplicate providers
+
+No duplicate navigation
+
+No broken routes
+
+No duplicate services
+
+No duplicate storage implementation
+
+---
+
+# PHASE 7 — REPORT
+
+Output:
+
+## Existing Features
+
+## Restored Features
+
+## Files Modified
+
+## Files Created
+
+## Remaining Work
+
+Only after the report should any code be written.
+
+---
+
+# IMPORTANT
+
+Do NOT redesign the UI.
+
+Do NOT change architecture.
+
+Do NOT replace working code.
+
+Recover only what is missing from the deleted environment.
+
+The goal is to restore the mobile project to the state it had reached before the development environment was lost, while preserving everything already committed to GitHub.
