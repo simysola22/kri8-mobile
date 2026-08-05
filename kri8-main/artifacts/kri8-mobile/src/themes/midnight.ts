@@ -1,37 +1,39 @@
 import type { Theme } from './types';
 
+// Ported 1:1 from the web app's index.css (:root / .theme-midnight tokens):
+// --background: 228 34% 11%, --primary: 43 74% 52% (gold), etc.
 export const midnight: Theme = {
   name: 'midnight',
   label: 'Midnight',
 
-  bg: '#0D0D1A',
-  bgSurface: '#13132A',
-  bgGlass: 'rgba(255, 255, 255, 0.06)',
-  bgGlassDeep: 'rgba(255, 255, 255, 0.10)',
+  bg: '#131626',
+  bgSurface: '#1B2037',
+  bgGlass: 'rgba(255, 255, 255, 0.04)',
+  bgGlassDeep: 'rgba(255, 255, 255, 0.07)',
 
-  border: 'rgba(255, 255, 255, 0.10)',
-  borderActive: 'rgba(124, 110, 245, 0.60)',
+  border: 'rgba(255, 255, 255, 0.08)',
+  borderActive: 'rgba(223, 172, 42, 0.55)',
 
   blur: 24,
 
-  accent: '#7C6EF5',
-  accentSoft: 'rgba(124, 110, 245, 0.18)',
-  accentContrast: '#FFFFFF',
+  accent: '#DFAC2A',
+  accentSoft: 'rgba(212, 175, 55, 0.12)',
+  accentContrast: '#131626',
 
-  text: '#F0EFFF',
-  textMuted: 'rgba(240, 239, 255, 0.55)',
-  textFaint: 'rgba(240, 239, 255, 0.28)',
+  text: '#F5F5F5',
+  textMuted: '#8A90A8',
+  textFaint: 'rgba(245, 245, 245, 0.28)',
 
   success: '#4ADE80',
   warning: '#FBBF24',
   error: '#F87171',
 
-  gradient: ['#1A1A3E', '#0D0D1A'],
-  accentGradient: ['#9B8BFF', '#5C4FD4'],
+  gradient: ['#181C30', '#131626'],
+  accentGradient: ['#EAC871', '#DFAC2A'],
 
-  tabBarBg: 'rgba(13, 13, 26, 0.92)',
-  tabBarActive: '#7C6EF5',
-  tabBarInactive: 'rgba(240, 239, 255, 0.35)',
+  tabBarBg: 'rgba(19, 22, 38, 0.92)',
+  tabBarActive: '#DFAC2A',
+  tabBarInactive: 'rgba(138, 144, 168, 0.65)',
 
   statusBar: 'light-content',
 };

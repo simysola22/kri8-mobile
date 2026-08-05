@@ -1,37 +1,38 @@
 import type { Theme } from './types';
 
+// Ported 1:1 from the web app's .theme-cyber tokens (neon green accent).
 export const cyber: Theme = {
   name: 'cyber',
   label: 'Cyber',
 
-  bg: '#030811',
-  bgSurface: '#070F1C',
-  bgGlass: 'rgba(0, 255, 100, 0.05)',
-  bgGlassDeep: 'rgba(0, 255, 100, 0.09)',
+  bg: '#121212',
+  bgSurface: '#1C1C1C',
+  bgGlass: 'rgba(57, 255, 20, 0.04)',
+  bgGlassDeep: 'rgba(57, 255, 20, 0.06)',
 
-  border: 'rgba(0, 255, 100, 0.14)',
-  borderActive: 'rgba(0, 255, 100, 0.60)',
+  border: 'rgba(57, 255, 20, 0.10)',
+  borderActive: 'rgba(51, 255, 15, 0.55)',
 
-  blur: 20,
+  blur: 24,
 
-  accent: '#00FF64',
-  accentSoft: 'rgba(0, 255, 100, 0.14)',
-  accentContrast: '#030811',
+  accent: '#33FF0F',
+  accentSoft: 'rgba(57, 255, 20, 0.12)',
+  accentContrast: '#121212',
 
-  text: '#E0FFE8',
-  textMuted: 'rgba(224, 255, 232, 0.52)',
-  textFaint: 'rgba(224, 255, 232, 0.25)',
+  text: '#F5F5F5',
+  textMuted: '#8C8C8C',
+  textFaint: 'rgba(245, 245, 245, 0.28)',
 
-  success: '#00FF64',
-  warning: '#FFD700',
-  error: '#FF4560',
+  success: '#4ADE80',
+  warning: '#FBBF24',
+  error: '#F87171',
 
-  gradient: ['#061a10', '#030811'],
-  accentGradient: ['#39FF8F', '#00CC50'],
+  gradient: ['#171717', '#121212'],
+  accentGradient: ['#79FF61', '#33FF0F'],
 
-  tabBarBg: 'rgba(3, 8, 17, 0.95)',
-  tabBarActive: '#00FF64',
-  tabBarInactive: 'rgba(224, 255, 232, 0.32)',
+  tabBarBg: 'rgba(18, 18, 18, 0.92)',
+  tabBarActive: '#33FF0F',
+  tabBarInactive: 'rgba(140, 140, 140, 0.65)',
 
   statusBar: 'light-content',
 };

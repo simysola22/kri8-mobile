@@ -1,37 +1,38 @@
 import type { Theme } from './types';
 
+// Ported 1:1 from the web app's .theme-sky tokens.
 export const sky: Theme = {
   name: 'sky',
   label: 'Sky',
 
-  bg: '#F0F8FF',
-  bgSurface: '#E4F3FF',
-  bgGlass: 'rgba(255, 255, 255, 0.55)',
-  bgGlassDeep: 'rgba(255, 255, 255, 0.75)',
+  bg: '#061323',
+  bgSurface: '#0E2239',
+  bgGlass: 'rgba(125, 211, 252, 0.05)',
+  bgGlassDeep: 'rgba(125, 211, 252, 0.07)',
 
-  border: 'rgba(0, 153, 230, 0.16)',
-  borderActive: 'rgba(0, 153, 230, 0.55)',
+  border: 'rgba(125, 211, 252, 0.10)',
+  borderActive: 'rgba(53, 183, 243, 0.55)',
 
-  blur: 18,
+  blur: 24,
 
-  accent: '#0099E6',
-  accentSoft: 'rgba(0, 153, 230, 0.12)',
-  accentContrast: '#FFFFFF',
+  accent: '#35B7F3',
+  accentSoft: 'rgba(125, 211, 252, 0.14)',
+  accentContrast: '#061323',
 
-  text: '#0D2340',
-  textMuted: 'rgba(13, 35, 64, 0.54)',
-  textFaint: 'rgba(13, 35, 64, 0.30)',
+  text: '#F5F5F5',
+  textMuted: '#8096B2',
+  textFaint: 'rgba(245, 245, 245, 0.28)',
 
-  success: '#22C55E',
-  warning: '#F59E0B',
-  error: '#EF4444',
+  success: '#4ADE80',
+  warning: '#FBBF24',
+  error: '#F87171',
 
-  gradient: ['#DCEEFF', '#F0F8FF'],
-  accentGradient: ['#38B6FF', '#0076C0'],
+  gradient: ['#0A1A2E', '#061323'],
+  accentGradient: ['#82D2F8', '#35B7F3'],
 
-  tabBarBg: 'rgba(240, 248, 255, 0.94)',
-  tabBarActive: '#0099E6',
-  tabBarInactive: 'rgba(13, 35, 64, 0.35)',
+  tabBarBg: 'rgba(6, 19, 35, 0.92)',
+  tabBarActive: '#35B7F3',
+  tabBarInactive: 'rgba(128, 150, 178, 0.65)',
 
-  statusBar: 'dark-content',
+  statusBar: 'light-content',
 };

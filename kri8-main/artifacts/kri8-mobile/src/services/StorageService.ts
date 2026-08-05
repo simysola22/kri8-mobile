@@ -1,6 +1,13 @@
 /**
  * StorageService
  *
+ * ⚠️ NOT YET WIRED UP: nothing in app/ or src/ currently imports this file.
+ * ⚠️ BACKEND MISSING: /api/storage/upload-url and /api/storage/download-url
+ * do not exist on the real Express API yet (verified against
+ * lib/api-spec/openapi.yaml — only /ideas, /users, /social, /trends exist).
+ * Calling these functions today will fail with a 404. Build the backend
+ * routes first, then wire this into a capture/upload flow.
+ *
  * Provider-independent media storage layer backed by Cloudflare R2.
  * Provider-specific code stays behind this interface.
  *

@@ -14,7 +14,9 @@ A creator-focused platform for capturing, organizing, and executing ideas — wi
 - Required env: `VITE_CLERK_PUBLISHABLE_KEY`, `VITE_API_BASE_URL`
 
 ### Mobile app (React Native / Expo)
-- `cd artifacts/kri8-mobile && pnpm install && npx expo start` — start Expo dev server
+- `pnpm --filter @workspace/kri8-mobile run start` — start the Expo development client
+- `pnpm --filter @workspace/kri8-mobile run start:go` — start Metro for Expo Go (native modules may require a custom dev build)
+- `pnpm --filter @workspace/kri8-mobile run prebuild` — regenerate native projects before an EAS development build
 - Requires `.env.local` in `artifacts/kri8-mobile/` (copy from `.env.example`)
 - Required env: `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` (same key as web app)
 - Required env: `EXPO_PUBLIC_API_BASE_URL=https://kri8-obvh.onrender.com`
@@ -40,8 +42,8 @@ A creator-focused platform for capturing, organizing, and executing ideas — wi
 - Build: esbuild (CJS bundle)
 
 ### Mobile app (`artifacts/kri8-mobile/`)
-- Expo SDK 53, React Native 0.79, React 19
-- Routing: Expo Router v5 (file-based, typed routes)
+- Expo SDK 54, React Native 0.81, React 19
+- Routing: Expo Router v6 (file-based, typed routes)
 - Auth: `@clerk/clerk-expo` — shared Clerk instance, session tokens stored in SecureStore
 - Data: TanStack Query v5 + custom `apiFetch` wrapper
 - Offline: MMKV-backed mutation queue + `useOfflineSync` SyncEngine

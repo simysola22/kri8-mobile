@@ -12,6 +12,11 @@
  *  - Helpful feedback
  *  - Trend accuracy
  *  - Collaboration
+ *
+ * ⚠️ NOT YET WIRED UP: nothing in app/ currently calls this service.
+ * ⚠️ BACKEND MISSING: GET /api/users/{id}/creator-score does not exist on
+ * the real Express API yet (verified against lib/api-spec/openapi.yaml).
+ * fetchCreatorScore() will 404 until that route is built.
  */
 import { createStorage } from '@/lib/kv';
 

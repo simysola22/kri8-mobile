@@ -1,37 +1,38 @@
 import type { Theme } from './types';
 
+// Ported 1:1 from the web app's .theme-crimson tokens.
 export const crimson: Theme = {
   name: 'crimson',
   label: 'Crimson',
 
-  bg: '#0F0507',
-  bgSurface: '#1A080C',
-  bgGlass: 'rgba(255, 51, 102, 0.06)',
-  bgGlassDeep: 'rgba(255, 51, 102, 0.11)',
+  bg: '#0F0F0F',
+  bgSurface: '#1C1717',
+  bgGlass: 'rgba(220, 38, 38, 0.06)',
+  bgGlassDeep: 'rgba(220, 38, 38, 0.08)',
 
-  border: 'rgba(255, 51, 102, 0.16)',
-  borderActive: 'rgba(255, 51, 102, 0.65)',
+  border: 'rgba(220, 38, 38, 0.12)',
+  borderActive: 'rgba(220, 40, 40, 0.55)',
 
-  blur: 22,
+  blur: 24,
 
-  accent: '#FF3366',
-  accentSoft: 'rgba(255, 51, 102, 0.15)',
+  accent: '#DC2828',
+  accentSoft: 'rgba(220, 38, 38, 0.16)',
   accentContrast: '#FFFFFF',
 
-  text: '#FFE8EC',
-  textMuted: 'rgba(255, 232, 236, 0.54)',
-  textFaint: 'rgba(255, 232, 236, 0.26)',
+  text: '#F7F7F7',
+  textMuted: '#9C8B8B',
+  textFaint: 'rgba(247, 247, 247, 0.28)',
 
   success: '#4ADE80',
-  warning: '#FCD34D',
-  error: '#FF3366',
+  warning: '#FBBF24',
+  error: '#F87171',
 
-  gradient: ['#2A050D', '#0F0507'],
-  accentGradient: ['#FF6B8E', '#CC1A44'],
+  gradient: ['#161313', '#0F0F0F'],
+  accentGradient: ['#E76E6E', '#DC2828'],
 
-  tabBarBg: 'rgba(15, 5, 7, 0.94)',
-  tabBarActive: '#FF3366',
-  tabBarInactive: 'rgba(255, 232, 236, 0.34)',
+  tabBarBg: 'rgba(15, 15, 15, 0.92)',
+  tabBarActive: '#DC2828',
+  tabBarInactive: 'rgba(156, 139, 139, 0.65)',
 
   statusBar: 'light-content',
 };
