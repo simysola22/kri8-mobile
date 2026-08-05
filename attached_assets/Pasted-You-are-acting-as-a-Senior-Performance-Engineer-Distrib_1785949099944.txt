@@ -1,0 +1,203 @@
+You are acting as a Senior Performance Engineer, Distributed Systems Architect, and Scalability Consultant.
+
+Audit the entire Kri8 codebase and determine the realistic user capacity of the current application.
+
+Do NOT guess.
+
+Base every conclusion on the actual implementation.
+
+---
+
+## PHASE 1 — ARCHITECTURE AUDIT
+
+Inspect:
+
+* Frontend
+* Backend
+* Database
+* Authentication
+* API layer
+* React Query
+* Offline queue
+* Message system
+* SSE implementation
+* Caching
+* Rate limiting
+* Database schema
+* Indexes
+* Storage
+* Background jobs
+
+Document everything that affects scalability.
+
+---
+
+## PHASE 2 — REQUEST ANALYSIS
+
+Determine the cost of the most common user actions:
+
+* Login
+* Dashboard load
+* Create idea
+* Edit idea
+* Delete idea
+* Branch idea
+* Calendar load
+* Friend search
+* Send friend request
+* Accept request
+* Messages
+* Trends
+* AI requests
+* Export PPT
+* Profile update
+
+For each action report:
+
+* Number of database queries
+* Number of API calls
+* External services used
+* Blocking operations
+* Estimated response complexity
+
+---
+
+## PHASE 3 — DATABASE ANALYSIS
+
+Inspect every table.
+
+Determine:
+
+* Missing indexes
+* Slow queries
+* N+1 query risks
+* Full table scans
+* Recursive queries
+* Join complexity
+* Foreign key usage
+
+Estimate how the database behaves with:
+
+* 100 users
+* 1,000 users
+* 10,000 users
+* 100,000 users
+* 1,000,000 users
+
+---
+
+## PHASE 4 — CONCURRENT USER CAPACITY
+
+Estimate the maximum number of users the CURRENT implementation can support before degradation.
+
+Estimate separately for:
+
+* Registered users
+* Concurrent active users
+* Simultaneous API requests
+* Simultaneous dashboard loads
+* Simultaneous idea creation
+* Simultaneous exports
+* Simultaneous messaging
+* Simultaneous friend requests
+
+Provide realistic ranges.
+
+Do not exaggerate.
+
+---
+
+## PHASE 5 — SERVER REQUIREMENTS
+
+Estimate infrastructure needed for:
+
+Current implementation
+
+10,000 users
+
+100,000 users
+
+1,000,000 users
+
+Include:
+
+* CPU
+* RAM
+* PostgreSQL size
+* Network
+* Storage
+* Number of backend instances
+* Load balancer requirements
+
+---
+
+## PHASE 6 — BOTTLENECKS
+
+Identify the first components that will fail under load.
+
+Rank them by severity.
+
+Examples:
+
+* Database
+* SSE
+* Authentication
+* Message polling
+* React Query
+* Exports
+* AI endpoints
+* Search
+* Calendar
+
+Explain why.
+
+---
+
+## PHASE 7 — OPTIMIZATION ROADMAP
+
+Estimate the capacity after implementing:
+
+* Better indexes
+* Redis caching
+* CDN
+* Queue workers
+* Horizontal scaling
+* Read replicas
+* Pagination
+* Virtualized lists
+* Compression
+* HTTP caching
+
+Show the estimated improvement.
+
+---
+
+## PHASE 8 — FINAL CAPACITY REPORT
+
+Provide a table like this:
+
+| Metric              | Current | After Optimization |
+| ------------------- | ------- | ------------------ |
+| Registered Users    |         |                    |
+| Concurrent Users    |         |                    |
+| Requests/sec        |         |                    |
+| Ideas Stored        |         |                    |
+| Messages/day        |         |                    |
+| Friend Requests/day |         |                    |
+| Exports/day         |         |                    |
+
+---
+
+## IMPORTANT
+
+Do NOT modify any code.
+
+Do NOT optimize anything yet.
+
+Only audit.
+
+Base all conclusions on the current codebase.
+
+If an estimate cannot be justified from the implementation, explicitly state the uncertainty instead of guessing.
+
+The goal is to determine the true scalability limits of Kri8 as it exists today and provide a roadmap to support 1 million users.
