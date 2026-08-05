@@ -1,0 +1,414 @@
+# Kri8 Mobile Sprint 1 — Service Wiring & UX Completion
+
+You are acting as the lead mobile engineer for **Kri8**.
+
+The mobile application architecture is already complete.
+
+The following systems already exist:
+
+* Clerk Authentication
+* Offline Queue
+* MMKV Persistence
+* Analytics
+* StorageService
+* NotificationService
+* DraftService
+* SearchService
+* CreatorScoreService
+* CaptureDetectionService
+* AIAssistantService
+* BiometricService
+* Sync Engine
+* Theme Engine
+* Glass UI Components
+
+**Do NOT rebuild any of these.**
+
+Your objective is to **wire the existing services into the user experience**.
+
+This sprint is about making the app feel complete.
+
+---
+
+# PHASE 1 — AUDIT
+
+Before changing anything:
+
+Inspect the mobile project.
+
+Determine:
+
+* which services already exist
+* which screens already exist
+* which hooks already exist
+* which UI components already exist
+
+Produce a report.
+
+Do NOT duplicate code.
+
+Do NOT create alternative implementations.
+
+Reuse the existing architecture.
+
+---
+
+# PHASE 2 — BIOMETRIC SECURITY
+
+The BiometricService already exists.
+
+Wire it into the application.
+
+Requirements:
+
+Settings screen
+
+↓
+
+Enable Biometric Lock toggle
+
+↓
+
+Persist preference
+
+↓
+
+When app resumes
+
+↓
+
+Require Face ID / Fingerprint
+
+↓
+
+Unlock app
+
+If authentication fails:
+
+Allow "Use device passcode."
+
+If Clerk session expired:
+
+Return user to Sign In.
+
+No custom authentication.
+
+Reuse Clerk.
+
+---
+
+# PHASE 3 — DRAFT RECOVERY
+
+DraftService already exists.
+
+Wire it into:
+
+Capture Screen
+
+Idea Edit Screen
+
+Requirements:
+
+Autosave every few seconds.
+
+Restore drafts automatically.
+
+Show:
+
+"Recovered Draft"
+
+with:
+
+Restore
+
+Discard
+
+Never lose typed content.
+
+---
+
+# PHASE 4 — UNIVERSAL SEARCH
+
+SearchService already exists.
+
+Create a dedicated search experience.
+
+Search should include:
+
+Ideas
+
+Messages
+
+Friends
+
+Calendar
+
+Trends
+
+Results should update instantly.
+
+Recent searches should persist locally.
+
+Use MMKV.
+
+No duplicate search implementation.
+
+---
+
+# PHASE 5 — SYNC STATUS
+
+SyncStatusIndicator already exists.
+
+Place it naturally within the app.
+
+Display:
+
+Offline
+
+Syncing
+
+All Changes Saved
+
+Failed Sync
+
+Use subtle animations.
+
+Do not interrupt workflow.
+
+---
+
+# PHASE 6 — AI WRITING ASSISTANT
+
+AIAssistantService already exists.
+
+Integrate it into writing.
+
+While user types:
+
+Suggest:
+
+Titles
+
+Hooks
+
+Hashtags
+
+Improvements
+
+Rewrites
+
+Do NOT interrupt typing.
+
+Suggestions should appear naturally.
+
+One tap to insert.
+
+---
+
+# PHASE 7 — SMART CAPTURE
+
+CaptureDetectionService already exists.
+
+Wire it into Capture.
+
+Detect automatically:
+
+Instagram URLs
+
+YouTube URLs
+
+TikTok URLs
+
+Twitter/X URLs
+
+General URLs
+
+Suggest:
+
+Generate Inspiration
+
+Extract Information
+
+Save Link
+
+Do not require manual mode selection.
+
+---
+
+# PHASE 8 — CREATOR SCORE
+
+CreatorScoreService already exists.
+
+Add a beautiful Creator Score card.
+
+Display:
+
+Creator Score
+
+Weekly Growth
+
+Content Streak
+
+Idea Velocity
+
+Productivity Trend
+
+Use subtle charts.
+
+Glassmorphism styling.
+
+---
+
+# PHASE 9 — PUSH NOTIFICATIONS
+
+NotificationService already exists.
+
+Finish registration flow.
+
+Verify:
+
+Permission request
+
+Token registration
+
+Settings toggle
+
+Notification preferences
+
+If backend endpoint exists:
+
+Register token.
+
+If backend endpoint unavailable:
+
+Gracefully queue registration.
+
+No crashes.
+
+---
+
+# PHASE 10 — UX IMPROVEMENTS
+
+Improve interactions.
+
+Add:
+
+Haptics
+
+Pull to Refresh
+
+Swipe Actions
+
+Long Press Menus
+
+Better Loading States
+
+Skeleton Loading
+
+Empty States
+
+Error States
+
+Smooth Transitions
+
+Micro Animations
+
+Everything should feel premium.
+
+---
+
+# PHASE 11 — PERFORMANCE
+
+Audit:
+
+Re-renders
+
+Large Lists
+
+FlatList optimization
+
+Memoization
+
+React Query caching
+
+Image loading
+
+Navigation transitions
+
+Only optimize proven bottlenecks.
+
+---
+
+# PHASE 12 — VERIFICATION
+
+Verify every feature.
+
+Authentication
+
+Offline
+
+Ideas
+
+Search
+
+Drafts
+
+Creator Score
+
+AI Suggestions
+
+Notifications
+
+Themes
+
+Biometric Lock
+
+Sync
+
+Capture
+
+Everything should work together.
+
+---
+
+# OUTPUT
+
+Step 1
+
+Audit Report
+
+Step 2
+
+Existing Services Found
+
+Step 3
+
+Screens Wired
+
+Step 4
+
+Files Modified
+
+Step 5
+
+Verification Results
+
+Step 6
+
+Remaining Work
+
+---
+
+## IMPORTANT
+
+Do NOT redesign the UI.
+
+Do NOT replace existing architecture.
+
+Do NOT duplicate services.
+
+Do NOT create new state management.
+
+Reuse everything already built.
+
+The goal of this sprint is to transform the existing mobile architecture into a polished, production-quality mobile experience by connecting the services that already exist.
