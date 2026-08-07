@@ -10,6 +10,12 @@ import { enqueue } from '@/stores/offlineQueue';
 
 const BASE = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'https://kri8-obvh.onrender.com';
 
+function isNetworkError(error: unknown): boolean {
+  if (error instanceof TypeError) return true;
+  if (!(error instanceof Error)) return false;
+  return /network request failed|failed to fetch|network error|timeout/i.test(error.message);
+}
+
 async function apiFetch<T>(
   path: string,
   getToken: () => Promise<string | null>,
@@ -101,8 +107,11 @@ export function useCreateIdea() {
           body: JSON.stringify(input),
         });
       } catch (err) {
-        // Queue for offline sync
-        enqueue({ method: 'POST', path: '/ideas', body: input });
+        // Only queue transport failures. Validation, auth, and server errors
+        // must be shown immediately instead of replaying forever.
+        if (isNetworkError(err)) {
+          enqueue({ method: 'POST', path: '/ideas', body: input });
+        }
         throw err;
       }
     },
@@ -123,9 +132,12 @@ export function useUpdateIdea() {
           method: 'PATCH',
           body: JSON.stringify(update),
         });
-      } catch {
-        enqueue({ method: 'PATCH', path: `/ideas/${id}`, body: update });
-        throw new Error('Queued for sync');
+      } catch (err) {
+        if (isNetworkError(err)) {
+          enqueue({ method: 'PATCH', path: `/ideas/${id}`, body: update });
+          throw new Error('Changes saved offline and will sync when you reconnect');
+        }
+        throw err;
       }
     },
     onSuccess: (updated) => {

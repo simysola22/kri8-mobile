@@ -42,7 +42,21 @@ export async function runSync(getToken: () => Promise<string | null>): Promise<v
       await replayMutation(mutation, token);
       dequeue(mutation.id);
       successCount++;
-    } catch {
+    } catch (error) {
+      const status =
+        error instanceof Error &&
+        typeof (error as Error & { status?: unknown }).status === 'number'
+          ? (error as Error & { status: number }).status
+          : undefined;
+
+      // Client errors are permanent for this payload. Retrying them on every
+      // reconnect hides invalid input and needlessly drains the queue.
+      if (status !== undefined && status >= 400 && status < 500) {
+        dequeue(mutation.id);
+        failCount++;
+        continue;
+      }
+
       const stillQueued = incrementRetry(mutation.id);
       if (!stillQueued) {
         console.warn(`[SyncEngine] Dropped mutation ${mutation.id} after max retries`);
@@ -70,7 +84,11 @@ async function replayMutation(
     },
     body: mutation.body ? JSON.stringify(mutation.body) : undefined,
   });
-  if (!res.ok) throw new Error(`Sync failed: ${res.status}`);
+  if (!res.ok) {
+    const error = new Error(`Sync failed: ${res.status}`);
+    Object.assign(error, { status: res.status });
+    throw error;
+  }
 }
 
 // ── Hook ───────────────────────────────────────────────────────

@@ -16,27 +16,19 @@ import { parseDeepLink, routeToExpoPath } from '@/lib/deepLinking';
 
 const PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ?? '';
 
-// On native, crash early so developers see the error immediately.
-// On web, render a setup screen instead.
-if (!PUBLISHABLE_KEY && Platform.OS !== 'web') {
-  throw new Error(
-    'Missing EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY. ' +
-      'Copy .env.example to .env.local and fill in your Clerk publishable key.',
-  );
-}
-
-// ── Setup screen (web-only, shown when Clerk key is not configured) ──
+// ── Setup screen (shown when Clerk is not configured) ─────────
 function SetupScreen() {
   return (
     <View style={styles.setup}>
       <Text style={styles.setupEmoji}>🔑</Text>
       <Text style={styles.setupTitle}>Kri8 Mobile</Text>
-      <Text style={styles.setupSubtitle}>One environment variable needed</Text>
+        <Text style={styles.setupSubtitle}>Finish connecting your workspace</Text>
       <View style={styles.setupCard}>
         <Text style={styles.setupCode}>EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY</Text>
         <Text style={styles.setupHint}>
-          Add your Clerk publishable key (pk_test_…) as a Replit Secret, then
-          restart the workflow.
+          Add your Clerk publishable key (pk_test_…) to the mobile app
+          environment, then restart Metro. The app can still open safely while
+          this setup is incomplete.
         </Text>
       </View>
     </View>

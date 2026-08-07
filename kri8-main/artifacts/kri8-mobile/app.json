@@ -4,15 +4,10 @@
     "slug": "kri8-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
     "scheme": "kri8",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#0D0D1A"
-    },
+    "backgroundColor": "#0D0D1A",
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "space.kri8.mobile",
@@ -25,7 +20,6 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0D0D1A"
       },
       "package": "space.kri8.mobile",
@@ -61,23 +55,8 @@
         }
       ],
       "expo-router",
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/splash.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#0D0D1A"
-        }
-      ],
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/notification-icon.png",
-          "color": "#7C6EF5",
-          "defaultChannel": "default"
-        }
-      ],
+      "expo-splash-screen",
+      "expo-notifications",
       [
         "expo-camera",
         {

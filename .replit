@@ -5,3 +5,30 @@ channel = "stable-25_05"
 
 [agent]
 expertMode = true
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Kri8 Mobile Metro"
+
+[[workflows.workflow]]
+name = "Kri8 Mobile Metro"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd kri8-main/artifacts/kri8-mobile && pnpm run start:go -- --localhost"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[ports]]
+localPort = 8081
+externalPort = 80
