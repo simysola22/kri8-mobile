@@ -1,0 +1,311 @@
+# Kri8 Mobile — Resume Sprint 2 and Finish Verification
+
+You are continuing an **already partially implemented Sprint 2** for the Kri8 mobile app.
+
+## IMPORTANT
+
+Do NOT restart Sprint 2.
+
+Do NOT revert existing work.
+
+Do NOT rebuild services that already exist.
+
+Do NOT modify the web application.
+
+Work ONLY inside:
+
+`artifacts/kri8-mobile`
+
+Continue from the repository's CURRENT state.
+
+The previous implementation already wired:
+
+* Biometric settings
+* Biometric app-lock lifecycle
+* Universal search route
+* Recent search persistence
+* Smart URL capture
+* Draft recovery
+* AI writing assistance
+* Offline/sync UX
+
+The previous run also:
+
+* restored workspace dependencies from the existing lockfile
+* passed TypeScript validation
+* passed Expo config validation
+* started Metro
+* verified that the app bundles far enough to render
+* found and fixed the empty-draft autosave edge case
+
+The previous run stopped because the Replit free quota was exhausted before final verification.
+
+---
+
+# YOUR TASK
+
+## STEP 1 — Inspect CURRENT STATE
+
+Before changing anything:
+
+1. Inspect the current git diff.
+2. Identify every file modified by the previous Sprint 2 implementation.
+3. Verify that the modifications are mobile-only.
+4. Do NOT discard or overwrite existing changes.
+5. Determine whether the final `capture.tsx` empty-draft fix was successfully written before the previous run stopped.
+
+Report the current state briefly.
+
+---
+
+# STEP 2 — COMPLETE VALIDATION
+
+Run the existing project validation commands.
+
+At minimum:
+
+### TypeScript
+
+Run the mobile TypeScript check.
+
+It must pass.
+
+### Expo
+
+Run Expo configuration validation.
+
+Confirm the configured Expo SDK and project configuration are valid.
+
+### Build / export
+
+Run the appropriate existing mobile production/export validation command.
+
+Do NOT invent a new build system.
+
+### Metro
+
+Start Metro using the project's existing configuration.
+
+Check for:
+
+* bundling errors
+* module resolution errors
+* runtime exceptions
+* navigation errors
+* Clerk initialization errors
+* React warnings that indicate broken functionality
+
+If the preview is available, inspect the relevant screens.
+
+---
+
+# STEP 3 — VERIFY EACH SPRINT 2 FEATURE
+
+Do not merely verify that files exist.
+
+Verify the actual user-facing wiring.
+
+## 1. BIOMETRIC SECURITY
+
+Verify:
+
+* biometric toggle exists in Settings/Profile
+* supported devices can enable it
+* unsupported devices fail gracefully
+* cancelled biometric authentication does not crash the app
+* disabling biometrics works
+* app lock triggers when the app resumes/backgrounds according to the implementation
+* users have a safe fallback when biometric authentication is unavailable
+* Clerk/session state is not destroyed by the lock flow
+
+Do NOT introduce arbitrary timers.
+
+---
+
+## 2. UNIVERSAL SEARCH
+
+Verify:
+
+* dedicated search route exists
+* search can actually be reached from mobile navigation
+* search input works
+* debounce works
+* recent searches persist
+* grouped results render correctly
+* ideas can be opened
+* users/friends can be opened
+* trends can be opened
+* loading state works
+* empty state works
+* error state works
+* search does NOT invent message/calendar APIs that do not exist
+
+Use only existing backend/API contracts.
+
+---
+
+## 3. SMART CAPTURE
+
+Verify the capture screen can detect:
+
+* YouTube URLs
+* TikTok URLs
+* X/Twitter URLs
+* generic URLs
+
+Verify detected URLs produce useful UI/action suggestions.
+
+Do not create fake API responses.
+
+---
+
+## 4. DRAFT RECOVERY
+
+Verify:
+
+* drafts autosave while typing
+* empty drafts are NOT created
+* existing typed content is never unexpectedly overwritten
+* reopening the capture flow can restore a draft
+* Restore works
+* Discard works
+* draft state survives the intended lifecycle
+* recovery UI does not appear when there is no meaningful draft
+
+---
+
+## 5. AI WRITING ASSISTANCE
+
+Verify the existing AI assistant hook/service is actually connected to the capture/editing experience.
+
+Verify:
+
+* suggestions trigger appropriately
+* loading state exists
+* errors are handled
+* suggestions do not overwrite user content unexpectedly
+* offline mode does not crash the screen
+
+Do not create fake AI responses.
+
+---
+
+## 6. OFFLINE / SYNC UX
+
+Verify:
+
+* offline creation remains possible
+* pending sync state is visible
+* syncing state is visible
+* synchronized state is explicitly visible
+* reconnect/foreground synchronization continues to work
+* failed sync does not crash the app
+* existing offline queue behavior is preserved
+
+---
+
+# STEP 4 — FIX ONLY REAL PROBLEMS
+
+If validation exposes issues:
+
+Fix them directly.
+
+Prioritize:
+
+1. TypeScript errors
+2. Expo/build errors
+3. Runtime crashes
+4. Broken navigation
+5. Broken user flows
+6. UX inconsistencies
+
+Do NOT perform unrelated refactors.
+
+Do NOT modify the web app.
+
+Do NOT upgrade unrelated dependencies.
+
+Do NOT change architecture unless required to fix an actual Sprint 2 issue.
+
+---
+
+# STEP 5 — FINAL DIFF AUDIT
+
+After fixes:
+
+Review:
+
+`git diff`
+
+Confirm:
+
+* only intended mobile files changed
+* no generated junk was committed
+* no accidental root package files were created
+* no lockfile corruption
+* no web files were modified
+* no secrets were added
+* no fake APIs were introduced
+* no demo authentication was introduced
+
+---
+
+# STEP 6 — FINAL REPORT
+
+Return:
+
+## Sprint 2 Status
+
+For each:
+
+* Biometric security
+* Universal search
+* Smart capture
+* Draft recovery
+* AI writing assistance
+* Offline/sync UX
+
+Mark:
+
+✅ Complete
+⚠️ Partial
+❌ Broken
+
+For every ⚠️ or ❌, explain exactly what remains.
+
+Then provide:
+
+### Validation
+
+* TypeScript:
+* Expo config:
+* Production/export:
+* Metro:
+* Runtime:
+* Navigation:
+
+### Files Changed
+
+List every modified file and briefly explain why.
+
+### Known Limitations
+
+Only list genuine remaining limitations.
+
+### Git Status
+
+Show whether the working tree is clean or has intended uncommitted changes.
+
+---
+
+## CRITICAL RULE
+
+If everything passes, DO NOT make unnecessary changes just to "improve" the code.
+
+The goal is to **finish and verify the Sprint 2 implementation that is already in progress**, not start another development sprint.
+
+If a validation step cannot be completed because of a missing environment variable, device-only capability, or unavailable Replit service, clearly identify that limitation instead of pretending the test passed.
+
+DO NOT stop after discovering a minor issue.
+
+Fix it, re-run the relevant validation, and continue until the Sprint 2 verification is complete.
