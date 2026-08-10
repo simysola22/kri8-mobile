@@ -4,6 +4,7 @@
     "slug": "kri8-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
+    "platforms": ["ios", "android", "web"],
     "scheme": "kri8",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -42,10 +43,6 @@
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE"
       ]
-    },
-    "web": {
-      "bundler": "metro",
-      "output": "static"
     },
     "plugins": [
       [

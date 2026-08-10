@@ -15,12 +15,14 @@ A creator-focused platform for capturing, organizing, and executing ideas — wi
 
 ### Mobile app (React Native / Expo)
 - `pnpm --filter @workspace/kri8-mobile run start` — start the Expo development client
-- `pnpm --filter @workspace/kri8-mobile run start:go` — start Metro for Expo Go (native modules may require a custom dev build)
+- `pnpm --filter @workspace/kri8-mobile run start:go -- --port 8082` — start Metro for Expo Go on the Replit mobile port (native modules may require a custom dev build)
 - `pnpm --filter @workspace/kri8-mobile run prebuild` — regenerate native projects before an EAS development build
 - Requires `.env.local` in `artifacts/kri8-mobile/` (copy from `.env.example`)
 - Required env: `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` (same key as web app)
 - Required env: `EXPO_PUBLIC_API_BASE_URL=https://kri8-obvh.onrender.com`
+- Production target is iOS/Android; web support is retained only for Replit/Metro preview compatibility
 - EAS build: `npx eas build --profile development` — build dev client for iOS/Android
+- Replit workflow: `Kri8 Mobile Metro` — starts the Expo Go bundle on port 8082 so it does not conflict with the mockup preview server on port 8081
 - Bundle ID: `space.kri8.mobile`
 
 ### Workspace
@@ -84,7 +86,7 @@ A creator-focused platform for capturing, organizing, and executing ideas — wi
 
 ## Gotchas
 
-- `react-native-reanimated/plugin` MUST be last in the Babel plugins array in `babel.config.js`
+- `react-native-worklets/plugin` MUST be last in the Babel plugins array in `babel.config.js` (Reanimated 4)
 - Expo Router's typed routes require `"experiments": { "typedRoutes": true }` in `app.json`
 - Auth screens always use the Midnight theme (user prefs not yet loaded at that point)
 - SSE (`/api/social/messages/:userId/stream`) requires `?token=` query param — already supported by the backend

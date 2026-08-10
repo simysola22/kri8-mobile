@@ -22,7 +22,7 @@ function SetupScreen() {
     <View style={styles.setup}>
       <Text style={styles.setupEmoji}>🔑</Text>
       <Text style={styles.setupTitle}>Kri8 Mobile</Text>
-        <Text style={styles.setupSubtitle}>Finish connecting your workspace</Text>
+      <Text style={styles.setupSubtitle}>Finish connecting your workspace</Text>
       <View style={styles.setupCard}>
         <Text style={styles.setupCode}>EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY</Text>
         <Text style={styles.setupHint}>
@@ -63,11 +63,16 @@ function AuthGuard() {
 
     // Fire-and-forget — non-fatal if push token registration fails
     void (async () => {
-      const token = await getToken();
-      if (!token) return;
-      // user.id is a string like "user_xxxxxxxx" — pass a stable numeric-ish identifier
-      const numericId = Math.abs(user.id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0));
-      await setupNotifications(token, numericId);
+      try {
+        const token = await getToken();
+        if (!token) return;
+        // user.id is a string like "user_xxxxxxxx" — pass a stable numeric-ish identifier
+        const numericId = Math.abs(user.id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0));
+        await setupNotifications(token, numericId);
+      } catch {
+        // Notification permissions and device token registration are optional.
+        // Never block the authenticated app if the device cannot register.
+      }
     })();
   }, [isSignedIn, user, getToken]);
 
