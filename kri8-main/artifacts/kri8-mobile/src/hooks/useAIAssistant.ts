@@ -15,6 +15,7 @@ const DEBOUNCE_MS = 800; // Wait for a pause in typing before calling the API
 export interface UseAIAssistantResult {
   suggestions: AIAssistantService.AISuggestions;
   isLoading: boolean;
+  isError: boolean;
   /** Accept a suggestion field — tracks analytics. */
   acceptSuggestion: (field: keyof AIAssistantService.AISuggestions) => void;
   /** Dismiss all suggestions. */
@@ -29,6 +30,7 @@ export function useAIAssistant(
   const { getToken } = useAuth();
   const [suggestions, setSuggestions] = useState<AIAssistantService.AISuggestions>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [isError, setIsError] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const contextRef = useRef(context);
 
@@ -42,6 +44,7 @@ export function useAIAssistant(
     if (!token) return;
 
     setIsLoading(true);
+    setIsError(false);
     try {
       const result = await AIAssistantService.getAISuggestions(token, contextRef.current);
       if (Object.keys(result).length > 0) {
@@ -49,7 +52,8 @@ export function useAIAssistant(
         analytics.track('ai_inspiration_requested');
       }
     } catch {
-      // Non-fatal — AI suggestions are best-effort
+      // Non-fatal — AI suggestions never block typing.
+      setIsError(true);
     } finally {
       setIsLoading(false);
     }
@@ -61,7 +65,11 @@ export function useAIAssistant(
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
     const hasContent = (title?.trim().length ?? 0) > 3 || (insight?.trim().length ?? 0) > 10;
-    if (!hasContent) return;
+    if (!hasContent) {
+      setSuggestions({});
+      setIsError(false);
+      return;
+    }
 
     debounceRef.current = setTimeout(() => {
       void fetchSuggestions();
@@ -85,5 +93,12 @@ export function useAIAssistant(
     void fetchSuggestions();
   }, [fetchSuggestions]);
 
-  return { suggestions, isLoading, acceptSuggestion, dismissSuggestions, triggerSuggestions };
+  return {
+    suggestions,
+    isLoading,
+    isError,
+    acceptSuggestion,
+    dismissSuggestions,
+    triggerSuggestions,
+  };
 }

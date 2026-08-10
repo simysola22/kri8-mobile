@@ -21,6 +21,8 @@ import { clearQueue } from '@/stores/offlineQueue';
 import { THEME_LIST } from '@/themes';
 import { tapLight, tapHeavy } from '@/lib/haptics';
 import type { ThemeName } from '@/types';
+import { useBiometric } from '@/hooks/useBiometric';
+import { SyncStatusIndicator } from '@/components/ui/SyncStatusIndicator';
 
 export default function ProfileScreen() {
   const theme = useActiveTheme();
@@ -30,6 +32,15 @@ export default function ProfileScreen() {
   const { data: user } = useCurrentUser();
   const { data: stats } = useIdeaStats();
   const updateUser = useUpdateUser();
+  const {
+    isAvailable,
+    isEnabled,
+    setEnabled,
+    authenticate,
+    isChecking,
+    supportedTypes,
+    refreshAvailability,
+  } = useBiometric();
 
   const handleSignOut = () => {
     Alert.alert('Sign out?', 'You will need to sign in again.', [
@@ -141,6 +152,84 @@ export default function ProfileScreen() {
           </View>
         </View>
 
+        {/* Security */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Security</Text>
+          <GlassCard style={styles.securityCard}>
+            <View style={styles.securityHeader}>
+              <View style={styles.securityCopy}>
+                <Text style={[styles.securityTitle, { color: theme.text }]}>
+                  Biometric unlock
+                </Text>
+                <Text style={[styles.securitySubtitle, { color: theme.textMuted }]}>
+                  {isChecking
+                    ? 'Checking this device…'
+                    : isAvailable
+                      ? `${formatBiometricTypes(supportedTypes)} available`
+                      : 'Not available on this device'}
+                </Text>
+              </View>
+              <TouchableOpacity
+                disabled={isChecking || (!isAvailable && !isEnabled)}
+                onPress={() => {
+                  if (isEnabled) {
+                    setEnabled(false);
+                    return;
+                  }
+                  void authenticate('Confirm biometric unlock').then((result) => {
+                    if (result.success) {
+                      setEnabled(true);
+                    } else {
+                      Alert.alert(
+                        'Biometric unlock not enabled',
+                        result.error === 'user_cancel'
+                          ? 'The setup was cancelled.'
+                          : 'Authentication failed. Try again when you are ready.',
+                      );
+                    }
+                  });
+                }}
+                accessibilityRole="switch"
+                accessibilityState={{ checked: isEnabled, disabled: isChecking || !isAvailable }}
+                style={[
+                  styles.toggle,
+                  {
+                    backgroundColor: isEnabled ? theme.accent : theme.bgGlassDeep,
+                    borderColor: isEnabled ? theme.accent : theme.border,
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.toggleThumb,
+                    { backgroundColor: isEnabled ? '#FFFFFF' : theme.textMuted },
+                  ]}
+                />
+              </TouchableOpacity>
+            </View>
+            {isEnabled && (
+              <Text style={[styles.securityHint, { color: theme.textMuted }]}>
+                Kri8 will lock when you return to the app. You can always use account sign-in
+                from the lock screen.
+              </Text>
+            )}
+            {!isAvailable && !isChecking && (
+              <GlassButton
+                variant="ghost"
+                size="sm"
+                onPress={() => void refreshAvailability()}
+              >
+                Check again
+              </GlassButton>
+            )}
+          </GlassCard>
+        </View>
+
+        <View style={styles.syncRow}>
+          <Text style={[styles.syncLabel, { color: theme.textMuted }]}>Sync status</Text>
+          <SyncStatusIndicator />
+        </View>
+
         {/* Sign out */}
         <GlassButton
           onPress={handleSignOut}
@@ -182,4 +271,44 @@ const styles = StyleSheet.create({
   },
   themeSwatch: { width: 10, height: 10, borderRadius: 5 },
   themeLabel: { fontSize: 13, fontWeight: '600', flex: 1 },
+  securityCard: { gap: 12 },
+  securityHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  securityCopy: { flex: 1, gap: 4 },
+  securityTitle: { fontSize: 16, fontWeight: '700' },
+  securitySubtitle: { fontSize: 13, lineHeight: 18 },
+  securityHint: { fontSize: 12, lineHeight: 18 },
+  toggle: {
+    width: 50,
+    height: 30,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 3,
+    justifyContent: 'center',
+  },
+  toggleThumb: { width: 22, height: 22, borderRadius: 11, alignSelf: 'flex-start' },
+  syncRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: 28,
+  },
+  syncLabel: { fontSize: 13 },
 });
+
+function formatBiometricTypes(
+  types: import('expo-local-authentication').AuthenticationType[],
+): string {
+  const labels = types.map((type) => {
+    switch (type) {
+      case 1:
+        return 'fingerprint';
+      case 2:
+        return 'facial recognition';
+      case 3:
+        return 'iris';
+      default:
+        return 'biometrics';
+    }
+  });
+  return labels.length > 0 ? labels.join(' / ') : 'Biometrics';
+}

@@ -21,6 +21,8 @@ export interface UseBiometricResult {
   isChecking: boolean;
   /** Native biometric types enrolled on the device, when available. */
   supportedTypes: BiometricService.LocalAuthentication.AuthenticationType[];
+  /** Re-check native availability after permissions or enrollment change. */
+  refreshAvailability: () => Promise<void>;
 }
 
 export function useBiometric(): UseBiometricResult {
@@ -31,28 +33,28 @@ export function useBiometric(): UseBiometricResult {
     BiometricService.LocalAuthentication.AuthenticationType[]
   >([]);
 
-  useEffect(() => {
-    let mounted = true;
-    void (async () => {
-      try {
-        const [available, types] = await Promise.all([
-          BiometricService.isBiometricAvailable(),
-          BiometricService.getSupportedTypes(),
-        ]);
-        if (mounted) {
-          setIsAvailable(available);
-          setSupportedTypes(types);
-          setIsEnabledState(BiometricService.isBiometricEnabled());
-        }
-      } catch {
-        // Unsupported platforms (including web) should behave as unavailable.
-        if (mounted) setIsAvailable(false);
-      } finally {
-        if (mounted) setIsChecking(false);
-      }
-    })();
-    return () => { mounted = false; };
+  const refreshAvailability = useCallback(async () => {
+    setIsChecking(true);
+    try {
+      const [available, types] = await Promise.all([
+        BiometricService.isBiometricAvailable(),
+        BiometricService.getSupportedTypes(),
+      ]);
+      setIsAvailable(available);
+      setSupportedTypes(types);
+      setIsEnabledState(BiometricService.isBiometricEnabled());
+    } catch {
+      // Unsupported platforms (including web) should behave as unavailable.
+      setIsAvailable(false);
+      setSupportedTypes([]);
+    } finally {
+      setIsChecking(false);
+    }
   }, []);
+
+  useEffect(() => {
+    void refreshAvailability();
+  }, [refreshAvailability]);
 
   const setEnabled = useCallback((enabled: boolean) => {
     BiometricService.setBiometricEnabled(enabled);
@@ -69,5 +71,13 @@ export function useBiometric(): UseBiometricResult {
     return result;
   }, []);
 
-  return { isAvailable, isEnabled, setEnabled, authenticate, isChecking, supportedTypes };
+  return {
+    isAvailable,
+    isEnabled,
+    setEnabled,
+    authenticate,
+    isChecking,
+    supportedTypes,
+    refreshAvailability,
+  };
 }

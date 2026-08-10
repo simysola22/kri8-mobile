@@ -5,6 +5,7 @@ import {
   Text,
   StyleSheet,
   RefreshControl,
+  TouchableOpacity,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,10 +16,13 @@ import { Badge } from '@/components/ui/Badge';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useCurrentUser } from '@/hooks/useUser';
 import { useRecentIdeas, useIdeaStats } from '@/hooks/useIdeas';
+import { useRouter } from 'expo-router';
+import { SyncStatusIndicator } from '@/components/ui/SyncStatusIndicator';
 
 export default function HomeScreen() {
   const theme = useActiveTheme();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const { data: user } = useCurrentUser();
   const { data: stats } = useIdeaStats();
   const { data: recent, isLoading, refetch, isRefetching } = useRecentIdeas(6);
@@ -49,12 +53,23 @@ export default function HomeScreen() {
               {user?.name ?? user?.username ?? 'Creator'}
             </Text>
           </View>
-          <Avatar
-            uri={user?.avatarUrl}
-            name={user?.name ?? user?.username}
-            size="md"
-          />
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              onPress={() => router.push('/(tabs)/search' as never)}
+              accessibilityRole="button"
+              accessibilityLabel="Search"
+              style={[styles.searchButton, { backgroundColor: theme.bgGlass }]}
+            >
+              <Text style={styles.searchIcon}>⌕</Text>
+            </TouchableOpacity>
+            <Avatar
+              uri={user?.avatarUrl}
+              name={user?.name ?? user?.username}
+              size="md"
+            />
+          </View>
         </View>
+        <SyncStatusIndicator />
 
         {/* Stats strip */}
         {stats && (
@@ -196,6 +211,17 @@ const styles = StyleSheet.create({
   statValue: { fontSize: 22, fontWeight: '800' },
   statLabel: { fontSize: 11, fontWeight: '500', letterSpacing: 0.3 },
   statsDivider: { width: 1, height: 36 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  searchButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+  },
+  searchIcon: { color: '#FFFFFF', fontSize: 24, lineHeight: 26 },
   section: { gap: 12 },
   sectionTitle: { fontSize: 20, fontWeight: '700' },
   ideaCard: { gap: 6 },

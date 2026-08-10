@@ -25,6 +25,18 @@ import type { QueuedMutation } from '@/types';
 
 const BASE = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'https://kri8-obvh.onrender.com';
 
+type SyncStateListener = (isSyncing: boolean) => void;
+const syncStateListeners = new Set<SyncStateListener>();
+
+export function subscribeSyncState(listener: SyncStateListener): () => void {
+  syncStateListeners.add(listener);
+  return () => syncStateListeners.delete(listener);
+}
+
+function broadcastSyncState(isSyncing: boolean): void {
+  syncStateListeners.forEach((listener) => listener(isSyncing));
+}
+
 // ── Internal sync runner (exported for background fetch use) ───
 
 export async function runSync(getToken: () => Promise<string | null>): Promise<void> {
@@ -102,10 +114,12 @@ export function useOfflineSync() {
     if (getQueueSize() === 0) return;
 
     isSyncing.current = true;
+    broadcastSyncState(true);
     try {
       await runSync(getToken);
     } finally {
       isSyncing.current = false;
+      broadcastSyncState(false);
     }
   }, [getToken, isSignedIn]);
 

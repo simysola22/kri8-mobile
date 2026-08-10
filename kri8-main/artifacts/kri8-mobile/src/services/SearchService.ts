@@ -7,8 +7,12 @@
  * Current implementation: client-side filtering of cached data + API calls.
  * Prepared for server-side search: replace `searchCategory` with an API call.
  */
+import { createStorage } from '@/lib/kv';
 
 const API_BASE = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'https://kri8-obvh.onrender.com';
+const recentStorage = createStorage('kri8-search');
+const RECENT_SEARCHES_KEY = 'recent_searches';
+const MAX_RECENT_SEARCHES = 8;
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -44,6 +48,33 @@ export interface SearchGroup {
   category: SearchCategory;
   label: string;
   items: SearchResultItem[];
+}
+
+export function getRecentSearches(): string[] {
+  const raw = recentStorage.getString(RECENT_SEARCHES_KEY);
+  if (!raw) return [];
+  try {
+    const value = JSON.parse(raw) as unknown;
+    return Array.isArray(value) && value.every((item) => typeof item === 'string')
+      ? value
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveRecentSearch(query: string): void {
+  const normalized = query.trim();
+  if (!normalized) return;
+  const next = [
+    normalized,
+    ...getRecentSearches().filter((item) => item.toLowerCase() !== normalized.toLowerCase()),
+  ].slice(0, MAX_RECENT_SEARCHES);
+  recentStorage.set(RECENT_SEARCHES_KEY, JSON.stringify(next));
+}
+
+export function clearRecentSearches(): void {
+  recentStorage.delete(RECENT_SEARCHES_KEY);
 }
 
 // ── Category labels ───────────────────────────────────────────

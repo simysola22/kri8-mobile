@@ -76,7 +76,9 @@ export async function getAISuggestions(
       }),
     });
 
-    if (!res.ok) return {};
+    if (!res.ok) {
+      throw new Error(`AI assistant request failed (${res.status})`);
+    }
 
     const data = await res.json() as {
       suggestion?: string;
@@ -85,8 +87,8 @@ export async function getAISuggestions(
     };
 
     return parseSuggestions(data, context);
-  } catch {
-    return {};
+  } catch (error) {
+    throw error instanceof Error ? error : new Error('AI assistant request failed');
   }
 }
 

@@ -12,7 +12,7 @@ import { View, Text, StyleSheet, Animated } from 'react-native';
 import { useSyncStatus } from '@/hooks/useSyncStatus';
 import { useActiveTheme } from '@/stores/theme';
 
-export function SyncStatusIndicator() {
+export function SyncStatusIndicator({ alwaysVisible = false }: { alwaysVisible?: boolean }) {
   const { status, pendingCount } = useSyncStatus();
   const theme = useActiveTheme();
   const opacity = useRef(new Animated.Value(1)).current;
@@ -34,13 +34,13 @@ export function SyncStatusIndicator() {
   }, [status, opacity]);
 
   // Don't show anything when fully synced and online
-  if (status === 'synced') return null;
+  if (status === 'synced' && !alwaysVisible) return null;
 
   const config = {
     offline: { color: theme.error, label: 'Offline', dot: '●' },
     syncing: { color: theme.warning, label: 'Syncing…', dot: '↺' },
     pending: { color: theme.warning, label: `${pendingCount} pending`, dot: '●' },
-    synced: { color: theme.success, label: 'Synced', dot: '●' },
+    synced: { color: theme.success, label: 'Synchronized', dot: '●' },
   }[status];
 
   return (

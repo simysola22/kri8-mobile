@@ -28,6 +28,7 @@ interface UniversalSearchBarProps {
   onResultPress?: (route: string, item: SearchResultItem) => void;
   autoFocus?: boolean;
   onQueryChange?: (query: string) => void;
+  initialQuery?: string;
 }
 
 export function UniversalSearchBar({
@@ -35,10 +36,15 @@ export function UniversalSearchBar({
   onResultPress,
   autoFocus,
   onQueryChange,
+  initialQuery,
 }: UniversalSearchBarProps) {
   const theme = useActiveTheme();
   const { query, setQuery, results, isLoading, isError, clear } = useUniversalSearch();
   const inputRef = useRef<TextInput>(null);
+
+  React.useEffect(() => {
+    if (initialQuery !== undefined) setQuery(initialQuery);
+  }, [initialQuery, setQuery]);
 
   const hasResults = (results?.totalCount ?? 0) > 0;
   const showEmpty = query.length > 1 && !isLoading && !hasResults;
@@ -65,6 +71,7 @@ export function UniversalSearchBar({
           }}
           autoFocus={autoFocus}
           returnKeyType="search"
+          onSubmitEditing={() => Keyboard.dismiss()}
           clearButtonMode="while-editing"
           autoCapitalize="none"
           autoCorrect={false}

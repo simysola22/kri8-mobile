@@ -25,6 +25,8 @@ export interface UseDraftResult {
   saveDraft: (fields: DraftFields) => void;
   /** Clear the draft after a successful submit. */
   clearDraft: () => void;
+  /** True after the persisted draft has been checked. */
+  isReady: boolean;
 }
 
 const DEBOUNCE_MS = 500;
@@ -32,6 +34,7 @@ const DEBOUNCE_MS = 500;
 export function useDraft(ideaId?: number): UseDraftResult {
   const [draft, setDraft] = useState<DraftService.IdeaDraft | null>(null);
   const [hasDraft, setHasDraft] = useState(false);
+  const [isReady, setIsReady] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Load draft on mount
@@ -48,6 +51,7 @@ export function useDraft(ideaId?: number): UseDraftResult {
         ageMs: Date.now() - recovered.savedAt,
       });
     }
+    setIsReady(true);
   }, [ideaId]);
 
   const saveDraft = useCallback(
@@ -75,5 +79,5 @@ export function useDraft(ideaId?: number): UseDraftResult {
     setHasDraft(false);
   }, [ideaId]);
 
-  return { draft, hasDraft, saveDraft, clearDraft };
+  return { draft, hasDraft, saveDraft, clearDraft, isReady };
 }

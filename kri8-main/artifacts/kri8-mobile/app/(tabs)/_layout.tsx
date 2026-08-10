@@ -13,6 +13,7 @@ export default function TabLayout() {
       <Tabs.Screen name="community" />
       <Tabs.Screen name="ai" />
       <Tabs.Screen name="profile" />
+      <Tabs.Screen name="search" options={{ href: null }} />
     </Tabs>
   );
 }

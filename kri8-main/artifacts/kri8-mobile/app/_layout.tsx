@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, Platform, StyleSheet } from 'react-native';
+import { View, Text, Platform, StyleSheet, AppState, Alert } from 'react-native';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ClerkProvider, ClerkLoaded, useAuth, useUser } from '@clerk/clerk-expo';
@@ -13,6 +13,8 @@ import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { analytics } from '@/services/analytics/AnalyticsService';
 import { setupNotifications, onNotificationAction } from '@/services/NotificationService';
 import { parseDeepLink, routeToExpoPath } from '@/lib/deepLinking';
+import { useBiometric } from '@/hooks/useBiometric';
+import { GlassButton } from '@/components/ui/GlassButton';
 
 const PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ?? '';
 
@@ -37,7 +39,7 @@ function SetupScreen() {
 
 // ── Auth guard — redirects based on sign-in state ─────────────
 function AuthGuard() {
-  const { isSignedIn, isLoaded, getToken } = useAuth();
+  const { isSignedIn, isLoaded, getToken, signOut } = useAuth();
   const { user } = useUser();
   const router = useRouter();
   const segments = useSegments();
@@ -116,7 +118,101 @@ function AuthGuard() {
     }
   }, [isSignedIn, isLoaded, segments, router]);
 
-  return <Slot />;
+  return (
+    <AppLockGate isSignedIn={isSignedIn} signOut={signOut}>
+      <Slot />
+    </AppLockGate>
+  );
+}
+
+function AppLockGate({
+  isSignedIn,
+  signOut,
+  children,
+}: {
+  isSignedIn: boolean | undefined;
+  signOut: () => Promise<void>;
+  children: React.ReactNode;
+}) {
+  const theme = useActiveTheme();
+  const { isAvailable, isEnabled, authenticate, isChecking } = useBiometric();
+  const [isLocked, setIsLocked] = React.useState(false);
+  const [message, setMessage] = React.useState('');
+  const appState = React.useRef(AppState.currentState);
+
+  React.useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      const wasBackgrounded =
+        appState.current === 'background' || appState.current === 'inactive';
+      appState.current = nextState;
+      if (wasBackgrounded && nextState === 'active' && isSignedIn && isEnabled && isAvailable) {
+        setMessage('');
+        setIsLocked(true);
+      }
+    });
+    return () => subscription.remove();
+  }, [isAvailable, isEnabled, isSignedIn]);
+
+  React.useEffect(() => {
+    if (!isLocked || !isSignedIn || !isEnabled || !isAvailable) {
+      if (!isEnabled || !isAvailable) setIsLocked(false);
+      return;
+    }
+    void authenticate('Unlock Kri8').then((result) => {
+      if (result.success) {
+        setMessage('');
+        setIsLocked(false);
+      } else {
+        setMessage(
+          result.error === 'user_cancel' ? 'Unlock was cancelled.' : 'We could not verify your identity.',
+        );
+      }
+    });
+  }, [authenticate, isAvailable, isEnabled, isLocked, isSignedIn]);
+
+  if (!isLocked || !isSignedIn || isChecking) return <>{children}</>;
+
+  return (
+    <View style={[styles.lockScreen, { backgroundColor: theme.bg }]}>
+      <Text style={styles.lockIcon}>🔒</Text>
+      <Text style={[styles.lockTitle, { color: theme.text }]}>Kri8 is locked</Text>
+      <Text style={[styles.lockMessage, { color: theme.textMuted }]}>
+        {message || 'Authenticate to continue.'}
+      </Text>
+      <GlassButton
+        fullWidth
+        onPress={() => {
+          setMessage('');
+          void authenticate('Unlock Kri8').then((result) => {
+            if (result.success) setIsLocked(false);
+            else setMessage('Unlock was cancelled or unsuccessful.');
+          });
+        }}
+      >
+        Try again
+      </GlassButton>
+      <GlassButton
+        fullWidth
+        variant="secondary"
+        onPress={() => {
+          Alert.alert(
+            'Use account sign-in instead?',
+            'You will sign out and can unlock Kri8 with your account credentials.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              {
+                text: 'Sign out',
+                style: 'destructive',
+                onPress: () => void signOut(),
+              },
+            ],
+          );
+        }}
+      >
+        Use account sign-in instead
+      </GlassButton>
+    </View>
+  );
 }
 
 // ── Status bar that follows the active theme ──────────────────
@@ -194,4 +290,14 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.6)',
     lineHeight: 20,
   },
+  lockScreen: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 28,
+    gap: 14,
+  },
+  lockIcon: { fontSize: 52, marginBottom: 8 },
+  lockTitle: { fontSize: 28, fontWeight: '800' },
+  lockMessage: { fontSize: 15, textAlign: 'center', lineHeight: 22, marginBottom: 12 },
 });

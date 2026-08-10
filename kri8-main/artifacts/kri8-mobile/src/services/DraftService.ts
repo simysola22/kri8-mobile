@@ -17,6 +17,8 @@ export interface IdeaDraft {
   title: string;
   insight: string;
   notes: string;
+  /** Source URL for smart capture, when present. */
+  origin: string;
   /** Transcript from voice capture, if any. */
   voiceTranscript: string;
   /** Prompt the user typed in the AI panel. */
@@ -83,6 +85,7 @@ function emptyDraft(ideaId?: number): IdeaDraft {
     title: '',
     insight: '',
     notes: '',
+    origin: '',
     voiceTranscript: '',
     aiPrompt: '',
     savedAt: Date.now(),

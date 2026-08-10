@@ -7,6 +7,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import NetInfo from '@react-native-community/netinfo';
 import { getQueueSize } from '@/stores/offlineQueue';
+import { subscribeSyncState } from './useOfflineSync';
 
 export type SyncStatus = 'synced' | 'syncing' | 'pending' | 'offline';
 
@@ -27,12 +28,16 @@ export function useSyncStatus(): UseSyncStatusResult {
 
   useEffect(() => {
     refresh();
+    const unsubscribeSync = subscribeSyncState(setIsSyncing);
     const unsubscribe = NetInfo.addEventListener((state) => {
       const online = state.isConnected === true && state.isInternetReachable === true;
       setIsOnline(online);
       refresh();
     });
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      unsubscribeSync();
+    };
   }, [refresh]);
 
   // Poll queue size while the app is active so the indicator stays accurate
