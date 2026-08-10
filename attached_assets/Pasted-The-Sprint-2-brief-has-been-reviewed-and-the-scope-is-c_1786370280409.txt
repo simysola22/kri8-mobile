@@ -1,0 +1,62 @@
+The Sprint 2 brief has been reviewed and the scope is correct.
+
+Proceed with implementation now.
+
+Do NOT stop at another audit or ask me for confirmation.
+
+Implement Sprint 2 exactly according to the uploaded brief:
+
+1. Biometric Security
+2. Universal Search
+3. Smart Capture + Draft Recovery
+
+Important constraints:
+
+* Mobile app ONLY.
+* Do not modify the stable web app.
+* Do not rebuild existing services.
+* Reuse the existing BiometricService/useBiometric.
+* Reuse SearchService/useUniversalSearch/UniversalSearchBar.
+* Reuse DraftService/useDraft.
+* Reuse CaptureDetectionService.
+* Reuse AIAssistantService/useAIAssistant.
+* Reuse the existing offline/sync architecture.
+* Do not create duplicate services.
+* Do not invent backend endpoints.
+* Do not fake functionality.
+* Do not remove existing features.
+* Do not replace Clerk.
+* Preserve Expo SDK 54 / React Native 0.81.
+* Preserve the existing Kri8 design system and all themes.
+
+Implement the three features completely, including their UI, navigation, states, error handling, and integration with the existing architecture.
+
+After implementation:
+
+1. Run mobile TypeScript/typecheck.
+2. Run lint if configured.
+3. Run Expo config validation.
+4. Run the appropriate mobile build/check.
+5. Test the affected flows.
+6. Review git diff for accidental changes outside the mobile app.
+7. Fix any errors caused by your implementation.
+8. Do not leave broken imports, dead code, duplicate listeners, duplicate services, or unused components.
+
+For anything genuinely blocked by a missing backend endpoint or external service, do NOT create a mock production implementation. Leave the architecture clean and report the blocker clearly.
+
+At the end, give me:
+
+* Exact files changed
+* Exact files added
+* Features fully working
+* Features partially working
+* Features blocked by backend
+* Typecheck result
+* Lint result
+* Expo/build result
+* Tests performed
+* Any remaining issues
+
+Most importantly:
+
+**Actually implement the sprint. Do not just describe what should be implemented.**

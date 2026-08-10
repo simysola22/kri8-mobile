@@ -11,6 +11,10 @@ import { createStorage } from '@/lib/kv';
 const storage = createStorage('kri8-biometric');
 const BIOMETRIC_ENABLED_KEY = 'biometric_enabled';
 
+// Re-export the native type so consumers do not need to know the service's
+// implementation detail.
+export { LocalAuthentication };
+
 // ── Capability checks ─────────────────────────────────────────
 
 /** Returns true if the device hardware supports biometrics. */

@@ -16,6 +16,7 @@ export interface UseUniversalSearchResult {
   setQuery: (q: string) => void;
   results: SearchService.SearchResults | null;
   isLoading: boolean;
+  isError: boolean;
   clear: () => void;
 }
 
@@ -24,6 +25,7 @@ export function useUniversalSearch(): UseUniversalSearchResult {
   const [query, setQueryState] = useState('');
   const [results, setResults] = useState<SearchService.SearchResults | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isError, setIsError] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -38,6 +40,7 @@ export function useUniversalSearch(): UseUniversalSearchResult {
     if (!query.trim()) {
       setResults(null);
       setIsLoading(false);
+      setIsError(false);
       return;
     }
 
@@ -54,13 +57,14 @@ export function useUniversalSearch(): UseUniversalSearchResult {
       try {
         const searchResults = await SearchService.universalSearch(token, query);
         setResults(searchResults);
+        setIsError(searchResults.hasErrors === true && searchResults.totalCount === 0);
         analytics.track('search_performed', {
           query: query.slice(0, 50), // truncate for privacy
           totalCount: searchResults.totalCount,
           durationMs: searchResults.durationMs,
         });
       } catch {
-        // Search error — leave previous results in place
+        setIsError(true);
       } finally {
         setIsLoading(false);
       }
@@ -75,7 +79,8 @@ export function useUniversalSearch(): UseUniversalSearchResult {
     setQueryState('');
     setResults(null);
     setIsLoading(false);
+    setIsError(false);
   }, []);
 
-  return { query, setQuery, results, isLoading, clear };
+  return { query, setQuery, results, isLoading, isError, clear };
 }

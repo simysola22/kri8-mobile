@@ -36,6 +36,8 @@ export interface SearchResults {
   totalCount: number;
   groups: SearchGroup[];
   durationMs: number;
+  /** True when one or more supported categories could not be queried. */
+  hasErrors?: boolean;
 }
 
 export interface SearchGroup {
@@ -62,9 +64,10 @@ async function searchIdeas(token: string, query: string): Promise<SearchResultIt
   const res = await fetch(`${API_BASE}/api/ideas?${params}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  if (!res.ok) return [];
-  const data = await res.json() as { ideas?: Array<{ id: number; title?: string; insight?: string }> };
-  return (data.ideas ?? []).map((idea) => ({
+  if (!res.ok) throw new Error(`Ideas search failed (${res.status})`);
+  const data = await res.json() as unknown;
+  const ideas = extractArray(data, 'ideas') as Array<{ id: number; title?: string; insight?: string }>;
+  return ideas.map((idea) => ({
     id: idea.id,
     title: idea.title ?? 'Untitled',
     subtitle: idea.insight,
@@ -79,14 +82,15 @@ async function searchFriends(token: string, query: string): Promise<SearchResult
   const res = await fetch(`${API_BASE}/api/users/search?${params}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  if (!res.ok) return [];
-  const data = await res.json() as { users?: Array<{ id: number; name?: string; username?: string }> };
-  return (data.users ?? []).map((user) => ({
+  if (!res.ok) throw new Error(`Friends search failed (${res.status})`);
+  const data = await res.json() as unknown;
+  const users = extractArray(data, 'users') as Array<{ id: number; name?: string; username?: string }>;
+  return users.map((user) => ({
     id: user.id,
     title: user.name ?? user.username ?? 'Unknown',
     subtitle: user.username ? `@${user.username}` : undefined,
     category: 'friends' as const,
-    route: `/(tabs)/community/profile/${user.username}`,
+    route: user.username ? `/(tabs)/profile/${user.username}` : '/(tabs)/community',
     score: 1,
   }));
 }
@@ -95,10 +99,14 @@ async function searchTrends(token: string, query: string): Promise<SearchResultI
   const res = await fetch(`${API_BASE}/api/trends/dashboard`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  if (!res.ok) return [];
-  const data = await res.json() as { trends?: Array<{ id?: string | number; title?: string; description?: string }> };
+  if (!res.ok) throw new Error(`Trend search failed (${res.status})`);
+  const data = await res.json() as unknown;
+  const trends = [
+    ...extractArray(data, 'trends'),
+    ...extractArray(data, 'topics'),
+  ] as Array<{ id?: string | number; title?: string; description?: string }>;
   const q = query.toLowerCase();
-  return (data.trends ?? [])
+  return trends
     .filter((t) => t.title?.toLowerCase().includes(q))
     .slice(0, 5)
     .map((t, i) => ({
@@ -160,5 +168,19 @@ export async function universalSearch(
     totalCount,
     groups,
     durationMs: Date.now() - start,
+    hasErrors: [ideaResults, friendResults, trendResults].some(
+      (result) => result.status === 'rejected',
+    ),
   };
+}
+
+/** Accept the response shapes used by existing endpoints without inventing APIs. */
+function extractArray(value: unknown, key: string): unknown[] {
+  if (Array.isArray(value)) return value;
+  if (!value || typeof value !== 'object') return [];
+  const record = value as Record<string, unknown>;
+  if (Array.isArray(record[key])) return record[key];
+  if (Array.isArray(record.data)) return record.data;
+  if (Array.isArray(record.items)) return record.items;
+  return [];
 }

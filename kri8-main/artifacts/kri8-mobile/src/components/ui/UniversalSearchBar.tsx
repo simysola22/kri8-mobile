@@ -17,6 +17,7 @@ import {
   ActivityIndicator,
   StyleSheet,
   Platform,
+  Keyboard,
 } from 'react-native';
 import { useUniversalSearch } from '@/hooks/useUniversalSearch';
 import { useActiveTheme } from '@/stores/theme';
@@ -26,15 +27,17 @@ interface UniversalSearchBarProps {
   placeholder?: string;
   onResultPress?: (route: string, item: SearchResultItem) => void;
   autoFocus?: boolean;
+  onQueryChange?: (query: string) => void;
 }
 
 export function UniversalSearchBar({
   placeholder = 'Search ideas, friends, trends…',
   onResultPress,
   autoFocus,
+  onQueryChange,
 }: UniversalSearchBarProps) {
   const theme = useActiveTheme();
-  const { query, setQuery, results, isLoading, clear } = useUniversalSearch();
+  const { query, setQuery, results, isLoading, isError, clear } = useUniversalSearch();
   const inputRef = useRef<TextInput>(null);
 
   const hasResults = (results?.totalCount ?? 0) > 0;
@@ -56,7 +59,10 @@ export function UniversalSearchBar({
           placeholder={placeholder}
           placeholderTextColor={theme.textFaint}
           value={query}
-          onChangeText={setQuery}
+          onChangeText={(value) => {
+            setQuery(value);
+            onQueryChange?.(value);
+          }}
           autoFocus={autoFocus}
           returnKeyType="search"
           clearButtonMode="while-editing"
@@ -88,16 +94,30 @@ export function UniversalSearchBar({
               />
             )}
             keyboardShouldPersistTaps="handled"
-            ListFooterComponent={
+           ListFooterComponent={
+             isError ? (
+               <Text style={[styles.errorLabel, { color: theme.error }]}>
+                 Some search sources are unavailable.
+               </Text>
+             ) : (
               <Text style={[styles.durationLabel, { color: theme.textFaint }]}>
                 {results.totalCount} result{results.totalCount !== 1 ? 's' : ''} in {results.durationMs}ms
               </Text>
+             )
             }
           />
         </View>
       )}
 
-      {showEmpty && (
+      {isError && showEmpty && (
+        <View style={[styles.emptyState, { borderColor: theme.error }]}>
+          <Text style={[styles.emptyText, { color: theme.error }]}>
+            Search is temporarily unavailable. Try again.
+          </Text>
+        </View>
+      )}
+
+      {showEmpty && !isError && (
         <View style={[styles.emptyState, { borderColor: theme.border }]}>
           <Text style={[styles.emptyText, { color: theme.textMuted }]}>
             No results for "{query}"
@@ -126,7 +146,10 @@ function SearchGroupSection({ group, theme, onResultPress }: SearchGroupSectionP
         <TouchableOpacity
           key={`${item.category}-${item.id}`}
           style={[styles.resultItem, { borderBottomColor: theme.border }]}
-          onPress={() => onResultPress?.(item.route, item)}
+           onPress={() => {
+             Keyboard.dismiss();
+             onResultPress?.(item.route, item);
+           }}
           accessibilityRole="button"
           accessibilityLabel={item.title}
         >
@@ -211,6 +234,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   durationLabel: {
+    fontSize: 11,
+    textAlign: 'center',
+    paddingVertical: 8,
+  },
+  errorLabel: {
     fontSize: 11,
     textAlign: 'center',
     paddingVertical: 8,

@@ -19,21 +19,36 @@ export interface UseBiometricResult {
   authenticate: (promptMessage?: string) => Promise<BiometricService.BiometricResult>;
   /** Loading state while checking availability. */
   isChecking: boolean;
+  /** Native biometric types enrolled on the device, when available. */
+  supportedTypes: BiometricService.LocalAuthentication.AuthenticationType[];
 }
 
 export function useBiometric(): UseBiometricResult {
   const [isAvailable, setIsAvailable] = useState(false);
   const [isEnabled, setIsEnabledState] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
+  const [supportedTypes, setSupportedTypes] = useState<
+    BiometricService.LocalAuthentication.AuthenticationType[]
+  >([]);
 
   useEffect(() => {
     let mounted = true;
     void (async () => {
-      const available = await BiometricService.isBiometricAvailable();
-      if (mounted) {
-        setIsAvailable(available);
-        setIsEnabledState(BiometricService.isBiometricEnabled());
-        setIsChecking(false);
+      try {
+        const [available, types] = await Promise.all([
+          BiometricService.isBiometricAvailable(),
+          BiometricService.getSupportedTypes(),
+        ]);
+        if (mounted) {
+          setIsAvailable(available);
+          setSupportedTypes(types);
+          setIsEnabledState(BiometricService.isBiometricEnabled());
+        }
+      } catch {
+        // Unsupported platforms (including web) should behave as unavailable.
+        if (mounted) setIsAvailable(false);
+      } finally {
+        if (mounted) setIsChecking(false);
       }
     })();
     return () => { mounted = false; };
@@ -54,5 +69,5 @@ export function useBiometric(): UseBiometricResult {
     return result;
   }, []);
 
-  return { isAvailable, isEnabled, setEnabled, authenticate, isChecking };
+  return { isAvailable, isEnabled, setEnabled, authenticate, isChecking, supportedTypes };
 }
