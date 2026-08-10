@@ -1,0 +1,359 @@
+# Kri8 Mobile — Resume Sprint 2 Implementation
+
+You previously audited the Kri8 mobile codebase for Sprint 2 and identified the concrete integration points.
+
+You also began implementation but stopped because the Replit daily quota was reached.
+
+**IMPORTANT: Resume from the current repository state. Do NOT restart the audit and do NOT undo existing work.**
+
+## CURRENT SPRINT 2 OBJECTIVE
+
+Complete the user-facing wiring for these existing mobile services:
+
+1. Biometric security
+2. Universal search
+3. Smart capture
+4. Draft recovery
+5. AI writing assistance integration
+6. Offline/sync-aware UX
+
+This is a **MOBILE-ONLY task**.
+
+Do NOT modify the web application.
+
+Do NOT rebuild services that already exist.
+
+Do NOT invent backend APIs.
+
+Reuse the existing services, hooks, components, API client, navigation, theme system, and storage architecture.
+
+---
+
+# PHASE 1 — FIRST CHECK CURRENT STATE
+
+Before editing:
+
+Inspect the current git diff and identify exactly what your previous Sprint 2 attempt already changed.
+
+Run:
+
+* git status
+* git diff
+* mobile TypeScript check
+* mobile lint if available
+* Expo config validation
+
+Report:
+
+* files already modified by the previous attempt
+* completed work
+* incomplete work
+* errors introduced by the previous attempt
+
+**Preserve valid existing changes.**
+
+---
+
+# PHASE 2 — BIOMETRIC SECURITY
+
+Complete biometric authentication using the existing:
+
+* BiometricService
+* useBiometric hook
+
+Requirements:
+
+### Settings
+
+Add a security section to the existing mobile settings screen.
+
+Include:
+
+* Enable biometric unlock
+* Disable biometric unlock
+* Current biometric availability
+* Clear unsupported-device state
+* Graceful cancellation handling
+* Graceful authentication failure handling
+
+Do not pretend biometrics are available when the device does not support them.
+
+### App Lock
+
+When biometric unlock is enabled:
+
+* lock the application when it resumes from background according to the existing biometric service contract
+* show a proper lock screen
+* authenticate before exposing protected content
+
+The lock screen must provide a safe fallback such as:
+
+**"Use account sign-in instead"**
+
+Do not create fake biometric authentication.
+
+Do not use timers.
+
+Do not bypass authentication.
+
+Do not interfere with Clerk session persistence.
+
+---
+
+# PHASE 3 — UNIVERSAL SEARCH
+
+Use the existing:
+
+* SearchService
+* useUniversalSearch
+* UniversalSearchBar
+
+Create a dedicated mobile search experience.
+
+Add a clear search entry point to navigation/header.
+
+Search must support the data sources that actually exist.
+
+At minimum:
+
+* Ideas
+* Friends/community
+* Trends
+
+Do NOT invent:
+
+* message search endpoints
+* calendar search endpoints
+* fake API responses
+
+Requirements:
+
+* debounced search
+* recent searches
+* grouped results
+* loading state
+* empty state
+* error state
+* themed UI
+* navigation to the correct destination when a result is selected
+
+Use the existing theme/glass design system.
+
+Avoid unnecessary API requests.
+
+---
+
+# PHASE 4 — SMART CAPTURE
+
+Use the existing:
+
+* CaptureDetectionService
+
+Wire it into the existing capture screen.
+
+When the user enters a URL, detect:
+
+* YouTube
+* TikTok
+* X/Twitter
+* generic URLs
+
+Show appropriate contextual actions.
+
+Do not scrape external websites.
+
+Do not invent metadata.
+
+Do not replace the existing manual capture modes.
+
+Existing:
+
+* Text
+* Camera
+* Voice
+
+must continue working.
+
+---
+
+# PHASE 5 — DRAFT RECOVERY
+
+Use the existing:
+
+* DraftService
+* useDraft
+
+Wire draft persistence into the capture/edit experience.
+
+Requirements:
+
+* autosave while editing
+* restore previous draft
+* discard draft
+* clear draft after successful submission where appropriate
+* survive app restart
+* work offline
+
+When a recoverable draft exists, show a clear UI such as:
+
+**Recovered draft**
+
+with:
+
+* Restore
+* Discard
+
+Do not silently overwrite user input.
+
+---
+
+# PHASE 6 — AI WRITING ASSISTANCE
+
+Use the existing:
+
+* AIAssistantService
+* useAIAssistant
+
+Do not rebuild the AI service.
+
+Integrate suggestions into the relevant capture/edit experience.
+
+Requirements:
+
+* suggestions must never block typing
+* loading state
+* failure state
+* user can ignore suggestions
+* user explicitly chooses whether to apply a suggestion
+
+Do not generate fake AI responses.
+
+---
+
+# PHASE 7 — OFFLINE + SYNC UX
+
+Use the existing offline infrastructure.
+
+Make the capture experience clearly communicate:
+
+* offline
+* saved locally
+* queued for synchronization
+* synchronizing
+* synchronized
+* synchronization failure
+
+Do not duplicate the sync engine.
+
+Use existing:
+
+* useOfflineSync
+* useSyncStatus
+* SyncStatusIndicator
+
+Place the existing SyncStatusIndicator somewhere useful in the mobile UI.
+
+---
+
+# PHASE 8 — DO NOT BREAK EXISTING FEATURES
+
+Verify that these remain functional:
+
+* Clerk authentication
+* protected routing
+* Home
+* Ideas list
+* Idea detail
+* Idea creation
+* Branches
+* Community
+* Friends
+* Messages
+* Trends / AI
+* Profile
+* Settings
+* Theme switching
+* Offline queue
+* Background synchronization
+* Existing camera mode
+* Existing voice mode
+
+Do not remove or replace existing functionality merely to implement Sprint 2.
+
+---
+
+# PHASE 9 — QUALITY CHECKS
+
+After implementation run:
+
+1. Mobile TypeScript check
+2. Mobile lint
+3. Expo config validation
+4. Production/build validation if available
+5. Search flow verification
+6. Biometric flow verification
+7. Draft recovery verification
+8. Smart URL detection verification
+9. Offline capture verification
+
+Fix errors introduced by this sprint.
+
+Do NOT silently ignore TypeScript errors.
+
+Do NOT modify unrelated packages to make checks pass.
+
+---
+
+# PHASE 10 — FINAL REPORT
+
+At the end report:
+
+### Completed
+
+List every Sprint 2 feature that is now user-accessible.
+
+### Files changed
+
+List every modified/new file and what changed.
+
+### Existing services reused
+
+Confirm which existing services/hooks were reused.
+
+### Backend changes
+
+State explicitly whether backend changes were required.
+
+If none were required, say so.
+
+### Verification
+
+Report the exact results of:
+
+* TypeScript
+* lint
+* Expo config
+* build
+* feature verification
+
+### Remaining work
+
+Only list genuinely unfinished items.
+
+---
+
+## CRITICAL RULES
+
+* Mobile only.
+* Do not modify the web app.
+* Do not rebuild existing services.
+* Do not invent APIs.
+* Do not fake backend functionality.
+* Do not introduce demo authentication.
+* Do not introduce timers for authentication.
+* Do not weaken Clerk security.
+* Do not delete existing features.
+* Do not overwrite valid changes already made by the previous Sprint 2 attempt.
+* Prefer small, maintainable changes over a large rewrite.
+
+**Most importantly: inspect the current git diff first and continue from the existing state.**
