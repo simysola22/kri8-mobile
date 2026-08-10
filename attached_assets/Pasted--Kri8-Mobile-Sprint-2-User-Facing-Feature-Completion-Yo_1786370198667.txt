@@ -1,0 +1,656 @@
+# Kri8 Mobile — Sprint 2: User-Facing Feature Completion
+
+You are working on the **Kri8 mobile application**.
+
+The mobile foundation has already been implemented and verified.
+
+Current verified state:
+
+* Expo SDK 54
+* React Native 0.81
+* Expo Router
+* Clerk authentication
+* Offline queue
+* MMKV persistence
+* Offline synchronization
+* Theme system
+* Glass UI
+* Analytics
+* Notification infrastructure
+* DraftService
+* SearchService
+* CreatorScoreService
+* CaptureDetectionService
+* AIAssistantService
+* BiometricService
+* StorageService
+* Existing Ideas, Community, Messages, AI/Trends, Profile and Settings screens
+* Mobile TypeScript check passes
+* Expo configuration passes
+* Dependencies install successfully
+
+The architecture already contains several services/hooks that are currently not fully connected to the UI.
+
+## IMPORTANT
+
+Do NOT rebuild existing services.
+
+Do NOT create duplicate implementations.
+
+Do NOT modify the stable web application.
+
+Do NOT replace the existing authentication system.
+
+Do NOT remove existing functionality.
+
+Before editing, inspect the current implementation and reuse the services/hooks that already exist.
+
+Work only on the mobile application.
+
+---
+
+# SPRINT OBJECTIVE
+
+Complete these three user-facing areas:
+
+1. Biometric Security
+2. Universal Search
+3. Smart Capture + Draft Recovery
+
+These features must become usable from the actual application UI rather than merely existing as services.
+
+---
+
+# PHASE 1 — READ-ONLY AUDIT
+
+Before modifying anything:
+
+Inspect the existing implementations of:
+
+* BiometricService
+* useBiometric
+* SearchService
+* useUniversalSearch
+* UniversalSearchBar
+* DraftService
+* useDraft
+* CaptureDetectionService
+* AIAssistantService
+* useAIAssistant
+* StorageService
+* notification/deep-link infrastructure
+* app/_layout.tsx
+* profile/settings screen
+* capture screen
+* ideas screens
+* existing navigation/tab structure
+
+Determine exactly what already exists.
+
+Produce a short report:
+
+### Already implemented
+
+### Partially implemented
+
+### Missing
+
+### Files that will be modified
+
+### New files that will be created
+
+Do not edit anything during this audit.
+
+Then proceed with implementation without waiting for approval.
+
+---
+
+# FEATURE 1 — BIOMETRIC SECURITY
+
+Use the existing:
+
+* BiometricService
+* useBiometric
+
+Do not create another biometric service.
+
+## Settings
+
+Add a proper biometric security section to Settings.
+
+It should:
+
+* Detect whether biometrics are available.
+* Detect supported biometric type where possible.
+* Show whether biometric protection is enabled.
+* Allow the user to enable/disable biometric protection.
+* Require successful biometric verification when enabling/disabling if appropriate.
+* Persist the setting safely.
+* Handle devices without biometric hardware gracefully.
+
+Example:
+
+Security
+
+Biometric App Lock
+Protect Kri8 when the app returns from the background.
+
+[ Face ID / Fingerprint ]
+
+The UI must work with the existing theme system.
+
+## App lock
+
+When biometric protection is enabled:
+
+* Lock the application when it returns from the background according to the existing app lifecycle architecture.
+* Display a clean Kri8 lock screen.
+* Trigger the biometric prompt.
+* Do not repeatedly trigger prompts in an infinite loop.
+* Handle cancellation gracefully.
+* Allow the user to retry.
+* Provide a safe fallback path to sign in again if the existing authentication architecture supports it.
+
+Do NOT create fake authentication.
+
+Do NOT bypass Clerk.
+
+Do NOT store passwords.
+
+Do NOT store biometric credentials.
+
+Use the operating system's biometric APIs through the existing BiometricService.
+
+## Edge cases
+
+Handle:
+
+* biometric hardware unavailable
+* biometric permission denied
+* user cancels prompt
+* too many failed attempts
+* device does not support biometrics
+* app starts for the first time
+* user logs out
+* user switches accounts
+* app resumes multiple times
+
+---
+
+# FEATURE 2 — UNIVERSAL SEARCH
+
+Use the existing:
+
+* SearchService
+* useUniversalSearch
+* UniversalSearchBar
+
+Do not duplicate search logic.
+
+Create a dedicated mobile search experience.
+
+## Search entry point
+
+Add a clear search entry point to the mobile application.
+
+Prefer the existing navigation architecture rather than redesigning the entire tab system.
+
+Use the existing design language.
+
+## Search screen
+
+Search should support:
+
+### Ideas
+
+Search:
+
+* title
+* description/content where supported
+* relevant metadata
+
+### Friends / Community
+
+Search existing user/friend data.
+
+### Trends
+
+Search trend-related data already available to the application.
+
+### Messages
+
+If the existing API/data layer supports message search, integrate it.
+
+If it does not, DO NOT invent a backend endpoint.
+
+Report the limitation and keep the architecture ready for future message search.
+
+### Calendar
+
+If calendar data is already available to the client/API, support it.
+
+Again, do not invent APIs just to make the UI appear functional.
+
+---
+
+## Search UX
+
+Implement:
+
+* search input
+* debounce
+* loading state
+* empty state
+* error state
+* grouped results
+* result icons/types
+* navigation when a result is selected
+* recent searches
+* clear search
+* keyboard dismissal
+* proper dark/light/theme support
+
+Example:
+
+Search Kri8
+
+Recent
+
+• YouTube ideas
+• Football content
+• Chelsea
+
+Results
+
+IDEAS
+...
+
+FRIENDS
+...
+
+TRENDS
+...
+
+Do not make search unnecessarily expensive.
+
+Avoid querying every endpoint on every keystroke.
+
+Use the existing caching/query architecture where available.
+
+---
+
+# FEATURE 3 — SMART CAPTURE + DRAFT RECOVERY
+
+This is the highest-priority feature of this sprint.
+
+Use the existing:
+
+* CaptureDetectionService
+* DraftService
+* useDraft
+* AIAssistantService
+* useAIAssistant
+
+Do NOT rebuild them.
+
+---
+
+# CAPTURE SCREEN
+
+Inspect the existing capture screen first.
+
+Preserve the existing capture modes.
+
+Existing modes may include:
+
+* Text
+* Camera
+* Voice
+
+Do not remove any of them.
+
+---
+
+# SMART TEXT CAPTURE
+
+When the user enters text into the capture screen:
+
+Run the existing CaptureDetectionService.
+
+It should detect supported URLs/platforms such as:
+
+* YouTube
+* TikTok
+* X/Twitter
+* general URLs
+
+Do not invent unsupported extraction capabilities.
+
+When a supported URL is detected, show a useful contextual UI.
+
+Example:
+
+Detected link
+
+TikTok
+
+[ Add to Idea ]
+
+or:
+
+Detected YouTube link
+
+[ Save ] [ Cancel ]
+
+Do not block normal text capture if detection fails.
+
+Detection failure must be non-fatal.
+
+---
+
+# DRAFT RECOVERY
+
+Integrate useDraft into the capture flow.
+
+While the user is creating/editing content:
+
+* Save drafts automatically using the existing DraftService.
+* Avoid excessive writes.
+* Debounce draft persistence where appropriate.
+* Preserve the draft when the app is backgrounded or unexpectedly closed.
+* Associate drafts with the correct user/account where the existing architecture supports it.
+
+When a recoverable draft exists:
+
+Show a clean recovery UI.
+
+Example:
+
+Recovered draft
+
+"10 ways to grow on TikTok..."
+
+[ Restore ]
+
+[ Discard ]
+
+Restore:
+
+→ populate the capture/editor with the draft.
+
+Discard:
+
+→ permanently remove the draft through DraftService.
+
+Do not silently overwrite user content.
+
+If both a current unsaved draft and a recovered draft exist, clearly ask the user which one they want to keep.
+
+---
+
+# AI WRITING ASSISTANCE
+
+Use the existing AIAssistantService/useAIAssistant.
+
+Do not build another AI system.
+
+Where appropriate, integrate suggestions into the capture/editor experience.
+
+For example:
+
+User types:
+
+"video about growing on TikTok"
+
+The UI can offer suggestions such as:
+
+* Improve idea
+* Generate hooks
+* Expand idea
+* Generate outline
+
+Keep suggestions non-blocking.
+
+AI failure must NEVER prevent the user from saving their idea.
+
+If the AI service is unavailable:
+
+* hide the suggestion UI or show a graceful error
+* preserve the user's text
+
+Never overwrite user input automatically.
+
+---
+
+# CAPTURE STATES
+
+The capture screen must properly handle:
+
+* empty state
+* typing
+* saving
+* saved
+* draft recovery
+* AI loading
+* AI failure
+* URL detected
+* invalid URL
+* offline mode
+* synchronization pending
+* successful synchronization
+
+Do not create complicated UI unnecessarily.
+
+The experience should feel fast.
+
+---
+
+# OFFLINE COMPATIBILITY
+
+Everything added in this sprint must work with the existing offline architecture.
+
+If the user creates an idea offline:
+
+* save locally through the existing mechanism
+* queue synchronization
+* show appropriate sync state
+
+Do not create a second offline queue.
+
+Do not bypass the existing sync system.
+
+---
+
+# UX / DESIGN
+
+Follow the existing Kri8 mobile design system.
+
+Use:
+
+* existing glass components
+* existing theme tokens
+* existing typography
+* existing spacing
+* existing animations
+* existing haptics where appropriate
+
+Do not introduce an unrelated visual style.
+
+Everything must work across all existing themes.
+
+Pay particular attention to:
+
+* light theme
+* dark theme
+* midnight theme
+* accessibility/contrast
+* keyboard behavior
+* small screens
+
+---
+
+# ERROR HANDLING
+
+No feature in this sprint should crash the application.
+
+All network/API operations need:
+
+* loading state
+* success state
+* empty state where appropriate
+* error state
+
+Unexpected API responses must be handled defensively.
+
+Never assume an endpoint always returns an array.
+
+Support existing response shapes where applicable:
+
+[]
+{ data: [] }
+{ items: [] }
+
+Normalize responses through existing utilities if they already exist.
+
+Do not duplicate normalization utilities.
+
+---
+
+# PERFORMANCE
+
+Avoid:
+
+* unnecessary re-renders
+* API calls on every keystroke
+* excessive draft writes
+* duplicate subscriptions
+* duplicate event listeners
+* biometric prompt loops
+* unnecessary navigation rerenders
+
+Clean up:
+
+* AppState listeners
+* keyboard listeners
+* subscriptions
+* timers
+* debounced callbacks
+
+when components unmount.
+
+---
+
+# TESTING / VERIFICATION
+
+After implementation:
+
+1. Run mobile TypeScript/typecheck.
+2. Run lint if configured.
+3. Run the mobile build/config validation.
+4. Verify Expo SDK remains 54.
+5. Verify existing dependencies remain compatible.
+6. Check for accidental changes outside the mobile app.
+7. Review the final git diff.
+
+Test these flows:
+
+### Biometric
+
+* enable
+* disable
+* app background/resume
+* cancel prompt
+* unsupported device
+
+### Search
+
+* empty search
+* idea search
+* friend search
+* trend search
+* result navigation
+* no results
+* API failure
+
+### Capture
+
+* normal text
+* YouTube URL
+* TikTok URL
+* X URL
+* invalid URL
+* draft creation
+* draft recovery
+* draft discard
+* AI suggestion
+* AI failure
+* offline creation
+* reconnect/sync
+
+---
+
+# IMPORTANT SAFETY RULE
+
+If an existing service or API is incomplete, DO NOT fake the missing backend.
+
+For example:
+
+If Creator Score or push notifications require backend endpoints that do not yet exist, do not invent mock production behavior.
+
+Clearly report the limitation.
+
+The goal is a real production architecture, not a demo.
+
+---
+
+# FINAL REPORT
+
+When finished, provide:
+
+## 1. Implementation Summary
+
+What was actually completed.
+
+## 2. Files Changed
+
+List every modified file.
+
+## 3. Files Added
+
+List every new file.
+
+## 4. Existing Services Reused
+
+Explicitly confirm which existing services/hooks were reused.
+
+## 5. Features Now Working
+
+Separate:
+
+* fully working
+* partially working
+* blocked by backend/API
+
+## 6. Verification
+
+Report:
+
+* TypeScript
+* lint
+* Expo config
+* build
+* tests
+
+with actual results.
+
+## 7. Remaining Work
+
+Only list genuine remaining work.
+
+## 8. Git Diff Summary
+
+Explain the major changes.
+
+Do NOT claim a feature is working unless it was actually verified.
+
+The objective is to turn the existing Kri8 mobile architecture into a polished, user-facing application without rebuilding or destabilizing the existing foundation.
