@@ -22,12 +22,13 @@ args = "Kri8 Mobile Metro"
 name = "Kri8 Mobile Metro"
 author = "agent"
 
+[workflows.workflow.metadata]
+outputType = "webview"
+
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd kri8-main/artifacts/kri8-mobile && pnpm run start:go -- --localhost --port 8082"
-
-[workflows.workflow.metadata]
-outputType = "console"
+args = "export EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY=\"$CLERK_PUBLISHABLE_KEY\" && pnpm --dir kri8-main/artifacts/kri8-mobile run start:go -- --localhost --port 8082"
+waitForPort = 8082
 
 [[ports]]
 localPort = 8080
