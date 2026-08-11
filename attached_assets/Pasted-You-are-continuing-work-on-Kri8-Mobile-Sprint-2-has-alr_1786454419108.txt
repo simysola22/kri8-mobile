@@ -1,0 +1,380 @@
+You are continuing work on **Kri8 Mobile**.
+
+Sprint 2 has already been implemented and the latest verification confirms the following features are code-complete:
+
+1. Biometric security
+2. Universal search
+3. Smart capture
+4. Draft recovery
+5. AI writing assistant
+6. Offline/sync UX
+
+Do NOT rebuild these features from scratch.
+
+Do NOT modify the web application.
+
+Do NOT create fake backend APIs or mock user data.
+
+Your job now is to perform the **final Sprint 2 hardening and runtime verification pass**.
+
+════════════════════════════════════
+PHASE 1 — PRESERVE THE CURRENT STATE
+════════════════════════════════════
+
+First inspect the current Git state.
+
+Confirm that the existing Sprint 2 implementation is still present.
+
+Pay particular attention to:
+
+* `artifacts/kri8-mobile/app/_layout.tsx`
+* `artifacts/kri8-mobile/app/(tabs)/profile/index.tsx`
+* `artifacts/kri8-mobile/app/(tabs)/search.tsx`
+* `artifacts/kri8-mobile/app/(tabs)/capture.tsx`
+* `artifacts/kri8-mobile/src/services/BiometricService.ts`
+* `artifacts/kri8-mobile/src/services/SearchService.ts`
+* `artifacts/kri8-mobile/src/services/CaptureDetectionService.ts`
+* `artifacts/kri8-mobile/src/services/DraftService.ts`
+* `artifacts/kri8-mobile/src/services/AIAssistantService.ts`
+* `artifacts/kri8-mobile/src/hooks/useBiometric.ts`
+* `artifacts/kri8-mobile/src/hooks/useUniversalSearch.ts`
+* `artifacts/kri8-mobile/src/hooks/useDraft.ts`
+* `artifacts/kri8-mobile/src/hooks/useAIAssistant.ts`
+* `artifacts/kri8-mobile/src/hooks/useOfflineSync.ts`
+* `artifacts/kri8-mobile/src/hooks/useSyncStatus.ts`
+* `artifacts/kri8-mobile/src/stores/offlineQueue.ts`
+* `artifacts/kri8-mobile/src/components/ui/UniversalSearchBar.tsx`
+* `artifacts/kri8-mobile/src/components/ui/SyncStatusIndicator.tsx`
+
+Do not remove existing functionality.
+
+════════════════════════════════════
+PHASE 2 — INSTALL + VALIDATE
+════════════════════════════════════
+
+If dependencies are missing, restore them using the existing lockfile.
+
+Do NOT change dependency versions unless absolutely required.
+
+Run:
+
+* mobile TypeScript check
+* Expo configuration validation
+* Expo web export
+* Metro bundling
+* any existing project validation commands
+
+Do not create a new ESLint configuration merely to make lint pass.
+
+If lint cannot run because ESLint is not configured, report that separately.
+
+════════════════════════════════════
+PHASE 3 — API CONTRACT AUDIT
+════════════════════════════════════
+
+Re-check every Sprint 2 API request against the actual backend.
+
+Especially verify:
+
+AI Assistant:
+
+`/api/trends/inspire`
+
+The mobile client MUST use the actual backend request and response contract.
+
+Do not invent:
+
+* endpoints
+* payload fields
+* response fields
+* mock responses
+
+Also verify Universal Search only uses APIs that actually exist.
+
+Current allowed search contracts include:
+
+* `/ideas`
+* `/users/search`
+* `/trends/dashboard`
+* `/trends/inspire`
+* `/trends/analyze`
+
+Do not invent message/calendar search APIs.
+
+════════════════════════════════════
+PHASE 4 — BIOMETRIC HARDENING
+════════════════════════════════════
+
+Verify:
+
+* biometric availability detection
+* enable flow
+* disable flow
+* cancellation handling
+* unsupported-device handling
+* authentication failure handling
+* app resume lock
+* fallback to normal account authentication
+* no infinite lock loop
+* no timer-based authentication
+* no fake biometric success
+
+The app must never crash if biometric authentication is unavailable.
+
+════════════════════════════════════
+PHASE 5 — SEARCH HARDENING
+════════════════════════════════════
+
+Verify:
+
+* dedicated search screen
+* home search entry point
+* debounce
+* recent-search persistence
+* grouped results
+* loading state
+* empty state
+* error state
+* navigation to valid screens
+* malformed API response handling
+
+Ensure `.map()`, `.filter()`, `.length`, etc. cannot crash if the backend returns:
+
+```text
+[]
+```
+
+or
+
+```text
+{ data: [] }
+```
+
+or
+
+```text
+{ items: [] }
+```
+
+Normalize responses before rendering.
+
+════════════════════════════════════
+PHASE 6 — SMART CAPTURE
+════════════════════════════════════
+
+Verify detection for:
+
+* YouTube
+* TikTok
+* Instagram
+* X/Twitter
+* generic URLs
+* plain text
+
+Verify detected URLs populate the existing `origin` field.
+
+Verify the UI provides the existing “Use as source” behavior.
+
+Do NOT add camera, OCR, voice recording, or media attachment functionality.
+
+Those are Phase 3 features.
+
+════════════════════════════════════
+PHASE 7 — DRAFT RECOVERY
+════════════════════════════════════
+
+Verify:
+
+* debounced autosave
+* empty-draft prevention
+* persisted drafts
+* restoration
+* Restore action
+* Discard action
+* successful submission clears the draft
+* existing typed content is never silently overwritten
+* drafts survive app restart
+
+Ensure draft failures never crash Capture.
+
+════════════════════════════════════
+PHASE 8 — AI ASSISTANT
+════════════════════════════════════
+
+Verify:
+
+* loading state
+* successful suggestion response
+* error state
+* dismiss
+* Apply
+* no duplicate requests caused by rerenders
+* no fake AI fallback
+
+Use the existing `/api/trends/inspire` contract.
+
+If authenticated runtime testing is impossible because Clerk is not configured, clearly report that instead of pretending the flow was tested.
+
+════════════════════════════════════
+PHASE 9 — OFFLINE/SYNC
+════════════════════════════════════
+
+Verify:
+
+* offline detection
+* failed mutation queue
+* pending state
+* syncing state
+* synchronized state
+* reconnect-triggered sync
+* foreground-triggered sync
+* retry limits
+* failed synchronization handling
+* no UI crashes
+
+Do not introduce optimistic persistence unless the existing architecture already supports it.
+
+════════════════════════════════════
+PHASE 10 — CLERK RUNTIME
+════════════════════════════════════
+
+Check whether:
+
+`EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`
+
+is configured.
+
+If it is configured:
+
+perform authenticated runtime verification.
+
+If it is NOT configured:
+
+DO NOT create a fallback authentication system.
+
+Instead report:
+
+“Authenticated runtime verification blocked by missing Clerk configuration.”
+
+The existing safe Clerk setup screen is expected in that situation.
+
+════════════════════════════════════
+PHASE 11 — RUNTIME TEST
+════════════════════════════════════
+
+If Clerk is configured, test the actual mobile flows:
+
+1. Sign in
+2. Home
+3. Search
+4. Search results
+5. Capture
+6. URL detection
+7. Draft creation
+8. Draft restoration
+9. AI suggestion
+10. Offline state
+11. Sync recovery
+12. Biometric settings
+13. App lock/resume
+
+If a real device is unavailable, clearly distinguish:
+
+CODE VERIFIED
+
+from
+
+RUNTIME VERIFIED
+
+Do not claim runtime verification that did not actually happen.
+
+════════════════════════════════════
+PHASE 12 — FINAL REGRESSION CHECK
+════════════════════════════════════
+
+Ensure Sprint 2 did not break:
+
+* authentication
+* navigation
+* home dashboard
+* ideas
+* profile
+* community
+* messages
+* existing capture modes
+* theme system
+* offline infrastructure
+
+Do not modify the web application.
+
+Do not modify backend APIs unless an actual backend defect is proven and explicitly necessary.
+
+════════════════════════════════════
+FINAL OUTPUT
+════════════════════════════════════
+
+Return:
+
+## Sprint 2 Final Verification
+
+| Feature          | Code | Runtime | Status |
+| ---------------- | ---- | ------- | ------ |
+| Biometric        |      |         |        |
+| Universal Search |      |         |        |
+| Smart Capture    |      |         |        |
+| Draft Recovery   |      |         |        |
+| AI Assistant     |      |         |        |
+| Offline/Sync     |      |         |        |
+
+Then provide:
+
+### Validation
+
+* TypeScript:
+* Expo config:
+* Export:
+* Metro:
+* Lint:
+* Runtime:
+
+### API Contract Results
+
+List every endpoint checked and whether the mobile implementation matches it.
+
+### Bugs Found
+
+Only list genuine bugs.
+
+### Bugs Fixed
+
+List exactly what was changed.
+
+### Remaining Limitations
+
+Separate:
+
+* Sprint 2 limitations
+* Sprint 3 features
+* environment limitations
+
+### Files Changed
+
+List every modified file.
+
+### Git Status
+
+Show the final working-tree state.
+
+IMPORTANT:
+
+Do not start Sprint 3.
+
+Do not add camera/OCR/voice/media features.
+
+Do not redesign existing screens.
+
+Do not rebuild completed Sprint 2 services.
+
+The goal is to make Sprint 2 **stable, verified, and production-ready**, not to expand its scope.
+
+Prioritize correctness over speed.
