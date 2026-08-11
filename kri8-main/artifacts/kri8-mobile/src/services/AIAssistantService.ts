@@ -71,8 +71,8 @@ export async function getAISuggestions(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        prompt: buildPrompt(context),
-        mode: 'assistant',
+        title: context.title?.trim() ?? '',
+        notes: buildPrompt(context),
       }),
     });
 
@@ -80,11 +80,7 @@ export async function getAISuggestions(
       throw new Error(`AI assistant request failed (${res.status})`);
     }
 
-    const data = await res.json() as {
-      suggestion?: string;
-      tags?: string[];
-      platforms?: string[];
-    };
+    const data = await res.json() as InspirationResponse;
 
     return parseSuggestions(data, context);
   } catch (error) {
@@ -138,27 +134,36 @@ function buildPrompt(context: AssistantContext): string {
 }
 
 function parseSuggestions(
-  data: { suggestion?: string; tags?: string[]; platforms?: string[] },
+  data: InspirationResponse,
   context: AssistantContext,
 ): AISuggestions {
   const result: AISuggestions = {};
 
-  if (data.suggestion) {
-    // Try to extract title from the first line of suggestion
-    const lines = data.suggestion.split('\n').filter(Boolean);
-    if (lines[0] && lines[0] !== context.title) {
-      result.title = lines[0];
-    }
-    if (lines[1]) {
-      result.hook = lines[1];
-    }
-    if (lines.slice(2).length > 0) {
-      result.description = lines.slice(2).join(' ');
-    }
+  const suggestedTitle = data.titleSuggestions?.find(
+    (suggestion) => suggestion.trim() && suggestion.trim() !== context.title?.trim(),
+  );
+  if (suggestedTitle) {
+    result.title = suggestedTitle;
   }
 
-  if (data.tags?.length) result.tags = data.tags;
-  if (data.platforms?.length) result.platforms = data.platforms;
+  if (data.alternativeHooks?.[0]) {
+    result.hook = data.alternativeHooks[0];
+  }
+
+  // The existing inspiration contract returns related ideas rather than
+  // rewritten descriptions; expose the first related idea as an optional
+  // notes suggestion without fabricating a new response shape.
+  if (data.relatedIdeas?.[0]) {
+    result.description = data.relatedIdeas[0];
+  }
 
   return result;
+}
+
+/** Response shape returned by the existing POST /api/trends/inspire route. */
+interface InspirationResponse {
+  relatedIdeas?: string[];
+  alternativeHooks?: string[];
+  titleSuggestions?: string[];
+  audienceQuestions?: string[];
 }

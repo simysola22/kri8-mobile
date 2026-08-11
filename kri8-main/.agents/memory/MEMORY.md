@@ -1,2 +1,3 @@
 - [kri8 redesign decisions](kri8-redesign.md) — glassmorphism nav, 8 themes, glass-panel utility; all pages use AppLayout with glass-panel class
 - [Kri8 mobile Replit setup](kri8-mobile-replit.md) — Expo Metro needs a dedicated port and explicit web/Clerk peer support for reliable Replit previews
+- [Kri8 mobile API contracts](kri8-mobile-api-contracts.md) — mobile AI assistance must match the existing trends inspiration payload and response shape
