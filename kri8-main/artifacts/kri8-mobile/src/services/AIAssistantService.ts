@@ -91,11 +91,23 @@ export async function getAISuggestions(
 // ── Trend analysis ────────────────────────────────────────────
 
 export interface TrendAnalysis {
-  trendScore: number;      // 0-100
-  momentum: string;        // "rising" | "stable" | "declining"
-  relatedTrends: string[];
-  bestPlatforms: string[];
-  suggestedTiming: string;
+  relevanceScore: number;
+  relatedTopics: Array<{
+    id: string;
+    name: string;
+    category: string;
+    growthPercent: number;
+    volume: number;
+    platform: string;
+  }>;
+  relatedHashtags: Array<{
+    tag: string;
+    platform: string;
+    volume: number;
+    growthPercent: number;
+  }>;
+  contentOpportunities: string[];
+  suggestedAngles: string[];
 }
 
 /**
@@ -113,7 +125,7 @@ export async function analyzeIdeaAgainstTrends(
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ title: ideaTitle, insight: ideaInsight }),
+    body: JSON.stringify({ title: ideaTitle, notes: ideaInsight }),
     });
 
     if (!res.ok) return null;

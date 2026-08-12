@@ -28,6 +28,7 @@ export function useUniversalSearch(): UseUniversalSearchResult {
   const [isError, setIsError] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const requestIdRef = useRef(0);
 
   const setQuery = useCallback((q: string) => {
     setQueryState(q);
@@ -36,6 +37,7 @@ export function useUniversalSearch(): UseUniversalSearchResult {
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     abortRef.current?.abort();
+    const requestId = ++requestIdRef.current;
 
     if (!query.trim()) {
       setResults(null);
@@ -47,31 +49,37 @@ export function useUniversalSearch(): UseUniversalSearchResult {
     setIsLoading(true);
     debounceRef.current = setTimeout(async () => {
       const token = await getToken();
-      if (!token) {
+      if (!token || requestId !== requestIdRef.current) {
         setIsLoading(false);
         return;
       }
 
-      abortRef.current = new AbortController();
+      const controller = new AbortController();
+      abortRef.current = controller;
 
       try {
-        const searchResults = await SearchService.universalSearch(token, query);
+        const searchResults = await SearchService.universalSearch(token, query, {
+          signal: controller.signal,
+        });
+        if (requestId !== requestIdRef.current) return;
         setResults(searchResults);
-        setIsError(searchResults.hasErrors === true && searchResults.totalCount === 0);
+        setIsError(searchResults.hasErrors === true);
         analytics.track('search_performed', {
           query: query.slice(0, 50), // truncate for privacy
           totalCount: searchResults.totalCount,
           durationMs: searchResults.durationMs,
         });
       } catch {
+        if (requestId !== requestIdRef.current) return;
         setIsError(true);
       } finally {
-        setIsLoading(false);
+        if (requestId === requestIdRef.current) setIsLoading(false);
       }
     }, DEBOUNCE_MS);
 
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
+      abortRef.current?.abort();
     };
   }, [query, getToken]);
 

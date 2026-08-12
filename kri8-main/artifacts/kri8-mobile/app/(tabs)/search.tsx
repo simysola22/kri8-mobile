@@ -60,7 +60,7 @@ export default function SearchScreen() {
               <Text style={[styles.title, { color: theme.text }]}>Search</Text>
             </View>
             <Text style={[styles.subtitle, { color: theme.textMuted }]}>
-              Find ideas, friends, and trends
+               Find ideas, people, and trends
             </Text>
             <UniversalSearchBar
               onResultPress={handleResultPress}
@@ -105,7 +105,7 @@ export default function SearchScreen() {
               Search across Kri8
             </Text>
             <Text style={[styles.emptyText, { color: theme.textMuted }]}>
-              Results are grouped by ideas, friends, and trends.
+               Results are grouped by ideas, people/community, and trends.
             </Text>
           </GlassCard>
         }

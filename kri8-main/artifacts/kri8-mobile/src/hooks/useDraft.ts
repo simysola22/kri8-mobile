@@ -54,6 +54,10 @@ export function useDraft(ideaId?: number): UseDraftResult {
     setIsReady(true);
   }, [ideaId]);
 
+  useEffect(() => () => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+  }, []);
+
   const saveDraft = useCallback(
     (fields: DraftFields) => {
       if (debounceRef.current) clearTimeout(debounceRef.current);

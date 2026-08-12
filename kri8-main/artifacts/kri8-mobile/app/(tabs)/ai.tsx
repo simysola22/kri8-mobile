@@ -26,6 +26,7 @@ export default function AIScreen() {
   const analyzeTrend = useAnalyzeTrend();
 
   const [analyzeTitle, setAnalyzeTitle] = useState('');
+  const [inspirationTitle, setInspirationTitle] = useState('');
   const [inspiration, setInspiration] = useState<TrendInspiration | null>(null);
   const [analysis, setAnalysis] = useState<TrendAnalysis | null>(null);
 
@@ -58,13 +59,30 @@ export default function AIScreen() {
           <Text style={[styles.sectionSub, { color: theme.textMuted }]}>
             AI generates ideas, hooks, and title patterns tailored for creators.
           </Text>
+          <TextInput
+            style={[
+              styles.input,
+              {
+                backgroundColor: theme.bgGlassDeep,
+                borderColor: inspirationTitle ? theme.borderActive : theme.border,
+                color: theme.text,
+              },
+            ]}
+            value={inspirationTitle}
+            onChangeText={setInspirationTitle}
+            placeholder="Describe an idea to inspire…"
+            placeholderTextColor={theme.textFaint}
+            multiline
+          />
           <GlassButton
             onPress={() =>
-              getInspiration.mutate(undefined, {
-                onSuccess: (data) => setInspiration(data),
-              })
+              getInspiration.mutate(
+                { title: inspirationTitle.trim() },
+                { onSuccess: (data) => setInspiration(data) },
+              )
             }
             loading={getInspiration.isPending}
+            disabled={!inspirationTitle.trim()}
             fullWidth
           >
             Inspire Me
@@ -72,14 +90,14 @@ export default function AIScreen() {
 
           {inspiration && (
             <View style={styles.results}>
-              {inspiration.ideas.length > 0 && (
-                <ResultGroup label="Ideas" items={inspiration.ideas} variant="accent" />
+              {inspiration.relatedIdeas.length > 0 && (
+                <ResultGroup label="Ideas" items={inspiration.relatedIdeas} variant="accent" />
               )}
-              {inspiration.hooks.length > 0 && (
-                <ResultGroup label="Hooks" items={inspiration.hooks} variant="success" />
+              {inspiration.alternativeHooks.length > 0 && (
+                <ResultGroup label="Hooks" items={inspiration.alternativeHooks} variant="success" />
               )}
-              {inspiration.titlePatterns.length > 0 && (
-                <ResultGroup label="Title Patterns" items={inspiration.titlePatterns} variant="muted" />
+              {inspiration.titleSuggestions.length > 0 && (
+                <ResultGroup label="Title Suggestions" items={inspiration.titleSuggestions} variant="muted" />
               )}
             </View>
           )}
@@ -126,11 +144,11 @@ export default function AIScreen() {
                   Trend Relevance
                 </Text>
                 <Text style={[styles.relevanceScore, { color: theme.accent }]}>
-                  {analysis.relevance}/100
+                  {analysis.relevanceScore}/100
                 </Text>
               </View>
-              {analysis.opportunities.length > 0 && (
-                <ResultGroup label="Opportunities" items={analysis.opportunities} variant="success" />
+              {analysis.contentOpportunities.length > 0 && (
+                <ResultGroup label="Opportunities" items={analysis.contentOpportunities} variant="success" />
               )}
               {analysis.suggestedAngles.length > 0 && (
                 <ResultGroup label="Angles" items={analysis.suggestedAngles} variant="accent" />
@@ -155,15 +173,13 @@ export default function AIScreen() {
               ))}
             </View>
             {trends.topics.slice(0, 5).map((topic) => (
-              <GlassCard key={topic.title} style={styles.topicCard}>
+              <GlassCard key={topic.id} style={styles.topicCard}>
                 <Text style={[styles.topicTitle, { color: theme.text }]}>
-                  {topic.title}
+                  {topic.name}
                 </Text>
-                {topic.description && (
-                  <Text style={[styles.topicDesc, { color: theme.textMuted }]}>
-                    {topic.description}
-                  </Text>
-                )}
+                <Text style={[styles.topicDesc, { color: theme.textMuted }]}>
+                  {topic.category} · +{topic.growthPercent}% growth · {topic.platform}
+                </Text>
               </GlassCard>
             ))}
           </View>

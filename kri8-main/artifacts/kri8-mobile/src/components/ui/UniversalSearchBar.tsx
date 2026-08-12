@@ -32,7 +32,7 @@ interface UniversalSearchBarProps {
 }
 
 export function UniversalSearchBar({
-  placeholder = 'Search ideas, friends, trends…',
+  placeholder = 'Search ideas, people, trends…',
   onResultPress,
   autoFocus,
   onQueryChange,

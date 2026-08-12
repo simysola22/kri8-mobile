@@ -132,32 +132,46 @@ export interface MessageInput {
 export interface TrendDashboard {
   topics: TrendTopic[];
   hashtags: TrendHashtag[];
-  categories: string[];
+  categories: TrendCategory[];
+  lastUpdated: string;
+  provider: string;
 }
 
 export interface TrendTopic {
-  title: string;
-  description?: string;
-  relevance?: number;
+  id: string;
+  name: string;
+  category: string;
+  growthPercent: number;
+  volume: number;
+  platform: string;
 }
 
 export interface TrendHashtag {
   tag: string;
-  count?: number;
+  platform: string;
+  volume: number;
+  growthPercent: number;
+}
+
+export interface TrendCategory {
+  name: string;
+  growthPercent: number;
+  topContent: string[];
 }
 
 export interface TrendAnalysis {
-  relevance: number;
-  opportunities: string[];
+  relevanceScore: number;
+  relatedTopics: TrendTopic[];
+  relatedHashtags: TrendHashtag[];
+  contentOpportunities: string[];
   suggestedAngles: string[];
-  keywords: string[];
 }
 
 export interface TrendInspiration {
-  ideas: string[];
-  hooks: string[];
-  questions: string[];
-  titlePatterns: string[];
+  relatedIdeas: string[];
+  alternativeHooks: string[];
+  titleSuggestions: string[];
+  audienceQuestions: string[];
 }
 
 export type ThemeName =

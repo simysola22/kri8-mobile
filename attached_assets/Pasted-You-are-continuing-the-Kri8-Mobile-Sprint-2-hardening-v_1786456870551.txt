@@ -1,0 +1,228 @@
+You are continuing the Kri8 Mobile Sprint 2 hardening/verification work.
+
+IMPORTANT: Do NOT restart Sprint 2. Do NOT rebuild completed features. Continue from the CURRENT repository state.
+
+The previous verification established that Sprint 2 is implemented and that TypeScript, Expo config, web export, Android export, and Metro bundling pass.
+
+The latest audit found two concrete contract issues before execution was interrupted:
+
+1. An unused trends hook sends incorrect payload fields to:
+
+   * `/trends/inspire`
+   * `/trends/analyze`
+
+2. Universal Search currently declares/searches categories that are not supported by the existing backend contract.
+
+The existing backend search surface supports only:
+
+* ideas
+* users/community
+* trends
+
+Do NOT invent message-search or calendar-search APIs.
+
+## YOUR TASK
+
+Finish the Sprint 2 hardening pass completely.
+
+### STEP 1 — INSPECT CURRENT STATE
+
+Before editing:
+
+* inspect the current git diff
+* inspect the Sprint 2 implementation
+* inspect `AIAssistantService`
+* inspect all trends-related hooks/services
+* inspect `SearchService`
+* inspect `useUniversalSearch`
+* inspect the dedicated search screen
+* inspect capture/draft flows
+* inspect biometric/app-lock flow
+* inspect offline queue/sync flow
+
+Do not undo completed Sprint 2 work.
+
+### STEP 2 — FIX THE TRENDS CONTRACT
+
+Find the hook/service that sends incorrect payloads to:
+
+`/trends/inspire`
+
+and
+
+`/trends/analyze`
+
+Compare them against the ACTUAL backend route contracts.
+
+Then:
+
+* fix the request payloads if the hook is actively used
+* if the hook is genuinely dead/unused, do not invent behavior; explain whether it should be removed
+* ensure response parsing matches the real backend response
+* do not modify the backend unless absolutely required by an existing contract mismatch
+* preserve existing functionality
+
+### STEP 3 — FIX UNIVERSAL SEARCH
+
+Universal Search must reflect the real backend.
+
+Supported categories:
+
+* Ideas
+* People/Community
+* Trends
+
+Remove or disable unsupported categories rather than creating fake APIs.
+
+Verify:
+
+* 300ms debounce
+* recent-search persistence
+* grouped results
+* loading state
+* empty state
+* error state
+* navigation
+* search cancellation/race handling
+* duplicate request prevention
+* safe handling of `{data: []}`, `{items: []}`, and direct arrays where applicable
+
+Do not create message/calendar search endpoints.
+
+### STEP 4 — AUDIT BIOMETRIC SECURITY
+
+Verify:
+
+* biometric availability detection
+* enable flow
+* disable flow
+* cancellation handling
+* hardware/unsupported handling
+* app lock on resume
+* foreground/background lifecycle
+* lock fallback
+* authenticated session remains intact
+* no fake biometric success state
+
+Do not weaken authentication to make preview testing easier.
+
+### STEP 5 — AUDIT SMART CAPTURE
+
+Verify:
+
+* YouTube detection
+* TikTok detection
+* Instagram detection
+* X/Twitter detection
+* generic URL detection
+* plain text handling
+* source/origin population
+* "Use as source" behavior
+
+Do not add camera/voice/OCR in Sprint 2. Those remain Phase 3.
+
+### STEP 6 — AUDIT DRAFT RECOVERY
+
+Verify:
+
+* debounced autosave
+* empty-draft guard
+* persistence
+* restoration
+* Restore action
+* Discard action
+* successful submission clears draft
+* existing typed content is never silently overwritten
+* app restart recovery
+
+### STEP 7 — AUDIT AI ASSISTANT
+
+Verify that the Capture screen uses the corrected `AIAssistantService`.
+
+The service must follow the EXISTING backend contract.
+
+Verify:
+
+* loading
+* success
+* error
+* dismiss
+* Apply
+* no fake responses
+* no invented endpoints
+* correct request payload
+* correct response parsing
+
+### STEP 8 — AUDIT OFFLINE/SYNC
+
+Verify:
+
+* failed mutations enter the queue
+* pending state
+* syncing state
+* offline state
+* synchronized state
+* retry limits
+* reconnect drain
+* foreground resume drain
+* failure handling
+* UI never crashes
+* no data corruption
+
+Do not invent optimistic persistence if the existing architecture does not support it.
+
+### STEP 9 — VALIDATION
+
+Run:
+
+* mobile TypeScript
+* Expo config
+* web export
+* Android export
+* Metro/bundle validation
+
+Use the existing package scripts.
+
+Do not add a new lint stack merely because ESLint isn't configured.
+
+If lint cannot run, report that accurately.
+
+### STEP 10 — RUNTIME
+
+If Clerk credentials are available:
+
+* verify the authenticated mobile flow
+
+If they are not available:
+
+* do NOT add fallback authentication
+* do NOT mock users
+* do NOT bypass Clerk
+* report runtime authentication as blocked
+
+### STEP 11 — GIT SAFETY
+
+Do not touch:
+
+* web app
+* backend
+* database
+* package manifests
+* lockfiles
+
+unless a genuine existing contract requires it.
+
+At the end report:
+
+1. Files changed
+2. Why each file changed
+3. Sprint 2 feature status
+4. Validation results
+5. Remaining limitations
+6. Git diff/status
+
+Do not claim runtime verification where only static/code verification was possible.
+
+Most importantly:
+
+**Do not stop after finding an issue. Fix legitimate mobile-side issues and continue verification until the Sprint 2 hardening pass is complete.**

@@ -42,6 +42,7 @@ export default function CaptureScreen() {
   const ai = useAIAssistant({ title, insight, notes });
   const { status, pendingCount } = useSyncStatus();
   const detection = origin.trim() ? detectTextContent(origin) : detectTextContent(title);
+  const hasTypedContent = Boolean(title.trim() || insight.trim() || notes.trim() || origin.trim());
 
   const handleSave = useCallback(async () => {
     if (!title.trim()) return;
@@ -134,7 +135,7 @@ export default function CaptureScreen() {
             </Text>
           </View>
 
-          {draft.isReady && draft.hasDraft && !draftDismissed && (
+          {draft.isReady && draft.hasDraft && !draftDismissed && !hasTypedContent && (
             <GlassCard style={styles.recoveryCard}>
               <Text style={[styles.recoveryTitle, { color: theme.text }]}>Recovered draft</Text>
               <Text style={[styles.recoveryText, { color: theme.textMuted }]}>

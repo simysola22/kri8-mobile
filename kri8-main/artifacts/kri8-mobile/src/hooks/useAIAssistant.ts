@@ -33,6 +33,7 @@ export function useAIAssistant(
   const [isError, setIsError] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const contextRef = useRef(context);
+  const requestIdRef = useRef(0);
 
   // Keep context ref current without triggering re-runs
   useEffect(() => {
@@ -40,22 +41,25 @@ export function useAIAssistant(
   });
 
   const fetchSuggestions = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
     const token = await getToken();
-    if (!token) return;
+    if (!token || requestId !== requestIdRef.current) return;
 
     setIsLoading(true);
     setIsError(false);
     try {
       const result = await AIAssistantService.getAISuggestions(token, contextRef.current);
-      if (Object.keys(result).length > 0) {
+      if (requestId === requestIdRef.current) {
         setSuggestions(result);
+      }
+      if (requestId === requestIdRef.current && Object.keys(result).length > 0) {
         analytics.track('ai_inspiration_requested');
       }
     } catch {
       // Non-fatal — AI suggestions never block typing.
-      setIsError(true);
+      if (requestId === requestIdRef.current) setIsError(true);
     } finally {
-      setIsLoading(false);
+      if (requestId === requestIdRef.current) setIsLoading(false);
     }
   }, [getToken]);
 

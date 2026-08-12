@@ -15,6 +15,7 @@ import { setupNotifications, onNotificationAction } from '@/services/Notificatio
 import { parseDeepLink, routeToExpoPath } from '@/lib/deepLinking';
 import { useBiometric } from '@/hooks/useBiometric';
 import { GlassButton } from '@/components/ui/GlassButton';
+import { clearQueue } from '@/stores/offlineQueue';
 
 const PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ?? '';
 
@@ -54,8 +55,10 @@ function AuthGuard() {
         name: user.fullName ?? '',
         email: user.primaryEmailAddress?.emailAddress ?? '',
       });
-    } else if (!isSignedIn) {
+    } else if (isSignedIn === false) {
       analytics.reset();
+      // Never replay mutations from a previous account under a new session.
+      clearQueue();
     }
   }, [isSignedIn, user]);
 

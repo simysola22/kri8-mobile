@@ -34,7 +34,7 @@ export function useTrendsDashboard() {
 export function useAnalyzeTrend() {
   const { getToken } = useAuth();
   return useMutation({
-    mutationFn: (input: { title: string; content?: string }) =>
+    mutationFn: (input: { title: string; notes?: string }) =>
       apiFetch<TrendAnalysis>('/trends/analyze', getToken, {
         method: 'POST',
         body: JSON.stringify(input),
@@ -45,10 +45,10 @@ export function useAnalyzeTrend() {
 export function useGetInspiration() {
   const { getToken } = useAuth();
   return useMutation({
-    mutationFn: (input?: { topic?: string }) =>
+    mutationFn: (input: { title: string; notes?: string }) =>
       apiFetch<TrendInspiration>('/trends/inspire', getToken, {
         method: 'POST',
-        body: JSON.stringify(input ?? {}),
+        body: JSON.stringify(input),
       }),
   });
 }

@@ -1,7 +1,7 @@
 /**
  * SearchService
  *
- * Universal search architecture — searches all content categories simultaneously.
+ * Universal search architecture — searches all backend-supported categories simultaneously.
  * Results are grouped by category and returned in a single response.
  *
  * Current implementation: client-side filtering of cached data + API calls.
@@ -18,11 +18,8 @@ const MAX_RECENT_SEARCHES = 8;
 
 export type SearchCategory =
   | 'ideas'
-  | 'friends'
-  | 'messages'
-  | 'trends'
-  | 'tags'
-  | 'calendar';
+  | 'community'
+  | 'trends';
 
 export interface SearchResultItem {
   id: string | number;
@@ -81,19 +78,17 @@ export function clearRecentSearches(): void {
 
 const CATEGORY_LABELS: Record<SearchCategory, string> = {
   ideas: 'Ideas',
-  friends: 'Friends',
-  messages: 'Messages',
+  community: 'People / Community',
   trends: 'Trends',
-  tags: 'Tags',
-  calendar: 'Calendar',
 };
 
 // ── API search ────────────────────────────────────────────────
 
-async function searchIdeas(token: string, query: string): Promise<SearchResultItem[]> {
+async function searchIdeas(token: string, query: string, signal?: AbortSignal): Promise<SearchResultItem[]> {
   const params = new URLSearchParams({ search: query, limit: '5' });
   const res = await fetch(`${API_BASE}/api/ideas?${params}`, {
     headers: { Authorization: `Bearer ${token}` },
+    signal,
   });
   if (!res.ok) throw new Error(`Ideas search failed (${res.status})`);
   const data = await res.json() as unknown;
@@ -108,46 +103,80 @@ async function searchIdeas(token: string, query: string): Promise<SearchResultIt
   }));
 }
 
-async function searchFriends(token: string, query: string): Promise<SearchResultItem[]> {
+async function searchCommunity(token: string, query: string, signal?: AbortSignal): Promise<SearchResultItem[]> {
   const params = new URLSearchParams({ q: query });
   const res = await fetch(`${API_BASE}/api/users/search?${params}`, {
     headers: { Authorization: `Bearer ${token}` },
+    signal,
   });
-  if (!res.ok) throw new Error(`Friends search failed (${res.status})`);
+  if (!res.ok) throw new Error(`Community search failed (${res.status})`);
   const data = await res.json() as unknown;
   const users = extractArray(data, 'users') as Array<{ id: number; name?: string; username?: string }>;
   return users.map((user) => ({
     id: user.id,
     title: user.name ?? user.username ?? 'Unknown',
     subtitle: user.username ? `@${user.username}` : undefined,
-    category: 'friends' as const,
+    category: 'community' as const,
     route: user.username ? `/(tabs)/profile/${user.username}` : '/(tabs)/community',
     score: 1,
   }));
 }
 
-async function searchTrends(token: string, query: string): Promise<SearchResultItem[]> {
+async function searchTrends(token: string, query: string, signal?: AbortSignal): Promise<SearchResultItem[]> {
   const res = await fetch(`${API_BASE}/api/trends/dashboard`, {
     headers: { Authorization: `Bearer ${token}` },
+    signal,
   });
   if (!res.ok) throw new Error(`Trend search failed (${res.status})`);
   const data = await res.json() as unknown;
-  const trends = [
-    ...extractArray(data, 'trends'),
-    ...extractArray(data, 'topics'),
-  ] as Array<{ id?: string | number; title?: string; description?: string }>;
   const q = query.toLowerCase();
-  return trends
-    .filter((t) => t.title?.toLowerCase().includes(q))
+  const topics = extractArray(data, 'topics') as Array<{
+    id?: string | number;
+    name?: string;
+    title?: string;
+    description?: string;
+  }>;
+  const hashtags = extractArray(data, 'hashtags') as Array<{
+    tag?: string;
+    platform?: string;
+  }>;
+  const categories = extractArray(data, 'categories') as Array<{ name?: string }>;
+
+  return [
+    ...topics
+      .filter((topic) => (topic.name ?? topic.title ?? '').toLowerCase().includes(q))
+      .slice(0, 5)
+      .map((topic, i) => ({
+        id: topic.id ?? `topic-${i}`,
+        title: topic.name ?? topic.title ?? '',
+        subtitle: topic.description,
+        category: 'trends' as const,
+        route: '/(tabs)/ai',
+        score: 0.8,
+      })),
+    ...hashtags
+      .filter((hashtag) => hashtag.tag?.toLowerCase().includes(q))
+      .slice(0, 5)
+      .map((hashtag, i) => ({
+        id: `hashtag-${i}-${hashtag.tag ?? ''}`,
+        title: `#${hashtag.tag ?? ''}`,
+        subtitle: hashtag.platform,
+        category: 'trends' as const,
+        route: '/(tabs)/ai',
+        score: 0.7,
+      })),
+    ...categories
+      .filter((category) => category.name?.toLowerCase().includes(q))
+      .slice(0, 5)
+      .map((category, i) => ({
+        id: `category-${i}-${category.name ?? ''}`,
+        title: category.name ?? '',
+        category: 'trends' as const,
+        route: '/(tabs)/ai',
+        score: 0.6,
+      })),
+  ]
     .slice(0, 5)
-    .map((t, i) => ({
-      id: t.id ?? i,
-      title: t.title ?? '',
-      subtitle: t.description,
-      category: 'trends' as const,
-      route: '/(tabs)/ai',
-      score: 0.8,
-    }));
 }
 
 // ── Main search ───────────────────────────────────────────────
@@ -159,7 +188,7 @@ async function searchTrends(token: string, query: string): Promise<SearchResultI
 export async function universalSearch(
   token: string,
   query: string,
-  options?: { categories?: SearchCategory[] },
+  options?: { categories?: SearchCategory[]; signal?: AbortSignal },
 ): Promise<SearchResults> {
   const start = Date.now();
   const q = query.trim();
@@ -167,21 +196,19 @@ export async function universalSearch(
     return { query: '', totalCount: 0, groups: [], durationMs: 0 };
   }
 
-  const categories = options?.categories ?? ['ideas', 'friends', 'trends'];
+  const categories = options?.categories ?? ['ideas', 'community', 'trends'];
+  const signal = options?.signal;
 
   const [ideaResults, friendResults, trendResults] = await Promise.allSettled([
-    categories.includes('ideas') ? searchIdeas(token, q) : Promise.resolve([]),
-    categories.includes('friends') ? searchFriends(token, q) : Promise.resolve([]),
-    categories.includes('trends') ? searchTrends(token, q) : Promise.resolve([]),
+    categories.includes('ideas') ? searchIdeas(token, q, signal) : Promise.resolve([]),
+    categories.includes('community') ? searchCommunity(token, q, signal) : Promise.resolve([]),
+    categories.includes('trends') ? searchTrends(token, q, signal) : Promise.resolve([]),
   ]);
 
   const allResults: Record<SearchCategory, SearchResultItem[]> = {
     ideas: ideaResults.status === 'fulfilled' ? ideaResults.value : [],
-    friends: friendResults.status === 'fulfilled' ? friendResults.value : [],
-    messages: [],
+    community: friendResults.status === 'fulfilled' ? friendResults.value : [],
     trends: trendResults.status === 'fulfilled' ? trendResults.value : [],
-    tags: [],
-    calendar: [],
   };
 
   const groups: SearchGroup[] = Object.entries(allResults)
