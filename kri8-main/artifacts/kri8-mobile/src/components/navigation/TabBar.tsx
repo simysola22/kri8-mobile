@@ -20,23 +20,35 @@ import { selectionChanged } from '@/lib/haptics';
 import { SPRING_BOUNCY } from '@/lib/animations';
 
 // ── Icons (emoji fallback until vector icons are added in Phase 3) ──
+// Keys are the real Expo Router route names (nested index routes live in folders).
 const TAB_ICONS: Record<string, string> = {
   index: '✦',
-  ideas: '💡',
+  'ideas/index': '💡',
   capture: '⊕',
-  community: '◎',
+  'community/index': '◎',
   ai: '◈',
-  profile: '○',
+  'profile/index': '○',
 };
 
 const TAB_LABELS: Record<string, string> = {
   index: 'Home',
-  ideas: 'Ideas',
+  'ideas/index': 'Ideas',
   capture: 'Capture',
-  community: 'Community',
+  'community/index': 'Community',
   ai: 'AI',
-  profile: 'Profile',
+  'profile/index': 'Profile',
 };
+
+// Explicit order of the primary tabs. Any other registered route (detail
+// screens, hidden `search`) is intentionally excluded from the tab bar.
+const TAB_ORDER = [
+  'index',
+  'ideas/index',
+  'capture',
+  'community/index',
+  'ai',
+  'profile/index',
+] as const;
 
 export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const theme = useActiveTheme();
@@ -56,9 +68,11 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
         ]}
       />
       <View style={styles.row}>
-        {state.routes.map((route, index) => {
-          const isFocused = state.index === index;
-          const isCapture = route.name === 'capture';
+        {TAB_ORDER.map((name) => {
+          const route = state.routes.find((r) => r.name === name);
+          if (!route) return null;
+          const isFocused = state.routes[state.index]?.name === name;
+          const isCapture = name === 'capture';
 
           return (
             <TabItem

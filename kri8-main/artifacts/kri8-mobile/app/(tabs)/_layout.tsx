@@ -8,12 +8,15 @@ export default function TabLayout() {
       screenOptions={{ headerShown: false }}
     >
       <Tabs.Screen name="index" />
-      <Tabs.Screen name="ideas" />
+      <Tabs.Screen name="ideas/index" />
       <Tabs.Screen name="capture" />
-      <Tabs.Screen name="community" />
+      <Tabs.Screen name="community/index" />
       <Tabs.Screen name="ai" />
-      <Tabs.Screen name="profile" />
+      <Tabs.Screen name="profile/index" />
       <Tabs.Screen name="search" options={{ href: null }} />
+      <Tabs.Screen name="ideas/[id]" options={{ href: null }} />
+      <Tabs.Screen name="community/messages/[userId]" options={{ href: null }} />
+      <Tabs.Screen name="profile/[username]" options={{ href: null }} />
     </Tabs>
   );
 }
