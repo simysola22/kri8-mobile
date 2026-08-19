@@ -48,16 +48,20 @@ export function useUniversalSearch(): UseUniversalSearchResult {
 
     setIsLoading(true);
     debounceRef.current = setTimeout(async () => {
-      const token = await getToken();
-      if (!token || requestId !== requestIdRef.current) {
-        setIsLoading(false);
-        return;
-      }
-
       const controller = new AbortController();
       abortRef.current = controller;
 
       try {
+        const token = await getToken();
+        if (!token) {
+          if (requestId === requestIdRef.current) {
+            setIsError(true);
+            setIsLoading(false);
+          }
+          return;
+        }
+        if (requestId !== requestIdRef.current) return;
+
         const searchResults = await SearchService.universalSearch(token, query, {
           signal: controller.signal,
         });
@@ -69,7 +73,10 @@ export function useUniversalSearch(): UseUniversalSearchResult {
           totalCount: searchResults.totalCount,
           durationMs: searchResults.durationMs,
         });
-      } catch {
+      } catch (error) {
+        // Aborted searches are expected when the query changes or the screen
+        // unmounts; do not turn them into a visible error state.
+        if (error instanceof Error && error.name === 'AbortError') return;
         if (requestId !== requestIdRef.current) return;
         setIsError(true);
       } finally {

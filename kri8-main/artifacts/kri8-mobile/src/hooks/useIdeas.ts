@@ -155,7 +155,15 @@ export function useDeleteIdea() {
 
   return useMutation({
     mutationFn: async (id: number) => {
-      await apiFetch<void>(`/ideas/${id}`, getToken, { method: 'DELETE' });
+      try {
+        await apiFetch<void>(`/ideas/${id}`, getToken, { method: 'DELETE' });
+      } catch (err) {
+        if (isNetworkError(err)) {
+          enqueue({ method: 'DELETE', path: `/ideas/${id}` });
+          throw new Error('Deletion saved offline and will sync when you reconnect');
+        }
+        throw err;
+      }
     },
     onSuccess: (_, id) => {
       qc.removeQueries({ queryKey: ideaKeys.detail(id) });
@@ -170,11 +178,21 @@ export function useMarkIdeaUsed() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, usedDate }: { id: number; usedDate?: string }) =>
-      apiFetch<Idea>(`/ideas/${id}/mark-used`, getToken, {
-        method: 'POST',
-        body: JSON.stringify(usedDate ? { usedDate } : {}),
-      }),
+    mutationFn: async ({ id, usedDate }: { id: number; usedDate?: string }) => {
+      const body = usedDate ? { usedDate } : {};
+      try {
+        return await apiFetch<Idea>(`/ideas/${id}/mark-used`, getToken, {
+          method: 'POST',
+          body: JSON.stringify(body),
+        });
+      } catch (err) {
+        if (isNetworkError(err)) {
+          enqueue({ method: 'POST', path: `/ideas/${id}/mark-used`, body });
+          throw new Error('Update saved offline and will sync when you reconnect');
+        }
+        throw err;
+      }
+    },
     onSuccess: (updated) => {
       qc.setQueryData(ideaKeys.detail(updated.id), (old: IdeaDetail | undefined) =>
         old ? { ...old, ...updated } : undefined,
@@ -189,11 +207,21 @@ export function useCreateBranch() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ ideaId, title, insight }: { ideaId: number; title: string; insight?: string }) =>
-      apiFetch<Idea>(`/ideas/${ideaId}/branches`, getToken, {
-        method: 'POST',
-        body: JSON.stringify({ title, insight }),
-      }),
+    mutationFn: async ({ ideaId, title, insight }: { ideaId: number; title: string; insight?: string }) => {
+      const body = { title, insight };
+      try {
+        return await apiFetch<Idea>(`/ideas/${ideaId}/branches`, getToken, {
+          method: 'POST',
+          body: JSON.stringify(body),
+        });
+      } catch (err) {
+        if (isNetworkError(err)) {
+          enqueue({ method: 'POST', path: `/ideas/${ideaId}/branches`, body });
+          throw new Error('Branch saved offline and will sync when you reconnect');
+        }
+        throw err;
+      }
+    },
     onSuccess: (_, vars) => {
       void qc.invalidateQueries({ queryKey: ideaKeys.detail(vars.ideaId) });
     },
