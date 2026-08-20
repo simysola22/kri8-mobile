@@ -1,0 +1,296 @@
+Continue the current Kri8 Mobile Sprint 2 verification from the exact repository state you are in now.
+
+IMPORTANT:
+
+Do NOT restart Sprint 2 from scratch.
+
+Do NOT undo or rewrite the existing implementation.
+
+Do NOT modify the web app, API server, database, package manifests, or lockfile.
+
+The previous run already:
+
+* restored dependencies from the existing lockfile
+* fixed the remaining Universal Search loading-state issue
+* extended offline mutation replay in `useIdeas.ts`
+* confirmed mobile TypeScript passes
+* restarted the mobile Metro workflow
+* restarted the web, API, and mockup workflows
+
+Your job now is ONLY to finish verification.
+
+### STEP 1 — CHECK CURRENT STATE
+
+Inspect:
+
+* git status
+* git diff
+* current mobile workflow logs
+* current web workflow logs
+* current API workflow logs
+
+Determine exactly which changes are currently uncommitted.
+
+Do not discard any intended mobile changes.
+
+### STEP 2 — MOBILE VALIDATION
+
+Run the existing mobile validation commands from:
+
+`artifacts/kri8-mobile/package.json`
+
+Verify:
+
+* TypeScript
+* Expo configuration
+* web export
+* Android export
+* Metro bundling
+* `git diff --check`
+
+Do not add ESLint merely to make the validation pass.
+
+If lint is unavailable because there is no ESLint configuration, report that as a tooling limitation.
+
+### STEP 3 — METRO RUNTIME
+
+Confirm that the Kri8 Mobile Metro workflow actually starts successfully.
+
+Do not consider "workflow restarted" sufficient.
+
+Inspect its logs for:
+
+* Metro startup errors
+* module resolution errors
+* bundling errors
+* JavaScript runtime errors
+* Expo errors
+* Clerk initialization errors
+* API connection errors
+
+If Metro fails, identify the exact error and fix ONLY a genuine mobile issue.
+
+### STEP 4 — EXPO GO
+
+If Metro is healthy, start the mobile app using the existing Expo Go workflow.
+
+Use:
+
+`pnpm exec expo start --go --tunnel`
+
+Do NOT install another Expo version globally.
+
+Do NOT change Expo SDK versions.
+
+Do NOT modify package.json simply to make the tunnel work.
+
+If ngrok/tunnel itself fails, distinguish that environmental failure from an application failure.
+
+If a QR code is available, report that the app is ready for Expo Go testing.
+
+### STEP 5 — CLERK
+
+Verify that the mobile app receives:
+
+`EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`
+
+Do NOT expose or print the secret value.
+
+Do NOT expose `CLERK_SECRET_KEY` to the mobile client.
+
+Verify that the architecture remains:
+
+Mobile:
+`EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`
+
+Backend:
+`CLERK_SECRET_KEY`
+
+If the environment variable is absent, report it rather than inventing a fallback.
+
+### STEP 6 — SPRINT 2 CODE AUDIT
+
+Verify these six features against the actual implementation:
+
+1. Biometric security
+2. Universal Search
+3. Smart Capture
+4. Draft Recovery
+5. AI Assistant
+6. Offline/Sync
+
+For each feature report:
+
+* implementation status
+* API contract status
+* static verification status
+* runtime verification status
+* remaining limitation, if any
+
+Do not claim runtime verification merely because the code exists.
+
+### STEP 7 — AUTH FLOW
+
+If the app can actually reach the authenticated screens, test:
+
+Sign Up
+→ email verification
+→ completed Clerk sign-up
+→ active session
+→ Dashboard
+
+Then:
+
+Sign In
+→ authenticated session
+→ Dashboard
+
+Then:
+
+Sign Out
+→ Landing/Login
+
+If authentication cannot be tested because Expo Go, Clerk, or the environment prevents it, explicitly report that.
+
+Do NOT replace Clerk with mock authentication.
+
+Do NOT create fallback users.
+
+Do NOT create demo mode.
+
+### STEP 8 — API CONTRACT VERIFICATION
+
+Verify the mobile calls against the existing API contracts.
+
+Pay particular attention to:
+
+* `/ideas`
+* `/users/search`
+* `/trends/dashboard`
+* `/trends/inspire`
+* `/trends/analyze`
+
+Ensure the mobile client does not send obsolete fields such as:
+
+`content`
+`topic`
+`prompt`
+`mode`
+
+where the backend expects:
+
+`title`
+`notes`
+
+Also verify response field names.
+
+### STEP 9 — OFFLINE SAFETY
+
+Confirm that queued mutations cannot be replayed under a different authenticated user.
+
+Confirm:
+
+* queue persistence
+* retry behavior
+* reconnect handling
+* foreground resume
+* failed mutation handling
+* sign-out queue clearing
+
+### STEP 10 — FINAL REPORT
+
+Return exactly:
+
+## Sprint 2 Verification Report
+
+### 1. Biometric
+
+Status:
+Evidence:
+Runtime status:
+Remaining issues:
+
+### 2. Universal Search
+
+Status:
+Evidence:
+Runtime status:
+Remaining issues:
+
+### 3. Smart Capture
+
+Status:
+Evidence:
+Runtime status:
+Remaining issues:
+
+### 4. Draft Recovery
+
+Status:
+Evidence:
+Runtime status:
+Remaining issues:
+
+### 5. AI Assistant
+
+Status:
+Evidence:
+Runtime status:
+Remaining issues:
+
+### 6. Offline/Sync
+
+Status:
+Evidence:
+Runtime status:
+Remaining issues:
+
+## Validation
+
+TypeScript:
+Expo config:
+Web export:
+Android export:
+Metro:
+git diff --check:
+
+## Authentication
+
+Clerk initialization:
+Sign up:
+Email verification:
+Sign in:
+Sign out:
+Session persistence:
+
+## API Contract
+
+List every endpoint checked and whether the mobile implementation matches it.
+
+## Remaining Issues
+
+Separate:
+
+CRITICAL
+HIGH
+MEDIUM
+LOW
+ENVIRONMENTAL
+
+Do not call an environmental problem a code defect.
+
+## Files Changed
+
+List every file modified during this entire verification pass.
+
+## Final Verdict
+
+Choose exactly one:
+
+* VERIFIED
+* VERIFIED WITH RUNTIME LIMITATIONS
+* NOT VERIFIED
+
+Do not claim VERIFIED if authenticated user flows or the actual mobile runtime could not be exercised.
+
+Do not make any further architectural changes unless required to fix a verified Sprint 2 defect.
