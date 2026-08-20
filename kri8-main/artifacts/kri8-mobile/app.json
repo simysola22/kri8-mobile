@@ -4,7 +4,11 @@
     "slug": "kri8-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "platforms": ["ios", "android", "web"],
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
     "scheme": "kri8",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -12,7 +16,10 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "space.kri8.mobile",
-      "associatedDomains": ["applinks:kri8.space", "webcredentials:kri8.space"],
+      "associatedDomains": [
+        "applinks:kri8.space",
+        "webcredentials:kri8.space"
+      ],
       "infoPlist": {
         "NSCameraUsageDescription": "Kri8 uses your camera to capture ideas and scan text from the world around you.",
         "NSMicrophoneUsageDescription": "Kri8 uses your microphone to capture voice ideas hands-free.",
@@ -34,14 +41,20 @@
               "host": "kri8.space"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ],
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO",
         "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE"
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
       ]
     },
     "plugins": [
@@ -70,6 +83,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "09f121c6-38f8-486b-b709-54aa3bec54fa"
+      }
+    },
+    "owner": "simys-team"
   }
 }
