@@ -1,0 +1,526 @@
+You are working on the **Kri8 Mobile** app, an Expo SDK 54 / React Native application in:
+
+`artifacts/kri8-mobile`
+
+We have completed the Sprint 2 hardening and successfully produced an installable EAS Android APK.
+
+The APK currently launches correctly and Clerk initializes, but the **mobile authentication flow is broken**.
+
+## CRITICAL AUTHENTICATION BUG
+
+The current mobile app uses custom Kri8-branded Sign In and Sign Up screens.
+
+The authentication is supposed to be powered entirely by **Clerk**, but the current Sign Up flow behaves incorrectly:
+
+1. User opens Sign Up.
+2. User enters their email/password.
+3. Clerk sends the email verification code successfully.
+4. User enters the verification code.
+5. The Sign Up button spins briefly and stops.
+6. No authenticated session is established.
+7. Pressing Sign Up again produces "already verified".
+8. User attempts Sign In.
+9. Sign In reports that the account cannot be found / could not find your account.
+
+This must be fixed properly.
+
+---
+
+# PHASE 1 — AUDIT FIRST
+
+DO NOT immediately rewrite the authentication system.
+
+First inspect the entire mobile authentication implementation.
+
+Inspect:
+
+* `app/sign-in.tsx`
+* `app/sign-up.tsx`
+* `app/_layout.tsx`
+* Clerk provider configuration
+* all uses of `useSignIn`
+* all uses of `useSignUp`
+* all uses of `setActive`
+* all uses of `isLoaded`
+* all authentication-related navigation
+* email verification logic
+* session creation
+* redirect logic
+* error handling
+* environment variable handling
+* any local/mock authentication
+* any custom auth state
+* any fallback authentication
+
+Search the entire mobile project for:
+
+```text
+useSignIn
+useSignUp
+setActive
+signUp
+signIn
+verification
+prepareEmailAddressVerification
+attemptEmailAddressVerification
+EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY
+CLERK_PUBLISHABLE_KEY
+ClerkProvider
+isSignedIn
+sessionId
+```
+
+Determine exactly why:
+
+> verification succeeds but a Clerk session is not established.
+
+Do not guess.
+
+---
+
+# PHASE 2 — CLERK MUST BE THE SINGLE AUTHORITY
+
+The mobile application must have exactly ONE authentication system:
+
+**Clerk.**
+
+Remove or bypass any:
+
+* mock authentication
+* fake users
+* demo users
+* local authentication state pretending to be authentication
+* fallback login
+* fallback signup
+* hardcoded accounts
+* development auth
+* authentication timers
+* custom session persistence
+* manually generated user IDs
+* manually generated authentication tokens
+
+The application must never consider a user authenticated unless Clerk says the user is authenticated.
+
+Do NOT introduce another authentication provider.
+
+Do NOT create a parallel authentication system.
+
+---
+
+# PHASE 3 — FIX SIGN UP CORRECTLY
+
+Use the official Clerk Expo/React Native authentication lifecycle.
+
+The expected flow is:
+
+### Step 1
+
+Create the Clerk sign-up:
+
+```text
+create({
+  emailAddress,
+  password
+})
+```
+
+### Step 2
+
+Prepare email verification using Clerk.
+
+### Step 3
+
+User enters the verification code.
+
+### Step 4
+
+Attempt verification using Clerk.
+
+### Step 5
+
+After successful verification, inspect the returned SignUp state.
+
+If Clerk reports that the SignUp is complete and provides a session, activate that session using Clerk's `setActive`.
+
+The important requirement is:
+
+**Do not assume that successful email verification automatically means the application has an active session.**
+
+Explicitly handle the Clerk SignUp lifecycle and activate the resulting session.
+
+### Step 6
+
+After `setActive`, verify the Clerk session/user state.
+
+### Step 7
+
+Navigate to the authenticated application/dashboard.
+
+Do NOT navigate to Dashboard before Clerk confirms the session is active.
+
+---
+
+# PHASE 4 — HANDLE INCOMPLETE SIGNUP STATES
+
+Do not treat every verification response as successful authentication.
+
+Handle Clerk states explicitly.
+
+For example:
+
+* missing verification
+* verification required
+* signup incomplete
+* signup complete
+* session available
+* session unavailable
+* invalid verification code
+* expired verification code
+* already verified
+* email already exists
+* password validation error
+* network error
+
+Display meaningful user-facing errors.
+
+Never silently stop the spinner.
+
+Never leave the button spinning indefinitely.
+
+Every async authentication operation must have:
+
+```text
+loading
+success
+error
+```
+
+states.
+
+---
+
+# PHASE 5 — FIX SIGN IN
+
+Audit the Sign In implementation.
+
+It must use Clerk's `useSignIn()` flow.
+
+Verify that:
+
+1. Clerk is loaded.
+2. Credentials are submitted to Clerk.
+3. The Clerk SignIn object reaches the correct status.
+4. The resulting session ID is activated with `setActive`.
+5. The application waits for Clerk's authenticated state.
+6. Navigation occurs only after successful authentication.
+
+Do not implement custom credential verification.
+
+Do not query our database to determine whether the user exists before Clerk authentication.
+
+Clerk is responsible for authentication.
+
+---
+
+# PHASE 6 — AUTHENTICATED ROUTING
+
+Audit the Expo Router authentication architecture.
+
+Required behavior:
+
+### Anonymous user
+
+```text
+Landing / Sign In / Sign Up
+```
+
+### Authenticated user
+
+```text
+Dashboard / Tabs
+```
+
+### After successful signup
+
+```text
+Sign Up
+→ Email verification
+→ Clerk session activation
+→ Dashboard
+```
+
+### After successful signin
+
+```text
+Sign In
+→ Clerk session activation
+→ Dashboard
+```
+
+### Sign out
+
+```text
+Sign Out
+→ Clerk session destroyed
+→ Landing / Sign In
+```
+
+The routing must be based on Clerk's actual session state.
+
+Do not use:
+
+* arbitrary delays
+* `setTimeout`
+* polling
+* 800ms authentication waits
+* 5-second authentication waits
+* fake loading completion
+* manually stored `isAuthenticated`
+
+---
+
+# PHASE 7 — MOBILE UI
+
+The current Kri8 mobile authentication screens are custom branded.
+
+Keep the Kri8 design **if it is technically compatible with the official Clerk authentication lifecycle**.
+
+The important distinction is:
+
+> The UI may be custom, but authentication must be completely Clerk-powered.
+
+Do not replace Clerk with custom authentication merely because the UI is custom.
+
+Also do not assume that Clerk's web `<SignIn />` and `<SignUp />` components can simply be dropped into native React Native.
+
+For Expo/React Native, use the official Clerk-supported native authentication APIs/hooks.
+
+If there is a supported Clerk native prebuilt component or official authentication UI that is appropriate for the current Expo version, evaluate it.
+
+Otherwise, retain the Kri8-branded UI while wiring it correctly to Clerk's official native APIs.
+
+The final result must be visually consistent with the Kri8 web authentication experience while remaining a proper native Expo implementation.
+
+---
+
+# PHASE 8 — ENVIRONMENT VARIABLES
+
+Verify the mobile application uses:
+
+```text
+EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY
+```
+
+The mobile client must NOT use:
+
+```text
+CLERK_SECRET_KEY
+```
+
+The Clerk secret key must never be bundled into the mobile application.
+
+Verify that the EAS `preview` environment contains:
+
+```text
+EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY
+```
+
+Do not print the actual key in logs.
+
+Do not expose secrets in source code.
+
+Do not create another environment variable unnecessarily.
+
+---
+
+# PHASE 9 — BACKEND INTEGRATION
+
+After Clerk successfully authenticates the user, verify that the mobile app can authenticate API requests correctly.
+
+Inspect the API client.
+
+Verify that authenticated requests send the Clerk session/token expected by the backend.
+
+Verify:
+
+```text
+Clerk Mobile
+      ↓
+Authenticated Clerk session
+      ↓
+API request
+      ↓
+Express API
+      ↓
+Clerk verification
+      ↓
+Authenticated user
+      ↓
+PostgreSQL
+```
+
+Do not bypass Clerk on the backend.
+
+Do not trust a user ID supplied by the mobile client.
+
+---
+
+# PHASE 10 — TEST THE ACTUAL FLOW
+
+After fixing the implementation, test the complete flow.
+
+### Test A — Sign Up
+
+Use a fresh test email.
+
+Verify:
+
+1. Account creation starts.
+2. Verification email is received.
+3. Verification code is accepted.
+4. Clerk reports signup completion.
+5. Session is created.
+6. `setActive` succeeds.
+7. User becomes authenticated.
+8. Dashboard opens.
+9. Refresh/reload preserves authentication.
+
+### Test B — Sign In
+
+Sign out.
+
+Use the same account.
+
+Verify:
+
+1. Sign In accepts credentials.
+2. Clerk authenticates.
+3. Session becomes active.
+4. Dashboard opens.
+
+### Test C — Sign Out
+
+Verify:
+
+1. Clerk session is destroyed.
+2. User returns to public/auth screen.
+3. Protected routes cannot be accessed.
+
+### Test D — Invalid verification
+
+Use an incorrect verification code.
+
+Verify that the UI shows a useful error and does not falsely mark the account as authenticated.
+
+### Test E — Already verified
+
+If the verification flow is submitted twice, handle Clerk's "already verified" state gracefully rather than treating it as an unrecoverable state.
+
+### Test F — API authentication
+
+After signing in, open an authenticated mobile feature such as Ideas.
+
+Verify that the API recognizes the authenticated Clerk user.
+
+---
+
+# PHASE 11 — DO NOT MASK THE BUG
+
+Do NOT solve this by:
+
+* automatically logging the user in with a mock account
+* skipping email verification
+* assuming verification succeeded
+* manually setting `isAuthenticated = true`
+* storing credentials locally
+* creating a fake session
+* bypassing Clerk
+* redirecting to Dashboard regardless of authentication state
+* retrying the same Clerk operation blindly
+* adding arbitrary delays
+* suppressing Clerk errors
+
+The actual Clerk lifecycle must be fixed.
+
+---
+
+# PHASE 12 — VALIDATION
+
+After implementation run:
+
+```bash
+pnpm --filter @workspace/kri8-mobile run typecheck
+```
+
+Then validate Expo:
+
+```bash
+pnpm exec expo config --type public
+```
+
+Then validate the web/export path if supported.
+
+Then run the Android build.
+
+If code changes affect the EAS build, rebuild the APK.
+
+Do not claim the authentication is fixed unless the actual signup and signin flow has been tested.
+
+---
+
+# OUTPUT
+
+Before changing code, provide:
+
+## 1. Root Cause
+
+Exactly why the current verification succeeds but the Clerk session is not established.
+
+## 2. Authentication Flow
+
+Show:
+
+```text
+Current broken flow
+```
+
+and
+
+```text
+Correct Clerk flow
+```
+
+## 3. Files To Change
+
+List every file that requires modification.
+
+## 4. Proposed Changes
+
+Explain each change.
+
+## 5. Exact Diff
+
+Show the diff before applying it.
+
+**STOP HERE.**
+
+Do not modify files until the audit, root cause, proposed changes, and diff have been shown.
+
+After approval, implement the fix incrementally.
+
+Finally report:
+
+* Sign Up result
+* Email verification result
+* Session activation result
+* Sign In result
+* Sign Out result
+* API authentication result
+* Typecheck result
+* Expo validation result
+* EAS build result
+* APK link
+
+The final goal is:
+
+**Kri8 Mobile must use Clerk as its single source of truth for authentication, with a reliable native Expo signup/signin/verification/session lifecycle and no authentication fallbacks or hacks.**
