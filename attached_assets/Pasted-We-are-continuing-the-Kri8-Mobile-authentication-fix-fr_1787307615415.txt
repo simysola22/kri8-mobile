@@ -1,0 +1,98 @@
+We are continuing the Kri8 Mobile authentication fix from another Replit environment.
+
+The previous audit established that:
+
+* Kri8 Mobile uses Clerk as its only authentication provider.
+* The mobile UI is custom Kri8-branded, but authentication must remain entirely Clerk-powered.
+* Mobile uses Clerk's official React Native hooks: `useSignUp()` and `useSignIn()`.
+* The web app uses Clerk's prebuilt `<SignIn />` and `<SignUp />`.
+* No custom authentication system, mock users, local authentication state, fallback authentication, or fake sessions may be introduced.
+
+The previous APK revealed this exact failure:
+
+1. User creates an account.
+2. Clerk sends the email verification code successfully.
+3. User enters the verification code.
+4. The verification appears to succeed.
+5. The sign-up button stops loading without entering the authenticated app.
+6. Retrying verification produces "already verified".
+7. Attempting to sign in afterward produces "couldn't find your account".
+
+The previous audit suspected an incomplete Clerk lifecycle around:
+
+* `attemptEmailAddressVerification()`
+* `result.status`
+* `result.createdSessionId`
+* `setActive()`
+* Clerk `isSignedIn`
+* AuthGuard routing
+* incomplete sign-in/sign-up states.
+
+IMPORTANT:
+
+Do NOT immediately edit anything.
+
+First inspect the CURRENT checkout and determine whether these issues still exist.
+
+Inspect:
+
+* `artifacts/kri8-mobile/app/(auth)/sign-up.tsx`
+* `artifacts/kri8-mobile/app/(auth)/sign-in.tsx`
+* `artifacts/kri8-mobile/app/_layout.tsx`
+* ClerkProvider configuration
+* mobile Clerk environment-variable configuration
+* authenticated API token handling
+
+Verify the complete lifecycle:
+
+SIGN UP
+
+signUp.create()
+→ email verification preparation
+→ attemptEmailAddressVerification()
+→ result.status
+→ result.createdSessionId
+→ setActive()
+→ Clerk isSignedIn
+→ AuthGuard
+→ authenticated dashboard
+
+SIGN IN
+
+signIn.create()
+→ result.status
+→ result.createdSessionId
+→ setActive()
+→ Clerk isSignedIn
+→ AuthGuard
+→ authenticated dashboard
+
+Also inspect incomplete Clerk states and error handling.
+
+Do not assume the previous diagnosis is correct. Verify it against the current source.
+
+Do not modify the web authentication implementation unless a concrete cross-platform issue requires it.
+
+Do not introduce:
+
+* another authentication provider
+* local auth state as the source of truth
+* mock users
+* fallback authentication
+* fake sessions
+* timers
+* arbitrary delays
+* authentication workarounds
+
+OUTPUT ONLY:
+
+1. Current authentication architecture
+2. Exact current failure point, if still present
+3. Evidence from the current code
+4. Files that need modification
+5. Exact proposed diff
+6. Validation plan
+
+STOP AFTER THE PROPOSED DIFF.
+
+Do not modify files until the audit and diff have been reviewed.
