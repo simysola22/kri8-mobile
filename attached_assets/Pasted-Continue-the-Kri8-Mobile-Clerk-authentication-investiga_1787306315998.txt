@@ -1,0 +1,101 @@
+Continue the Kri8 Mobile Clerk authentication investigation.
+
+IMPORTANT: Do not modify files yet.
+
+The mobile app must use Clerk as the ONLY authentication provider. The Kri8-branded mobile sign-in/sign-up screens may remain custom, but they must be a presentation layer over Clerk's official React Native hooks.
+
+Current behavior:
+
+1. User opens mobile Sign Up.
+2. User enters email/password.
+3. Clerk sends email verification code.
+4. User enters the verification code.
+5. Verification appears to succeed.
+6. The loading spinner stops.
+7. User is NOT authenticated.
+8. Retrying verification returns "already verified".
+9. Attempting Sign In afterward returns "couldn't find your account".
+
+The web app uses Clerk's prebuilt `<SignIn />` and `<SignUp />` components and should be treated as the behavioral reference.
+
+Audit the mobile implementation against the actual Clerk lifecycle.
+
+Inspect:
+
+* `app/(auth)/sign-up.tsx`
+* `app/(auth)/sign-in.tsx`
+* `app/_layout.tsx`
+* ClerkProvider configuration
+* Clerk package/version
+* `useSignUp()`
+* `useSignIn()`
+* `setActive()`
+* `isSignedIn`
+* `isLoaded`
+* `createdSessionId`
+* sign-up status
+* sign-in status
+* API authentication/token handling
+
+Do NOT assume that `createdSessionId` is the root cause. Prove the failure path from the actual code and error handling.
+
+Specifically determine:
+
+1. What `attemptEmailAddressVerification()` actually returns.
+2. Whether `result.status === "complete"`.
+3. Whether `result.createdSessionId` exists.
+4. Whether `setActive({ session: result.createdSessionId })` succeeds or throws.
+5. Whether Clerk's global `isSignedIn` changes after `setActive()`.
+6. Whether the auth guard redirects before Clerk finishes updating.
+7. Whether the sign-up object is being discarded/reset prematurely.
+8. Whether the app is accidentally creating a new sign-up attempt after verification.
+9. Whether the Clerk publishable key used by the EAS APK belongs to the same Clerk instance/environment as the web app.
+10. Whether the API server is using the matching Clerk configuration.
+11. Whether any local authentication state is competing with Clerk.
+12. Whether any custom auth fallback, mock user, fake session, local JWT, or manual authentication logic exists.
+
+Compare the mobile lifecycle with the web Clerk implementation.
+
+The desired architecture is:
+
+Custom Kri8 UI
+→ official Clerk `useSignUp()` / `useSignIn()`
+→ Clerk verification
+→ Clerk session
+→ `setActive()`
+→ Clerk `isSignedIn`
+→ authenticated app
+
+There must be NO:
+
+* custom authentication provider
+* local authentication state acting as authority
+* mock users
+* fake sessions
+* manually generated JWTs
+* password validation outside Clerk
+* authentication fallback
+* demo authentication
+* timeout-based authentication
+* automatic login bypass
+
+The mobile UI can remain Kri8-branded. We are NOT asking to replace it with Clerk's web `<SignUp />` component because this is a native React Native application.
+
+Before editing:
+
+### OUTPUT
+
+1. Exact current Clerk authentication architecture.
+2. Exact failure point for the verification → session flow.
+3. Evidence from the actual return values/error handling.
+4. Whether the current mobile implementation is genuinely Clerk-only.
+5. Whether the Clerk environment used by the EAS APK matches the web/API Clerk environment.
+6. Files that actually need modification.
+7. Exact proposed changes.
+8. Exact diffs.
+
+STOP THERE.
+
+Do NOT modify any files until the proposed changes are reviewed and approved.
+
+The goal is not merely to make the button work. The goal is a correct production Clerk implementation with Clerk remaining the single source of truth.
