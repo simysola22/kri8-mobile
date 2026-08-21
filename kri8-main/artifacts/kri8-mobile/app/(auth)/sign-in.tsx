@@ -36,9 +36,17 @@ export default function SignInScreen() {
         identifier: email.trim().toLowerCase(),
         password,
       });
-      if (result.status === 'complete') {
-        await setActive({ session: result.createdSessionId });
+      if (result.status !== 'complete') {
+        setError(
+          'Sign-in requires an additional verification step that is not available in this screen.',
+        );
+        return;
       }
+      if (!result.createdSessionId) {
+        setError('Sign-in completed, but no session was created. Please try again.');
+        return;
+      }
+      await setActive({ session: result.createdSessionId });
     } catch (err: unknown) {
       const clerkError = err as { errors?: { message?: string }[] };
       setError(

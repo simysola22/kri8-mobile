@@ -1,0 +1,50 @@
+Apply this exact fix to the auth incomplete-status bug in kri8-mobile.
+
+CONTEXT: Both app/(auth)/sign-in.tsx and app/(auth)/sign-up.tsx currently
+only handle the Clerk `status === 'complete'` case after signIn.create()
+and signUp.attemptEmailAddressVerification(). When Clerk returns any other
+status, or when createdSessionId is missing, the code does nothing — no
+error, no explanation, the user is just stuck. This is a confirmed bug,
+verified directly against the current file contents.
+
+TASK — apply exactly these two changes, nothing else:
+
+1. In app/(auth)/sign-in.tsx, inside handleSignIn, replace:
+
+   if (result.status === 'complete') {
+     await setActive({ session: result.createdSessionId });
+   }
+
+   with:
+
+   if (result.status !== 'complete') {
+     setError('Sign-in requires an additional verification step that is not available in this screen.');
+     return;
+   }
+   if (!result.createdSessionId) {
+     setError('Sign-in completed, but no session was created. Please try again.');
+     return;
+   }
+   await setActive({ session: result.createdSessionId });
+
+2. In app/(auth)/sign-up.tsx, inside handleVerify, apply the same pattern
+   to the attemptEmailAddressVerification result block (adjust the error
+   copy to reference email verification instead of sign-in).
+
+CONSTRAINTS:
+- Do not touch any other file. Not app/_layout.tsx, not
+  src/lib/tokenCache.ts, not src/api/client.ts, not any web auth files.
+- Do not introduce a mock session, alternate auth provider, retry timer,
+  or any fallback authentication path.
+- Do not add new dependencies.
+
+REQUIRED OUTPUT — do not summarize, show the actual diff:
+1. Run `git diff` (or equivalent) on both files after the change and paste
+   the full output verbatim in your response.
+2. Run the mobile typecheck (`npm run typecheck` or equivalent) and paste
+   the exact command output, not a paraphrase of whether it passed.
+3. Confirm explicitly: did you actually edit these two files just now, or
+   are you reporting from a previous session? State this plainly.
+
+Do not report this as complete unless the diff output above is included
+in your response and shows these exact changes present in the files.

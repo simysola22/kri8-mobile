@@ -52,9 +52,17 @@ export default function SignUpScreen() {
     setError(null);
     try {
       const result = await signUp.attemptEmailAddressVerification({ code });
-      if (result.status === 'complete') {
-        await setActive({ session: result.createdSessionId });
+      if (result.status !== 'complete') {
+        setError(
+          'Email verification requires an additional step that is not available in this screen.',
+        );
+        return;
       }
+      if (!result.createdSessionId) {
+        setError('Email verification completed, but no session was created. Please try again.');
+        return;
+      }
+      await setActive({ session: result.createdSessionId });
     } catch (err: unknown) {
       const clerkError = err as { errors?: { message?: string }[] };
       setError(clerkError.errors?.[0]?.message ?? 'Invalid code. Try again.');
