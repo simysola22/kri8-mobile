@@ -12,7 +12,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useUser } from '@clerk/clerk-expo';
+import { useUser } from '@clerk/expo';
 import { useActiveTheme } from '@/stores/theme';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { useMessages, useSendMessage } from '@/hooks/useSocial';

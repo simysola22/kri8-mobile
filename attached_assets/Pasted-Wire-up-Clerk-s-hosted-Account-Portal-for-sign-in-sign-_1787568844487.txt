@@ -1,0 +1,53 @@
+Wire up Clerk's hosted Account Portal for sign-in/sign-up, replacing the
+current broken custom forms. Confirmed configuration values below — use
+these exactly, do not substitute or guess alternates.
+
+CONFIRMED VALUES:
+- Clerk instance: relaxed-dragon-77.clerk.accounts.dev (external account,
+  same tenant as the web app — do NOT create a new Clerk project)
+- App scheme: "kri8" (from app.json)
+- Redirect URL already allowlisted in Clerk's Native applications page:
+  kri8://callback
+- Hosted sign-in URL: https://relaxed-dragon-77.clerk.accounts.dev/sign-in
+- Hosted sign-up URL: https://relaxed-dragon-77.clerk.accounts.dev/sign-up
+
+CONTEXT: The current custom sign-in.tsx/sign-up.tsx use useSignIn()/
+useSignUp() directly. Confirmed bug: sign-up reports verification
+"complete" but no Clerk account is actually created; sign-in then fails
+with "account not found." Stop debugging that custom form logic —
+replace it with Clerk's actual hosted pages instead.
+
+TASK:
+1. Before writing any code, check Clerk's current official docs
+   (clerk.com/docs) for the correct, current Expo/React Native pattern
+   for linking to Account Portal pages with a redirect_url parameter and
+   handling the return via a custom scheme. Do not guess the API surface
+   — Clerk's SDK methods for this can change between versions matches
+   the installed @clerk/clerk-expo version. State which doc page you
+   used.
+2. Implement sign-in and sign-up as calls that open the hosted URLs
+   above via expo-web-browser, with redirect_url set to kri8://callback,
+   using whatever Clerk's docs specify as the current correct method to
+   detect and activate the session once the browser returns.
+3. Remove the old sign-in.tsx and sign-up.tsx TextInput-based screens
+   entirely — do not leave two competing auth paths in the codebase.
+4. Confirm AuthGuard in app/_layout.tsx correctly reacts once the
+   Account Portal flow completes and Clerk's isSignedIn becomes true —
+   check this still works as-is or needs adjustment.
+
+CONSTRAINTS:
+- Do not build a new custom form UI.
+- Do not introduce a mock/fallback session or bypass Clerk in any way.
+- Do not modify web auth files or the Clerk dashboard configuration
+  beyond what's already been set (the redirect URL is already added).
+
+REQUIRED OUTPUT — do not summarize, prove it:
+1. The actual diff of every file changed.
+2. Typecheck output, verbatim.
+3. An ACTUAL test: sign up with a brand-new email through the real flow,
+   then go to the Clerk dashboard's Users tab and confirm the account
+   now exists there. Paste that confirmation (or a description of
+   exactly what you observed in the dashboard) — do not report success
+   without this check.
+4. Confirm: after that fresh sign-up completes, does the app correctly
+   land on the signed-in area (not stuck on a loading/auth screen)?

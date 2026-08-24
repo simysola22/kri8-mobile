@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '@clerk/clerk-expo';
+import { useAuth } from '@clerk/expo';
 import { useMemo } from 'react';
 import { createApiClient } from '@/api/client';
 import type { User, UserUpdate } from '@/types';

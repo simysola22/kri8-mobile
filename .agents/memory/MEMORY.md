@@ -1,3 +1,4 @@
 - [Kri8 mobile kv module](kri8-mobile-kv.md) — Metro platform resolution means tsc can't find @/lib/kv; needs kv.ts stub file.
 - [Kri8 mobile Phase 2.5 services](kri8-mobile-phase25.md) — 12 new services/hooks added in src/services/ and src/hooks/; all clean on typecheck.
 - [Kri8 mobile snapshot merges](kri8-mobile-snapshot-merges.md) — regenerate the monorepo lockfile; exported snapshots may declare a newer Expo SDK than they lock.
+- [Kri8 Clerk hosted auth](kri8-clerk-hosted-auth.md) — current Clerk Expo hosted auth uses @clerk/expo's useHostedAuth hook and native callback URLs.

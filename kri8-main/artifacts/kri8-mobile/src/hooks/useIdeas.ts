@@ -4,7 +4,7 @@ import {
   useQueryClient,
   useInfiniteQuery,
 } from '@tanstack/react-query';
-import { useAuth } from '@clerk/clerk-expo';
+import { useAuth } from '@clerk/expo';
 import type { Idea, IdeaDetail, IdeaInput, IdeaUpdate, IdeaStats } from '@/types';
 import { enqueue } from '@/stores/offlineQueue';
 

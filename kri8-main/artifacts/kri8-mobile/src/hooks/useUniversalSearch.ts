@@ -5,7 +5,7 @@
  * Debounces API calls and tracks search analytics.
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useAuth } from '@clerk/clerk-expo';
+import { useAuth } from '@clerk/expo';
 import * as SearchService from '@/services/SearchService';
 import { analytics } from '@/services/analytics/AnalyticsService';
 

@@ -6,7 +6,7 @@
  * the user needing to press a button.
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useAuth } from '@clerk/clerk-expo';
+import { useAuth } from '@clerk/expo';
 import * as AIAssistantService from '@/services/AIAssistantService';
 import { analytics } from '@/services/analytics/AnalyticsService';
 
