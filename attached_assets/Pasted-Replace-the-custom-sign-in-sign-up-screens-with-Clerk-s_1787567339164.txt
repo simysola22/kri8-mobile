@@ -1,0 +1,40 @@
+Replace the custom sign-in/sign-up screens with Clerk's hosted Account
+Portal, opened via an in-app browser — not custom TextInput forms.
+
+CONTEXT: The current custom sign-up/sign-in screens
+(app/(auth)/sign-in.tsx, app/(auth)/sign-up.tsx) call useSignIn()/useSignUp()
+directly and have a confirmed bug: email verification reports "complete"
+on Clerk's side, but the account is never actually created, and sign-in
+afterward returns "account not found." Rather than continuing to debug
+custom form logic, switch to Clerk's actual hosted pages — the same
+Account Portal pages the web app already uses successfully.
+
+APPROACH — Clerk's documented Account Portal + Expo pattern:
+1. Use expo-web-browser (already a dependency) to open Clerk's hosted
+   sign-in/sign-up URL from the Clerk instance's Account Portal
+   (dashboard.clerk.com → Account Portal shows the exact URLs).
+2. Configure the redirect back into the app using Expo's deep link scheme
+   (check app.json for the existing "scheme" value, or add one).
+3. Register that redirect URL as an allowed redirect origin in the Clerk
+   dashboard (Configure → Account Portal, or Configure → Paths).
+4. After the browser session completes and redirects back, read the
+   resulting session via Clerk's SDK (getToken()/useAuth()) — do NOT
+   build a new custom session-parsing flow; use what Clerk's SDK already
+   exposes once the redirect completes.
+5. Remove the old TextInput-based sign-in.tsx/sign-up.tsx screens (or
+   keep them removed/unused — don't leave two competing auth paths).
+
+CONSTRAINTS:
+- Do not build a new custom form UI. The whole point is using Clerk's
+  own working hosted page instead of hand-rolled forms.
+- Do not introduce a mock/fallback session.
+- Confirm the redirect URL is added to Clerk's allowed origins — this is
+  a common silent-failure point, so explicitly verify and state whether
+  it was already configured or needed adding.
+
+REQUIRED OUTPUT:
+1. The actual diff/new files, not a summary.
+2. Confirm: does creating a NEW account this way actually work end to
+   end? Test it — sign up with a fresh email, verify the account exists
+   in Clerk's Users dashboard afterward, and paste that confirmation.
+3. Typecheck output, verbatim.
