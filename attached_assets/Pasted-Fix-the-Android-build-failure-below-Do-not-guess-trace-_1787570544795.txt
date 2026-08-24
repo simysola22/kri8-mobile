@@ -1,0 +1,47 @@
+Fix the Android build failure below. Do not guess — trace the actual
+cause and report it.
+
+ERROR:
+> Task :app:mergeDebugJavaResource FAILED
+Execution failed for task ':app:mergeDebugJavaResource'.
+> 2 files found with path 'META-INF/versions/9/OSGI-INF/MANIFEST.MF'
+  from inputs:
+   - com.squareup.okhttp3:logging-interceptor:5.4.0/logging-interceptor-5.4.0.jar
+   - org.jspecify:jspecify:1.0.0/jspecify-1.0.0.jar
+
+TASKS:
+1. Run a dependency trace (e.g. `./gradlew :app:dependencies` or
+   `npm ls` equivalent) to identify what's pulling in
+   okhttp3:logging-interceptor and org.jspecify — report which package(s)
+   in package.json depend on them, directly or transitively. I suspect
+   this may trace back to an AWS SDK dependency possibly added in an
+   earlier session for R2 signed URLs — confirm or rule this out
+   explicitly.
+2. Determine whether the android/ directory in this project is
+   git-tracked (bare workflow) or generated fresh by EAS on every build
+   (managed/CNG workflow) — check `git status android/` and whether
+   android/ appears in .gitignore. State which one this project is.
+3. Apply the fix using the correct method for that workflow:
+   - If managed/CNG (android/ is NOT tracked): add the
+     expo-build-properties config plugin to app.json with a
+     packagingOptions.pickFirst (or exclude) rule for the conflicting
+     path, so the fix survives every future prebuild.
+   - If bare workflow (android/ IS tracked): edit
+     android/app/build.gradle directly, adding the equivalent
+     packagingOptions/pickFirst block in the android {} section.
+4. Do not just exclude the conflict blindly — confirm which of the two
+   JARs' MANIFEST.MF is actually needed (jspecify's is almost certainly
+   the safe one to keep, since it's a lightweight annotation-only
+   library; logging-interceptor is a runtime networking library) before
+   deciding which to pick vs exclude.
+
+REQUIRED OUTPUT:
+1. What's actually pulling in these two libraries (the dependency trace
+   result).
+2. Which workflow (managed/CNG vs bare) this project uses, confirmed by
+   checking git tracking.
+3. The exact diff of whatever file was changed.
+4. A fresh EAS build submitted, with the build URL.
+5. Confirm: did this build reach a successful "Errored: No" state, or
+   still failed? Do not report success until the build page itself shows
+   it, not just that the fix was applied.

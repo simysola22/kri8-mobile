@@ -68,6 +68,18 @@
       "expo-splash-screen",
       "expo-notifications",
       [
+        "expo-build-properties",
+        {
+          "android": {
+            "packagingOptions": {
+              "excludes": [
+                "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
+              ]
+            }
+          }
+        }
+      ],
+      [
         "expo-camera",
         {
           "cameraPermission": "Kri8 uses your camera to capture ideas and scan text.",
