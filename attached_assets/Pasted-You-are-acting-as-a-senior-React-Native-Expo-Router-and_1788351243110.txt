@@ -1,0 +1,503 @@
+You are acting as a senior React Native, Expo Router, and mobile UI engineer.
+
+The Kri8 Android standalone preview build is now FUNCTIONAL.
+
+Confirmed working:
+
+* App launches as a standalone APK
+* Clerk authentication works
+* Sign up works
+* Email verification works
+* Sign in works
+* Sign out works
+* Session persistence works
+* User ideas persist after logout and signing back in
+* Biometric authentication works
+* API connectivity works
+* Camera and Voice correctly display that they are planned for Phase 3
+
+DO NOT break any of these working systems.
+
+However, the MOBILE UI and navigation layout are currently severely broken.
+
+I tested the real standalone APK on an Android phone.
+
+The problem is visible in the attached screenshot.
+
+══════════════════════════════
+PRIMARY PROBLEM — TAB BAR IS BROKEN
+══════════════════════════════
+
+The bottom navigation is incorrectly rendering route names and internal Expo Router paths.
+
+Examples visible in the app include things similar to:
+
+* Home
+* Capture
+* AI
+* search/index
+* ideas/index
+* profile/index
+* community
+* messages
+* profile/[username]
+* ideas/[id]
+* profile/[username]
+
+This is completely unacceptable.
+
+Internal routes must NEVER automatically become visible bottom-navigation items.
+
+The current tab bar appears to be iterating through every route in `state.routes` and rendering them all.
+
+Audit:
+
+* `app/(tabs)/_layout.tsx`
+* `src/components/navigation/TabBar.tsx`
+* every route inside `app/(tabs)`
+* nested routes
+* dynamic routes
+* hidden routes
+* Expo Router route groups
+* `href: null`
+* custom tab bar logic
+* Expo Router navigation state
+
+Determine exactly why internal routes are appearing as visible tabs.
+
+══════════════════════════════
+REQUIRED TAB STRUCTURE
+══════════════════════════════
+
+The bottom navigation must contain ONLY intentional primary navigation destinations.
+
+Audit the existing product structure before deciding the final exact tabs.
+
+Likely primary destinations include the existing product features such as:
+
+* Home / Dashboard
+* Capture
+* AI
+* Community
+* Profile
+
+But DO NOT blindly change the information architecture.
+
+First inspect the existing routes and determine the intended primary navigation.
+
+The final tab bar must:
+
+* contain only intentional primary tabs
+* never render dynamic routes
+* never render `[id]`
+* never render `[username]`
+* never render `index`
+* never render nested routes
+* never render hidden routes
+* never render internal Expo Router route names
+* never show routes with `href: null`
+* never create duplicate tabs
+* never overflow horizontally
+* remain visually clean on real Android devices
+
+Detail pages must be pushed as stack screens, not displayed as tabs.
+
+For example, routes such as these must NOT appear in the bottom navigation:
+
+* idea details
+* profile details
+* public profile pages
+* search result pages
+* message threads
+* settings subpages
+* dynamic `[id]` routes
+* dynamic `[username]` routes
+* nested child screens
+
+══════════════════════════════
+DO NOT USE A QUICK FILTER HACK
+══════════════════════════════
+
+Do NOT simply add a fragile hardcoded filter such as:
+
+```ts
+.filter(route => route.name !== 'profile/[username]')
+```
+
+for every bad route.
+
+Fix the navigation architecture properly.
+
+The custom tab bar must derive its visible tabs from an explicit intended tab configuration.
+
+Prefer a single source of truth similar in concept to:
+
+```ts
+const TAB_CONFIG = [
+  {
+    name: 'home',
+    label: 'Home',
+    icon: ...
+  },
+  {
+    name: 'capture',
+    label: 'Capture',
+    icon: ...
+  }
+];
+```
+
+The actual implementation must match the repository's architecture.
+
+Do not invent route names.
+
+Audit the real route structure first.
+
+The custom tab bar should render ONLY routes intentionally configured as primary tabs.
+
+Internal navigation state must not automatically determine the list of visible tab buttons.
+
+══════════════════════════════
+SECONDARY PROBLEM — MOBILE LAYOUT IS SMUSHED
+══════════════════════════════
+
+The app is designed reasonably on paper but looks badly compressed and broken on a real Android device.
+
+The screenshot shows:
+
+* tab labels wrapping into multiple lines
+* route names overflowing
+* tab items competing for horizontal space
+* text appearing cramped
+* poor spacing
+* inconsistent alignment
+* bottom navigation taking excessive vertical space
+* content sitting too close to navigation boundaries
+* typography that appears awkwardly scaled
+* UI elements not adapting correctly to narrow phone widths
+
+Audit the ENTIRE mobile UI for real-device responsiveness.
+
+Do not optimize only for Replit's browser preview.
+
+The primary target is an actual mobile device.
+
+Test layouts conceptually against narrow Android phone widths.
+
+══════════════════════════════
+UI AUDIT SCOPE
+══════════════════════════════
+
+Audit every major screen:
+
+* Home / Dashboard
+* Capture
+* Ideas
+* AI
+* Trends
+* Community
+* Messages
+* Profile
+* Settings
+* Search
+* Authentication
+* Public profiles
+* Idea details
+* Any nested screens
+
+Inspect:
+
+* SafeAreaView usage
+* useSafeAreaInsets
+* Status bar spacing
+* Bottom navigation spacing
+* KeyboardAvoidingView
+* ScrollView
+* FlatList
+* flexbox constraints
+* fixed widths
+* fixed heights
+* minWidth
+* maxWidth
+* `numberOfLines`
+* `flexShrink`
+* `flexGrow`
+* `flexWrap`
+* font sizes
+* line heights
+* padding
+* margins
+* icon sizing
+* touch targets
+* Android navigation bar spacing
+* device width assumptions
+
+Find every component likely to break on a narrow Android screen.
+
+══════════════════════════════
+CAPTURE SCREEN
+══════════════════════════════
+
+The Capture screen functionality is good.
+
+DO NOT remove:
+
+* Text capture
+* Draft recovery
+* Local saving indicator
+* Phase 3 Camera placeholder
+* Phase 3 Voice placeholder
+* Idea persistence
+
+But improve the visual layout.
+
+The current screen should feel like a polished production SaaS mobile application.
+
+Specifically ensure:
+
+1. Header spacing is clean.
+2. The title does not feel oversized relative to the device.
+3. Subtitle spacing is consistent.
+4. Sync/local-save status does not look cramped.
+5. Text / Camera / Voice mode buttons fit cleanly on small devices.
+6. Disabled Phase 3 modes look intentionally disabled, not broken.
+7. Form labels are aligned consistently.
+8. Input fields have proper height and internal padding.
+9. Placeholder text does not clip.
+10. The Save Idea button remains accessible.
+11. Bottom content is not hidden behind the tab bar.
+12. The screen scrolls naturally when required.
+
+══════════════════════════════
+DESIGN REQUIREMENTS
+══════════════════════════════
+
+Preserve the existing Kri8 visual identity:
+
+* Dark theme
+* Existing accent colors
+* Existing product identity
+* Existing glass / premium feel where applicable
+
+Do NOT randomly redesign Kri8 into a completely different application.
+
+This is a UI POLISH AND RESPONSIVE LAYOUT FIX.
+
+The goal is:
+
+"Same Kri8 identity, but professional mobile execution."
+
+The app should feel intentional, spacious, and premium.
+
+══════════════════════════════
+NAVIGATION ARCHITECTURE REQUIREMENTS
+══════════════════════════════
+
+Audit the Expo Router architecture.
+
+The desired architecture should clearly separate:
+
+PRIMARY TAB SCREENS
+
+from
+
+NESTED / STACK SCREENS
+
+For example conceptually:
+
+```text
+app/
+├── (tabs)/
+│   ├── _layout.tsx
+│   ├── home.tsx
+│   ├── capture.tsx
+│   ├── ai.tsx
+│   ├── community.tsx
+│   └── profile.tsx
+│
+├── idea/
+│   └── [id].tsx
+│
+├── profile/
+│   └── [username].tsx
+│
+├── messages/
+│   └── [conversationId].tsx
+│
+└── search/
+    └── index.tsx
+```
+
+THIS IS ONLY A CONCEPTUAL EXAMPLE.
+
+Do not restructure files blindly to match this example.
+
+First inspect the actual repository.
+
+Then propose the smallest correct architectural change that ensures:
+
+* primary tabs are explicit
+* detail screens are not tabs
+* dynamic routes are not tabs
+* hidden routes are not tabs
+* navigation transitions still work
+* deep links still work
+* existing functionality remains intact
+
+══════════════════════════════
+CRITICAL — READ ONLY FIRST
+══════════════════════════════
+
+Before modifying ANY files:
+
+STEP 1 — Audit
+
+Inspect:
+
+* all Expo Router layouts
+* all route groups
+* all custom navigation components
+* TabBar.tsx
+* all `(tabs)` routes
+* dynamic routes
+* `href: null` usage
+* nested navigation
+* SafeArea usage
+* responsive styles
+* fixed dimensions
+* typography styles
+
+STEP 2 — Root Cause Report
+
+Explain EXACTLY:
+
+1. Why internal routes are appearing in the bottom tab bar.
+2. Which files cause the problem.
+3. Whether the problem is:
+
+   * custom TabBar logic
+   * route placement
+   * Expo Router configuration
+   * nested route structure
+   * or multiple issues.
+4. Which routes are supposed to be primary tabs.
+5. Which routes must become stack/detail routes.
+6. Why the UI is becoming compressed on a real Android device.
+
+STEP 3 — Files Requiring Changes
+
+List every file requiring modification.
+
+For each file explain:
+
+* what is wrong
+* why it is wrong
+* what will change
+* whether functionality is affected
+
+STEP 4 — Proposed Architecture
+
+Show the corrected navigation architecture.
+
+Clearly separate:
+
+PRIMARY NAVIGATION
+
+DETAIL SCREENS
+
+HIDDEN SCREENS
+
+AUTHENTICATION SCREENS
+
+Do not make assumptions about existing routes without inspecting them.
+
+STEP 5 — EXACT DIFFS
+
+Show the exact diffs that will be applied.
+
+Include:
+
+* TabBar changes
+* route/layout changes
+* responsive styling changes
+* SafeArea changes
+* screen layout changes
+
+══════════════════════════════
+STOP AFTER THE DIFFS
+══════════════════════════════
+
+DO NOT MODIFY ANY FILES.
+
+DO NOT CREATE A CHECKPOINT.
+
+DO NOT REFACTOR.
+
+DO NOT DELETE ROUTES.
+
+DO NOT MOVE FILES.
+
+DO NOT CHANGE NAVIGATION.
+
+DO NOT CHANGE AUTHENTICATION.
+
+STOP after providing:
+
+1. Audit
+2. Root cause
+3. Broken files
+4. Proposed navigation architecture
+5. Exact diffs
+
+I will review the plan before approving implementation.
+
+══════════════════════════════
+NON-NEGOTIABLE — DO NOT BREAK WORKING FEATURES
+══════════════════════════════
+
+The following are already working and must remain working:
+
+* Clerk sign up
+* Clerk email verification
+* Clerk sign in
+* Clerk sign out
+* Session persistence
+* Secure token storage
+* Persistent user ideas
+* Database user isolation
+* Biometric authentication
+* API authentication
+* Standalone preview APK
+* Camera Phase 3 placeholder
+* Voice Phase 3 placeholder
+* Draft recovery
+* Existing backend integration
+* Deep-link functionality, unless a confirmed bug requires a fix
+
+Do NOT replace working Clerk authentication.
+
+Do NOT add custom authentication.
+
+Do NOT add mock users.
+
+Do NOT add demo mode.
+
+Do NOT add fake data.
+
+Do NOT replace the backend.
+
+Do NOT change the database architecture unless absolutely necessary.
+
+This task is focused on:
+
+1. fixing the broken Expo Router navigation/tab architecture
+2. fixing real-device responsive layouts
+3. polishing the existing mobile UI into a production-quality interface
+
+Prioritize correctness over speed.
+
+Do a COMPLETE READ-ONLY AUDIT first.
+
+If the intended navigation architecture is uncertain, STOP and report the uncertainty instead of guessing.
+
+DO NOT EDIT UNTIL I APPROVE THE EXACT DIFFS.
