@@ -1,0 +1,445 @@
+You are continuing work on the Kri8 mobile app in this existing repository.
+
+IMPORTANT: Do not restart the architecture, redo Sprint 2, or make unrelated changes. Continue from the current repository state.
+
+## CURRENT SITUATION
+
+Kri8 Mobile is an Expo SDK 54 / React Native app in:
+
+`kri8-main/artifacts/kri8-mobile`
+
+The project uses:
+
+* Expo managed workflow / CNG
+* pnpm monorepo
+* Clerk for authentication
+* PostgreSQL-backed API
+* EAS Build for Android APK builds
+
+A previous EAS Android build failed during Gradle packaging because of a duplicate entry:
+
+`META-INF/versions/9/OSGI-INF/MANIFEST.MF`
+
+The conflict was reported between:
+
+* `com.squareup.okhttp3:logging-interceptor:5.4.0`
+* `org.jspecify:jspecify:1.0.0`
+
+The mobile project was updated with `expo-build-properties` and this Android packaging exclusion:
+
+```json
+"packagingOptions": {
+  "excludes": [
+    "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
+  ]
+}
+```
+
+A fresh EAS build was then started.
+
+The build URL previously reported was:
+
+`https://expo.dev/accounts/simys-team/projects/kri8-mobile/builds/b1452c96-4423-44e9-99fa-3ffdbb084a30`
+
+The last confirmed status was:
+
+`IN_PROGRESS`
+
+DO NOT assume this build succeeded or failed.
+
+---
+
+# PHASE 1 — CHECK THE ACTUAL EAS BUILD
+
+First, inspect the current EAS build status.
+
+Determine whether it is:
+
+* IN_PROGRESS
+* FINISHED
+* ERRORED
+* CANCELED
+
+If it failed:
+
+1. Retrieve the actual build logs.
+2. Identify the exact failing Gradle/Xcode/build step.
+3. Do not guess.
+4. Confirm whether the duplicate manifest conflict still exists.
+5. If a new error exists, explain its root cause separately.
+
+If it succeeded:
+
+1. Confirm that the status is actually `FINISHED`.
+2. Confirm the artifact is an installable Android APK.
+3. Provide the artifact URL.
+4. Do not claim the application itself is fully functional merely because the APK built successfully.
+
+---
+
+# PHASE 2 — AUDIT THE CURRENT MOBILE AUTHENTICATION
+
+Before making changes, inspect the CURRENT authentication implementation.
+
+The mobile app must use Clerk as the ONLY authentication authority.
+
+Inspect:
+
+* `app/_layout.tsx`
+* `app/(auth)/sign-in.tsx`
+* `app/(auth)/sign-up.tsx`
+* any auth providers
+* Clerk configuration
+* secure token storage
+* API authentication/token injection
+
+Determine whether the mobile app is using:
+
+A. Custom UI backed correctly by Clerk native hooks
+
+or
+
+B. A custom authentication system/fallback
+
+The following observed bug must be specifically investigated:
+
+1. User signs up.
+2. Clerk sends a verification email.
+3. User enters the verification code.
+4. The app spinner stops without entering the authenticated app.
+5. Clicking verification again says "already verified".
+6. Attempting to sign in afterward says the account cannot be found.
+
+Trace the COMPLETE Clerk sign-up lifecycle.
+
+Verify:
+
+```text
+signUp.create()
+→ prepareEmailAddressVerification()
+→ attemptEmailAddressVerification()
+→ result.status
+→ createdSessionId
+→ setActive()
+→ Clerk session becomes active
+→ isSignedIn becomes true
+→ AuthGuard redirects to authenticated tabs
+```
+
+Do not merely inspect whether these functions exist.
+
+Verify that every state is handled correctly.
+
+Specifically check:
+
+* Clerk `isLoaded`
+* incomplete sign-up states
+* missing `createdSessionId`
+* failed `setActive()`
+* already-verified state
+* duplicate submission prevention
+* Clerk errors
+* session activation
+* navigation after Clerk state changes
+
+Also inspect the sign-in lifecycle.
+
+Verify:
+
+```text
+signIn.create()
+→ result.status
+→ createdSessionId
+→ setActive()
+→ authenticated Clerk state
+```
+
+If Clerk returns an incomplete state, the UI must explain what is required. It must never silently stop loading.
+
+IMPORTANT:
+
+Do NOT create:
+
+* local authentication
+* fake users
+* mock sessions
+* demo mode
+* fallback authentication
+* local `isAuthenticated` flags that compete with Clerk
+
+Clerk must remain the single source of truth.
+
+---
+
+# PHASE 3 — CHECK ENVIRONMENT CONFIGURATION
+
+Verify the actual environment variable names consumed by the mobile app.
+
+The Expo mobile client should use:
+
+`EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`
+
+Do not expose its value.
+
+Verify that:
+
+* the variable is present in the EAS environment used for the APK build
+* the app actually reads that exact variable name
+* the publishable key is not overwritten by another workflow variable
+* the production/preview build receives the variable
+* no Clerk secret key is shipped to the mobile application
+
+Also verify backend configuration separately.
+
+Do not confuse:
+
+`VITE_CLERK_PUBLISHABLE_KEY`
+
+with:
+
+`EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`
+
+They belong to different frontend environments.
+
+---
+
+# PHASE 4 — VERIFY API AUTHENTICATION
+
+Inspect how the mobile app sends Clerk tokens to the API.
+
+Verify that authenticated requests:
+
+1. Obtain a token from the active Clerk session.
+2. Send it in the expected Authorization header.
+3. Do not send requests using fake user IDs.
+4. Do not depend on demo users.
+5. Correctly handle 401 and 403 responses.
+
+Check at least these flows:
+
+* ideas
+* trends
+* search
+* AI assistant
+* profile
+* messages
+
+Do not modify the API contract unless a real mismatch is proven.
+
+---
+
+# PHASE 5 — VERIFY SPRINT 2 FEATURES
+
+Verify the CURRENT implementation of:
+
+### Biometric lock
+
+Check:
+
+* lock on background/foreground transition
+* enrollment checks
+* cancellation
+* authentication failure
+* persistence
+* no authentication bypass
+
+### Universal Search
+
+Verify:
+
+* only supported backend categories are exposed
+* Ideas
+* People/Community
+* Trends
+* cancellation works
+* stale responses cannot overwrite newer results
+* loading state clears even if Clerk token retrieval fails
+* empty/error states work
+
+### Smart Capture
+
+Verify:
+
+* text capture
+* URL detection
+* media detection
+* camera flow
+* voice flow
+* correct idea API payload
+
+### Draft Recovery
+
+Verify:
+
+* draft persistence
+* restore
+* discard
+* successful submission cleanup
+* unmount/debounce cleanup
+* recovered drafts do not overwrite text already entered
+
+### AI Assistant
+
+Verify:
+
+* `/trends/inspire`
+* `/trends/analyze`
+
+Use the actual backend contract:
+
+* `title`
+* optional `notes`
+
+Verify stale requests cannot overwrite newer suggestions.
+
+### Offline Queue
+
+Verify queued operations include all supported mutations that can occur offline, including where applicable:
+
+* create
+* update
+* delete
+* mark used
+* branch creation
+
+Verify:
+
+* ordered replay
+* retry handling
+* 4xx permanent failure handling
+* reconnect handling
+* foreground resume
+* queue isolation/security across account changes
+
+A mutation belonging to one authenticated user must never replay under another user's account.
+
+---
+
+# PHASE 6 — VALIDATE WITHOUT MAKING UNRELATED CHANGES
+
+Run the existing relevant checks.
+
+At minimum:
+
+```bash
+pnpm --filter @workspace/kri8-mobile run typecheck
+```
+
+Then validate Expo configuration.
+
+Run appropriate Expo export/bundle checks where supported.
+
+Run:
+
+```bash
+git diff --check
+```
+
+Do not install random dependencies.
+
+Do not upgrade Expo packages unless there is a demonstrated compatibility problem.
+
+If Expo reports patch-version compatibility warnings, report them separately from actual failures.
+
+---
+
+# PHASE 7 — RUNTIME TESTING
+
+If the EAS build finishes successfully:
+
+Do not stop at "APK built successfully."
+
+Determine what can actually be tested.
+
+At minimum verify:
+
+* app launches
+* Clerk initializes
+* setup screen does not appear when the key is correctly configured
+* sign-up lifecycle
+* email verification lifecycle
+* account creation actually completes
+* sign-in
+* session persistence after app restart
+* sign-out
+* redirect/navigation after authentication state changes
+
+If real device interaction is required and cannot be performed from the environment, clearly distinguish:
+
+### Verified automatically
+
+### Requires manual device testing
+
+Do NOT mark manual-only functionality as verified.
+
+---
+
+# OUTPUT FORMAT
+
+## STEP 1 — EAS BUILD STATUS
+
+Give the exact current status.
+
+If finished, provide the APK artifact.
+
+If failed, provide the actual root cause from logs.
+
+## STEP 2 — AUTHENTICATION AUDIT
+
+Explain exactly whether authentication is:
+
+* Clerk-only
+* Clerk with custom UI
+* multiple/fallback auth systems
+
+Explain the exact cause of the broken sign-up/sign-in flow, if still present.
+
+## STEP 3 — ENVIRONMENT AUDIT
+
+Confirm variable names and whether the EAS build environment receives the required mobile Clerk key.
+
+Never print secret values.
+
+## STEP 4 — API AUTH AUDIT
+
+Confirm how Clerk tokens reach the backend.
+
+## STEP 5 — SPRINT 2 VERIFICATION
+
+For each feature, mark:
+
+* VERIFIED
+* IMPLEMENTED BUT NOT RUNTIME VERIFIED
+* FAILED
+* REQUIRES MANUAL DEVICE TESTING
+
+## STEP 6 — PROBLEMS FOUND
+
+Rank every problem:
+
+* CRITICAL
+* HIGH
+* MEDIUM
+* LOW
+
+## STEP 7 — PROPOSED FIXES
+
+Show the exact files requiring changes.
+
+Explain every change.
+
+Show exact diffs BEFORE editing anything.
+
+## STOP
+
+Do NOT modify any files until I explicitly approve the proposed fixes and diffs.
+
+Prioritize correctness over speed.
+
+Do not guess.
+
+Do not claim the APK or authentication is fully functional without evidence.
+
+Do not restart Sprint 2.
+
+Continue from the existing repository state and preserve all existing functionality.
