@@ -5,6 +5,7 @@ import {
   useLocation,
   Router as WouterRouter,
   Redirect,
+  Link,
 } from "wouter";
 import {
   ClerkProvider,
@@ -33,6 +34,7 @@ import TrendsPage from "./pages/trends";
 import ExportsPage from "./pages/exports";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { AuthSignInPage, AuthSignUpPage } from "./pages/auth";
+import TermsPage from "./pages/terms";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -129,6 +131,7 @@ function DevKeysMissing() {
 function DevRoutes() {
   return (
     <Switch>
+      <Route path="/terms" component={TermsPage} />
       <Route path="/sign-in/*?">
         <DevSignInPage basePath={basePath} />
       </Route>
@@ -274,6 +277,12 @@ function ClerkRoutes() {
                 Create Account
               </a>
             </div>
+            <Link
+              href="/terms"
+              className="inline-block pt-6 text-sm text-slate-500 underline-offset-4 transition-colors hover:text-slate-300 hover:underline"
+            >
+              Terms of Use
+            </Link>
           </div>
         </div>
       </Show>
@@ -282,6 +291,7 @@ function ClerkRoutes() {
 
   return (
     <Switch>
+      <Route path="/terms" component={TermsPage} />
       <Route path="/" component={HomeRedirect} />
       <Route path="/sign-in/*?">
         <AuthSignInPage />
