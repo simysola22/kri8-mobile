@@ -35,6 +35,7 @@ import ExportsPage from "./pages/exports";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { AuthSignInPage, AuthSignUpPage } from "./pages/auth";
 import TermsPage from "./pages/terms";
+import NotFound from "./pages/not-found";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -143,9 +144,8 @@ function DevRoutes() {
           <PublicProfile />
         </ErrorBoundary>
       </Route>
-      <Route>
-        <DevKeysMissing />
-      </Route>
+      <Route path="/" component={DevKeysMissing} />
+      <Route component={NotFound} />
     </Switch>
   );
 }
@@ -361,11 +361,7 @@ function ClerkRoutes() {
           <PublicProfile />
         </ErrorBoundary>
       </Route>
-      <Route>
-        <div className="flex min-h-screen items-center justify-center bg-[#0d1117] text-white">
-          404 - Not Found
-        </div>
-      </Route>
+      <Route component={NotFound} />
     </Switch>
   );
 }
