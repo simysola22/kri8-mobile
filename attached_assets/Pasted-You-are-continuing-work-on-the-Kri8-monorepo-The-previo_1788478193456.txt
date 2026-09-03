@@ -1,0 +1,146 @@
+You are continuing work on the Kri8 monorepo.
+
+The previous Trend/AI reliability phase has already been completed and verified. Do NOT revert, replace, or redo those changes.
+
+Completed work includes:
+
+* Explicit trend provider validation
+* No silent production fallback to mock trends
+* Honest trend metadata and freshness handling
+* Metric quality labels
+* YouTube and mock provider improvements
+* AI response validation
+* Improved backend error handling
+* Multi-keyword inspiration handling
+* Retryable web and mobile AI/trend error states
+* Web and mobile trend metadata displays
+* Updated OpenAPI schemas and regenerated API clients
+* Mobile splash-screen handling
+* Input trimming and safer API error parsing
+
+These changes are already verified and should remain intact.
+
+## CURRENT TASK
+
+There are separate, unrelated existing workspace typecheck issues involving:
+
+* Calendar components
+* Spinner components
+* Messages components
+
+Your task is to audit and fix ONLY these remaining typecheck issues.
+
+## IMPORTANT RULES
+
+Before modifying anything:
+
+1. Run the relevant workspace typecheck commands.
+2. Capture every current error exactly.
+3. Identify the file, line, and root cause of each error.
+4. Determine whether each error is:
+
+   * a real TypeScript bug
+   * an incorrect type definition
+   * an outdated import
+   * an API contract mismatch
+   * a component prop mismatch
+   * dead/obsolete code
+   * a configuration issue
+
+DO NOT immediately modify files.
+
+## PHASE 1 — AUDIT
+
+Produce:
+
+### Step 1 — Current Typecheck Results
+
+List every remaining error.
+
+For each error include:
+
+* Workspace/package
+* File
+* Line number
+* TypeScript error
+* Root cause
+* Whether it affects runtime behavior or compilation only
+
+### Step 2 — Files Requiring Changes
+
+List only files genuinely required to fix the errors.
+
+Do not include files unnecessarily.
+
+### Step 3 — Fix Plan
+
+Explain the smallest correct fix for each error.
+
+Do not refactor unrelated code.
+
+Do not change:
+
+* Clerk authentication
+* Trend provider architecture
+* AI Studio logic
+* OpenAPI contracts unless directly required by one of these errors
+* Mobile startup/splash logic
+* Camera Capture
+* Voice Capture
+* Existing Phase 3 functionality
+
+## PHASE 2 — SHOW DIFFS
+
+Show the EXACT proposed diffs before editing.
+
+For every proposed deletion, explain:
+
+* Why the code is obsolete
+* Why deleting it will not remove functionality
+
+**STOP HERE.**
+
+DO NOT MODIFY ANY FILE UNTIL THE PROPOSED DIFFS HAVE BEEN SHOWN.
+
+## AFTER APPROVAL
+
+After I explicitly approve:
+
+1. Apply the fixes incrementally.
+2. Run typecheck after each logical group of fixes.
+3. Fix only errors within the approved scope.
+4. Do not suppress errors using:
+
+   * `any`
+   * `@ts-ignore`
+   * `@ts-expect-error`
+   * disabling strict TypeScript settings
+   * weakening tsconfig rules
+
+Prefer proper types and correct architecture.
+
+## FINAL VERIFICATION
+
+After implementation, run all relevant checks:
+
+* Affected workspace typechecks
+* API server typecheck if affected
+* Mobile typecheck if affected
+* Web typecheck/build if affected
+* `git diff --check`
+
+Report:
+
+* Every command run
+* Pass/fail result
+* Remaining errors, if any
+* Files modified
+* Why each file was modified
+
+## SUCCESS CRITERIA
+
+The goal is to resolve the remaining Calendar, Spinner, and Messages typecheck issues while preserving all existing Kri8 functionality and without disturbing the recently completed Trend/AI reliability work.
+
+Prioritize correctness over speed.
+
+If any fix requires an architectural assumption that cannot be proven from the repository, STOP and ask me before proceeding.
