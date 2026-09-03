@@ -6,6 +6,11 @@
  * OpenAPI spec version: 0.2.0
  */
 
-export interface HealthStatus {
-  status: string;
-}
+export type ListIdeasParams = {
+search?: string;
+is_used?: boolean;
+/**
+ * @nullable
+ */
+parent_id?: number | null;
+};
