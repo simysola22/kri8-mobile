@@ -1,9 +1,9 @@
 import React, { useEffect } from 'react';
-import { View, Text, Platform, StyleSheet, AppState, Alert } from 'react-native';
+import { View, Text, Platform, StyleSheet, AppState, Alert, Animated, Easing } from 'react-native';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
-import { ClerkProvider, ClerkLoaded, useAuth, useUser } from '@clerk/expo';
+import { ClerkProvider, ClerkLoaded, ClerkLoading, useAuth, useUser } from '@clerk/expo';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -19,6 +19,7 @@ import { GlassButton } from '@/components/ui/GlassButton';
 import { clearQueue } from '@/stores/offlineQueue';
 
 const PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ?? '';
+const KRI8_MARK = require('../assets/kri8-mark.png');
 
 // Keep the native splash visible until Clerk has loaded and the app tree is ready.
 void SplashScreen.preventAutoHideAsync().catch(() => undefined);
@@ -42,6 +43,40 @@ function SetupScreen() {
           this setup is incomplete.
         </Text>
       </View>
+    </View>
+  );
+}
+
+function BrandLoader() {
+  const scale = React.useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    void SplashScreen.hideAsync();
+
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(scale, {
+          toValue: 1.08,
+          duration: 900,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: Platform.OS !== 'web',
+        }),
+        Animated.timing(scale, {
+          toValue: 1,
+          duration: 900,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: Platform.OS !== 'web',
+        }),
+      ]),
+    );
+    pulse.start();
+
+    return () => pulse.stop();
+  }, [scale]);
+
+  return (
+    <View style={styles.loading}>
+      <Animated.Image source={KRI8_MARK} resizeMode="contain" style={[styles.loadingMark, { transform: [{ scale }] }]} />
     </View>
   );
 }
@@ -257,8 +292,11 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <ClerkProvider tokenCache={tokenCache} publishableKey={PUBLISHABLE_KEY}>
+          <ClerkLoading>
+            <BrandLoader />
+          </ClerkLoading>
           <ClerkLoaded>
-              <ReadyApp />
+            <ReadyApp />
           </ClerkLoaded>
         </ClerkProvider>
       </SafeAreaProvider>
@@ -274,6 +312,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 32,
     gap: 12,
+  },
+  loading: {
+    flex: 1,
+    backgroundColor: '#0D0D1A',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingMark: {
+    width: 160,
+    height: 160,
   },
   setupEmoji: {
     fontSize: 48,

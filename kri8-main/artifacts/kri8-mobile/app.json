@@ -14,8 +14,12 @@
     "newArchEnabled": true,
     "backgroundColor": "#0D0D1A",
     "splash": {
+      "image": "./assets/kri8-mark.png",
+      "imageWidth": 160,
+      "resizeMode": "contain",
       "backgroundColor": "#0D0D1A"
     },
+    "icon": "./assets/kri8-mark.png",
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "space.kri8.mobile",
@@ -31,6 +35,7 @@
     },
     "android": {
       "adaptiveIcon": {
+        "foregroundImage": "./assets/kri8-mark.png",
         "backgroundColor": "#0D0D1A"
       },
       "package": "space.kri8.mobile",
