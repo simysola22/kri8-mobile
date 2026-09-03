@@ -1,0 +1,941 @@
+You are acting as a senior mobile SaaS engineer, AI systems architect, backend engineer, and Expo/React Native specialist.
+
+You are working on **Kri8 Mobile**, the mobile application for the Kri8 AI-powered creator workspace.
+
+The application is now functional enough for real-device testing.
+
+Confirmed working functionality includes:
+
+* Standalone Android APK builds successfully
+* Clerk authentication works
+* Sign up works
+* Sign in works
+* Sign out works
+* Sessions persist
+* User ideas persist after signing out and signing back in
+* Database/API connectivity works
+* Biometric authentication works
+* Mobile UI has received an initial refinement pass
+* Navigation has six intended tabs
+* Camera and voice capture are intentionally planned for Phase 3 and currently display that status
+
+Before beginning Phase 3, we are performing a **POLISH AND CORRECTNESS AUDIT**.
+
+DO NOT MODIFY ANY FILES.
+
+DO NOT APPLY FIXES.
+
+DO NOT REFACTOR.
+
+DO NOT INSTALL PACKAGES.
+
+DO NOT CREATE PLACEHOLDER DATA.
+
+FIRST investigate the actual implementation and produce a complete evidence-based report.
+
+Do not assume that a feature works because UI exists.
+
+Trace the frontend request, API client, backend route, service, database/cache/provider, response, and final UI rendering.
+
+════════════════════════════════════
+PRIMARY ISSUES TO AUDIT
+════════════════════════════════════
+
+There are five major areas:
+
+1. Missing Android app icon
+2. Poor/default application startup/loading experience
+3. AI Studio "Get Inspired" producing weak or incorrectly interpreted ideas
+4. AI Studio "Analyze Idea" not functioning correctly
+5. Trends/"Trending Now" appearing stale and potentially not connected correctly to live trend data
+
+Each issue must be investigated separately.
+
+════════════════════════════════════
+SECTION 1 — ANDROID APP ICON AUDIT
+════════════════════════════════════
+
+Audit the complete Expo icon configuration.
+
+The installed Kri8 Android application currently does not appear to have the intended proper app icon in the Android launcher/app drawer.
+
+Investigate:
+
+* app.json
+* app.config.*
+* icon configuration
+* adaptiveIcon configuration
+* foreground image
+* background image
+* Android resource generation
+* splash assets
+* asset paths
+* whether referenced files actually exist
+* whether assets meet Expo requirements
+* whether the icon is accidentally transparent or invalid
+* whether the icon is being replaced by a default Expo/Android icon
+* whether EAS is using stale configuration
+* whether the standalone APK actually contains the configured icon resources
+
+IMPORTANT:
+
+I already have a specific Kri8 logo/icon asset intended for the app.
+
+Find where the project currently stores or references that intended icon.
+
+Do NOT invent a replacement icon.
+
+Do NOT generate a new icon.
+
+Report:
+
+1. Current configured icon paths
+2. Whether each asset exists
+3. Whether the intended Kri8 icon is currently used
+4. Why the installed APK does not display the correct icon
+5. Exact files requiring changes
+6. Exact proposed configuration changes
+
+If the intended icon asset cannot be found, say so clearly.
+
+Do not guess.
+
+════════════════════════════════════
+SECTION 2 — APP STARTUP / SPLASH / LOADING AUDIT
+════════════════════════════════════
+
+When launching the installed standalone APK, the user currently sees:
+
+* a white screen
+* a strange/default-looking loader
+* an unattractive startup experience
+
+This is unacceptable for the production Kri8 application.
+
+Audit the entire startup sequence.
+
+Trace:
+
+Android launch
+→ native splash screen
+→ Expo startup
+→ JavaScript bundle initialization
+→ ClerkProvider initialization
+→ session/token cache loading
+→ authentication state loading
+→ biometric state loading
+→ route protection
+→ first visible screen
+
+Inspect:
+
+* app.json
+* splash configuration
+* Expo splash screen plugin configuration
+* root app layout
+* loading components
+* ActivityIndicator usage
+* custom loading screens
+* Clerk loading states
+* font loading states
+* asset loading states
+* biometric initialization
+* authentication guard
+* any blank-screen conditions
+
+Determine exactly which component or native screen produces the current white screen and weird loader.
+
+Audit for:
+
+* default Expo splash behavior
+* missing splash asset
+* incorrectly configured splash plugin
+* a white background flash
+* React rendering before the intended background/theme loads
+* default ActivityIndicator shown during auth loading
+* multiple sequential loading screens
+* unnecessary startup delays
+* loading-state race conditions
+* route redirects before Clerk finishes loading
+* route redirects before biometric checks finish
+* theme flash between splash and application
+* Android-specific startup differences
+
+The desired experience is:
+
+Kri8 app icon
+→ polished Kri8 branded splash/loading experience
+→ smooth transition into app
+→ Clerk/auth state resolved
+→ biometric check when appropriate
+→ Landing/authenticated screen
+
+The startup experience must feel intentional.
+
+Do NOT implement it yet.
+
+Report:
+
+1. Exact current startup sequence
+2. Exact cause of the white flash
+3. Exact cause of the weird loader
+4. Every loading state currently involved
+5. Whether loading is duplicated
+6. Whether any loading states can deadlock
+7. Recommended single startup state architecture
+8. Files requiring modification
+9. Exact proposed changes
+
+════════════════════════════════════
+SECTION 3 — AI STUDIO: GET INSPIRED AUDIT
+════════════════════════════════════
+
+This is a high-priority intelligence-quality issue.
+
+The AI Studio has a "Get Inspired" feature.
+
+Observed behavior:
+
+If the user enters a multi-word topic such as:
+
+"World Cup"
+
+the generated ideas appear to respond mainly to:
+
+"World"
+
+instead of understanding the complete phrase:
+
+"World Cup"
+
+This may be caused by frontend input handling, request serialization, backend parsing, prompt construction, tokenization, caching, or the AI provider.
+
+DO NOT ASSUME THE AI MODEL IS THE PROBLEM.
+
+Trace the full pipeline.
+
+Audit:
+
+Mobile UI input
+→ state management
+→ debounce logic
+→ request construction
+→ API client
+→ Clerk token
+→ backend route
+→ validation
+→ request body parsing
+→ trend/context retrieval
+→ prompt construction
+→ AI provider request
+→ AI response
+→ response parsing
+→ normalization
+→ mobile rendering
+
+Find exactly where a multi-word query could become:
+
+"World"
+
+instead of:
+
+"World Cup"
+
+Check specifically for:
+
+* `.split(" ")`
+* `[0]`
+* `.trim()`
+* destructuring errors
+* incorrect URL/query parameter serialization
+* request schemas expecting one token
+* backend extracting the first word
+* first-element array access
+* caching by first token
+* search keys based only on the first word
+* debounced requests firing on partial input
+* stale-request protection accidentally accepting an older request
+* AbortController behavior
+* race conditions where "World" completes after "World Cup"
+* AI prompt templates using only a partial topic
+* trend lookup receiving only the first word
+* query normalization that destroys phrase meaning
+
+The feature also has a **QUALITY problem**.
+
+Generated ideas currently feel repetitive and generic.
+
+Examples of repetitive patterns include ideas structurally similar to:
+
+* How to automate your workflow
+* Psychology of work
+* Productivity-related generic topics
+
+The user expects genuinely useful creator ideas tailored to the exact topic.
+
+For example, for "World Cup", generated ideas should understand the complete subject and explore genuinely relevant creative angles.
+
+Audit:
+
+* AI system prompt
+* developer prompt
+* user prompt
+* prompt templates
+* hardcoded fallback ideas
+* deterministic examples
+* cached outputs
+* mock trend context
+* few-shot examples
+* output parser
+* post-processing
+* temperature/model settings if configured
+* repeated generic fallback structures
+* whether all ideas are generated from one generic template
+
+Determine:
+
+1. Is the complete user phrase reaching the AI?
+2. Is the correct phrase reaching trend/search retrieval?
+3. Is stale request handling returning an older partial query?
+4. Are outputs actually generated dynamically?
+5. Are there hardcoded or fallback ideas?
+6. Is the prompt too generic?
+7. Is the AI being given enough context?
+8. Why outputs have repetitive structure?
+9. Whether caching is returning old results
+10. Whether results are truly specific to the entered topic
+
+Also audit idea quality against this principle:
+
+Each generated idea should ideally contain a distinct creative angle rather than merely rephrasing the same concept.
+
+For example, idea generation should explore different angles such as:
+
+* controversy/debate
+* history
+* psychology
+* strategy
+* hidden facts
+* business/economics
+* cultural impact
+* predictions
+* storytelling
+* comparisons
+* misconceptions
+* behind-the-scenes systems
+
+BUT these are examples of diversity dimensions, not mandatory templates.
+
+Do not hardcode these categories unless the existing architecture justifies it.
+
+The system should remain genuinely AI-driven and context-aware.
+
+Report the exact cause of the phrase truncation and the exact cause of repetitive ideas separately.
+
+════════════════════════════════════
+SECTION 4 — AI STUDIO: ANALYZE IDEA AUDIT
+════════════════════════════════════
+
+Observed behavior:
+
+The user enters an idea and presses:
+
+"Analyze"
+
+but apparently nothing happens.
+
+This is a functional failure.
+
+Audit the complete flow.
+
+Trace:
+
+Analyze button press
+→ button handler
+→ validation
+→ loading state
+→ API client
+→ Clerk token retrieval
+→ request
+→ backend route
+→ validation
+→ AI/trend analysis
+→ response
+→ parser
+→ state update
+→ result UI
+
+Check:
+
+* Is the button press handler actually connected?
+* Is the button disabled unexpectedly?
+* Is loading occurring but not visible?
+* Does validation return silently?
+* Does token retrieval fail silently?
+* Is an API request actually sent?
+* Is the endpoint URL correct?
+* Is the backend route registered?
+* Does the route return?
+* Is the request body correct?
+* Does the backend expect fields different from the mobile client?
+* Is the backend returning an error that the mobile app discards?
+* Is the response parser incompatible with the backend response?
+* Is React Query state updated correctly?
+* Is a result generated but not rendered?
+* Are exceptions swallowed?
+* Is the result hidden because of conditional rendering?
+* Does the app have a loading-state dead end?
+* Does an AbortController cancel the request?
+* Does stale-request protection reject the valid response?
+* Is the endpoint reachable from the standalone Android APK?
+
+Use actual logs and code tracing where possible.
+
+DO NOT merely say "it looks correctly wired."
+
+Prove whether the request reaches the backend.
+
+Report the first exact failure point.
+
+════════════════════════════════════
+SECTION 5 — AI ANALYSIS QUALITY AND SCORING AUDIT
+════════════════════════════════════
+
+The web application previously presented idea analysis with meaningful scores/metrics such as:
+
+* Trend relevance
+* Scores out of 100
+* Other analysis dimensions
+
+The mobile app currently does not appear to provide the same meaningful analysis experience.
+
+Audit the web implementation and compare it against the mobile implementation.
+
+Find:
+
+* Web analysis API request
+* Web analysis response
+* Web response types
+* Mobile analysis API request
+* Mobile response types
+* Mobile response parser
+* Mobile result UI
+
+Determine whether:
+
+A. The mobile client calls a different endpoint
+B. The mobile client calls the same endpoint but ignores fields
+C. The backend does not return the metrics
+D. The mobile parser discards the metrics
+E. The mobile UI has no components for displaying them
+F. The web implementation itself uses hardcoded scores
+G. The score system is dynamic but mobile failed to port it
+
+Do NOT blindly copy the web UI.
+
+The goal is functional parity of intelligence and useful information, adapted properly for mobile.
+
+Audit all analysis dimensions.
+
+For every score or metric, determine:
+
+* source
+* calculation method
+* whether AI-generated
+* whether trend-data-driven
+* whether hardcoded
+* whether random
+* whether currently trustworthy
+
+This is important.
+
+DO NOT create fake "87/100" scores merely because the UI needs numbers.
+
+Any production score must have a defensible source.
+
+If the current web score system is fake, random, placeholder, or hardcoded, report that honestly.
+
+Recommend the best production architecture for idea analysis.
+
+Possible dimensions to investigate include:
+
+* trend relevance
+* originality
+* audience potential
+* timing
+* creator fit
+* hook strength
+* clarity
+* competition/saturation
+
+These are examples for investigation, not instructions to fabricate metrics.
+
+Report:
+
+1. Why mobile analysis currently does nothing
+2. Whether web analysis is truly more complete
+3. Exact fields missing from mobile
+4. Whether the existing score system is trustworthy
+5. Recommended production analysis contract
+
+════════════════════════════════════
+SECTION 6 — TRENDS / "TRENDING NOW" DATA AUDIT
+════════════════════════════════════
+
+This is another critical issue.
+
+The "Trending Now" content appears to have shown the same topics for months.
+
+The user is concerned that Kri8 may not actually be retrieving fresh TikTok-related trend data.
+
+The original goal was to work with real TikTok trend data/API capability where legitimately available.
+
+DO NOT CLAIM THAT TIKTOK API INTEGRATION EXISTS WITHOUT TRACING THE CODE.
+
+Audit the complete trend pipeline.
+
+Trace:
+
+Mobile Trends/AI UI
+→ hook/query
+→ API client
+→ backend route
+→ trend service
+→ cache
+→ provider
+→ TikTok integration or alternative source
+→ normalization
+→ database/cache
+→ response
+→ mobile UI
+
+Inspect every relevant:
+
+* environment variable
+* provider key
+* service
+* API client
+* endpoint
+* cron/refresh job
+* cache TTL
+* database table
+* seed data
+* mock data
+* fallback data
+* hardcoded trend list
+* static JSON
+* default response
+* Redis/in-memory cache
+* trend refresh schedule
+
+Determine EXACTLY where the displayed trend data comes from.
+
+Possible answers may include:
+
+* live provider API
+* TikTok official API
+* third-party trend provider
+* database snapshots
+* seed data
+* hardcoded fallback
+* mock data
+* stale cache
+
+Do not assume.
+
+For every provider/API integration found, report:
+
+* service name
+* whether it is actually called
+* endpoint/method used
+* authentication requirements
+* whether credentials are configured
+* whether calls currently succeed
+* refresh frequency
+* cache TTL
+* fallback behavior
+
+Check whether trend refresh is actually occurring.
+
+Check whether:
+
+* a scheduled job exists
+* it runs in the current deployment
+* Render/Replit environment affects the scheduler
+* free-tier sleep causes refresh failure
+* trends are only loaded at server startup
+* trends are written once and never refreshed
+* cache TTL is too long
+* cache invalidation is broken
+* frontend query caching is too aggressive
+* the same database records are always returned
+* sorting by freshness is missing
+* timestamps are stale
+
+IMPORTANT:
+
+If TikTok's API cannot legally or technically provide the exact desired trend data in the way originally assumed, explain that clearly.
+
+Do not recommend scraping protected services or bypassing access controls.
+
+Recommend legitimate alternatives where necessary.
+
+The goal is:
+
+Kri8 should show genuinely fresh, relevant trend intelligence.
+
+It must not pretend that months-old data is "trending now."
+
+Every trend item should have enough metadata to assess freshness, including where appropriate:
+
+* fetchedAt
+* observedAt
+* source
+* region
+* category
+* trend velocity/change
+* expiry/staleness logic
+
+Audit whether the current architecture supports this.
+
+Report:
+
+1. Exact source of current Trending Now items
+2. Whether they are live
+3. Whether they are stale
+4. Their timestamps/age where available
+5. Whether TikTok integration actually exists
+6. Whether credentials/configuration exist
+7. Whether provider calls succeed
+8. Cache architecture
+9. Refresh architecture
+10. Why the same trends have appeared for months
+11. Recommended production trend-data architecture
+
+════════════════════════════════════
+SECTION 7 — CROSS-FEATURE API CONTRACT AUDIT
+════════════════════════════════════
+
+Because the issues may be caused by API mismatches, audit these mobile endpoints and compare them against backend contracts:
+
+* inspiration
+* idea analysis
+* trends
+* trend search
+* related ideas
+* any AI assistant endpoint used by mobile
+
+For every endpoint report:
+
+Frontend sends:
+
+* URL
+* method
+* request body
+* query parameters
+* auth method
+
+Backend expects:
+
+* URL
+* method
+* request body
+* query parameters
+* auth method
+
+Backend returns:
+
+* success shape
+* error shape
+
+Mobile expects:
+
+* success shape
+* error shape
+
+Identify every mismatch.
+
+Specifically inspect for:
+
+* `{ data: ... }`
+* `{ items: ... }`
+* `{ result: ... }`
+* nested result objects
+* snake_case vs camelCase
+* optional fields
+* nullable fields
+* arrays vs objects
+* error response bodies discarded by client
+
+Do not modify anything.
+
+════════════════════════════════════
+SECTION 8 — STANDALONE APK VS DEVELOPMENT DIFFERENCES
+════════════════════════════════════
+
+All audits must consider the standalone Android APK environment.
+
+A feature working in Replit or web preview does NOT prove that it works in the installed APK.
+
+Check for differences involving:
+
+* EXPO_PUBLIC_API_BASE_URL
+* Clerk publishable key
+* EAS preview environment
+* production environment
+* API CORS
+* Android networking
+* HTTPS
+* deep links
+* API authentication
+* Expo environment variable embedding
+* stale EAS builds
+* environment values baked into the APK
+
+Verify which API URL the preview APK is actually configured to use.
+
+Verify that AI/trends endpoints are reachable from the standalone build configuration.
+
+════════════════════════════════════
+SECTION 9 — REQUIRED TEST EVIDENCE
+════════════════════════════════════
+
+Where technically possible, perform read-only verification.
+
+For the "World Cup" issue, inspect or log safely:
+
+Input:
+"World Cup"
+
+Then trace whether the exact complete string remains:
+
+Frontend state:
+"World Cup"
+
+Request payload:
+"World Cup"
+
+Backend received value:
+"World Cup"
+
+Trend retrieval query:
+"World Cup"
+
+AI prompt input:
+"World Cup"
+
+Final response:
+topic-specific result
+
+Do not expose secrets, tokens, or private API credentials.
+
+For Analyze Idea, prove:
+
+Button pressed
+→ handler executed
+→ request sent
+→ backend received
+→ backend response status
+→ frontend received
+→ parser result
+→ render state
+
+For Trending Now, provide evidence of:
+
+* current returned records
+* source
+* timestamps
+* cache state
+* refresh mechanism
+
+If runtime testing cannot be completed, clearly distinguish:
+
+CONFIRMED BY CODE
+CONFIRMED BY LOGS
+CONFIRMED BY RUNTIME TEST
+NOT YET VERIFIED
+
+Do not blur these categories.
+
+════════════════════════════════════
+SECTION 10 — OUTPUT FORMAT
+════════════════════════════════════
+
+Produce the final report in exactly this structure:
+
+# STEP 1 — Executive Summary
+
+Give an overall health rating for:
+
+* App icon
+* Startup experience
+* Get Inspired functionality
+* Get Inspired quality
+* Analyze Idea functionality
+* Idea analysis quality
+* Trend freshness
+* Trend provider integration
+* API contract consistency
+
+Use:
+
+WORKING
+PARTIALLY WORKING
+BROKEN
+PLACEHOLDER
+UNVERIFIED
+
+# STEP 2 — App Icon Audit
+
+Include:
+
+* current implementation
+* exact cause
+* evidence
+* affected files
+* proposed fix
+
+# STEP 3 — Startup/Splash Audit
+
+Include:
+
+* exact startup sequence
+* white-screen cause
+* loader cause
+* all loading states
+* proposed architecture
+
+# STEP 4 — Get Inspired Audit
+
+Separate clearly:
+
+A. Multi-word query/truncation issue
+B. Request race/debounce issue
+C. AI prompt/context issue
+D. Repetitive idea-quality issue
+E. Caching/fallback issue
+
+For each, provide evidence.
+
+# STEP 5 — Analyze Idea Audit
+
+Provide the exact first failure point.
+
+Show:
+
+Button
+→ Handler
+→ Request
+→ Backend
+→ AI/analysis
+→ Response
+→ Mobile parser
+→ UI
+
+Mark the failing step.
+
+# STEP 6 — Web vs Mobile Analysis Comparison
+
+Use a table comparing:
+
+* endpoint
+* request
+* response
+* scores
+* metrics
+* hooks
+* rendering
+* missing functionality
+
+# STEP 7 — Trend Data Audit
+
+State exactly:
+
+* where current trends come from
+* whether they are live
+* whether TikTok integration actually exists
+* whether data is stale
+* why repeated topics occur
+* cache/refresh architecture
+* production recommendation
+
+# STEP 8 — API Contract Problems
+
+List every confirmed frontend/backend mismatch.
+
+# STEP 9 — Files Requiring Changes
+
+For every file:
+
+* path
+* problem
+* proposed change
+* risk level
+
+Do not modify it.
+
+# STEP 10 — Recommended Fix Plan
+
+Prioritize:
+
+P0 — Must fix before Phase 3
+P1 — Should fix before release
+P2 — Quality improvement
+
+Include dependencies between fixes.
+
+# STEP 11 — Exact Proposed Diffs
+
+Show exact diffs for every proposed source-code change.
+
+Do NOT apply them.
+
+# STEP 12 — Manual Device Tests
+
+Give me a precise checklist for testing the fixes after implementation.
+
+════════════════════════════════════
+STOP CONDITION
+════════════════════════════════════
+
+After completing:
+
+* the audit
+* root-cause analysis
+* files requiring changes
+* fix plan
+* exact proposed diffs
+
+STOP.
+
+DO NOT MODIFY ANY FILES.
+
+DO NOT APPLY ANY FIXES.
+
+DO NOT BUILD A NEW APK.
+
+DO NOT CREATE A CHECKPOINT.
+
+Wait for my explicit approval.
+
+Prioritize correctness over speed.
+
+If any root cause is uncertain, say:
+
+"UNPROVEN — requires further evidence"
+
+Do not guess.
+
+The goal is to make the existing Kri8 Mobile features genuinely production-quality before Phase 3 begins:
+
+* proper Kri8 launcher icon
+* polished branded startup experience
+* reliable multi-word AI understanding
+* high-quality, diverse creator ideas
+* functioning idea analysis
+* trustworthy analysis metrics
+* genuinely fresh trend intelligence
+* no fake trend claims
+* no fake scores
+* no silent API failures
+* no regressions to working authentication, persistence, biometrics, UI, navigation, or Phase 3 planning.
