@@ -38,9 +38,27 @@ const TAB_LABELS: Record<string, string> = {
   profile: 'Profile',
 };
 
+const PRIMARY_TAB_NAMES = new Set([
+  'index',
+  'ideas',
+  'capture',
+  'community',
+  'ai',
+  'profile',
+]);
+
 export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const theme = useActiveTheme();
   const insets = useSafeAreaInsets();
+  const visibleRoutes = state.routes.filter((route) => {
+    const descriptor = descriptors[route.key];
+    const href = (descriptor?.options as { href?: string | null } | undefined)?.href;
+
+    return (
+      PRIMARY_TAB_NAMES.has(route.name) &&
+      href !== null
+    );
+  });
 
   return (
     <View style={[styles.wrapper, { paddingBottom: insets.bottom }]}>
@@ -56,7 +74,9 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
         ]}
       />
       <View style={styles.row}>
-        {state.routes.map((route, index) => {
+        {visibleRoutes.map((route) => {
+          const index = state.routes.indexOf(route);
+          const descriptor = descriptors[route.key];
           const isFocused = state.index === index;
           const isCapture = route.name === 'capture';
 
@@ -66,6 +86,10 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
               routeName={route.name}
               isFocused={isFocused}
               isCapture={isCapture}
+              accessibilityLabel={
+                descriptor?.options.tabBarAccessibilityLabel ??
+                TAB_LABELS[route.name]
+              }
               onPress={() => {
                 const event = navigation.emit({
                   type: 'tabPress',
@@ -89,10 +113,17 @@ interface TabItemProps {
   routeName: string;
   isFocused: boolean;
   isCapture: boolean;
+  accessibilityLabel?: string;
   onPress: () => void;
 }
 
-function TabItem({ routeName, isFocused, isCapture, onPress }: TabItemProps) {
+function TabItem({
+  routeName,
+  isFocused,
+  isCapture,
+  accessibilityLabel,
+  onPress,
+}: TabItemProps) {
   const theme = useActiveTheme();
   const scale = useSharedValue(1);
 
@@ -108,8 +139,8 @@ function TabItem({ routeName, isFocused, isCapture, onPress }: TabItemProps) {
     scale.value = withSpring(1, SPRING_BOUNCY);
   }, [scale]);
 
-  const icon = TAB_ICONS[routeName] ?? '●';
-  const label = TAB_LABELS[routeName] ?? routeName;
+  const icon = TAB_ICONS[routeName];
+  const label = TAB_LABELS[routeName];
   const activeColor = theme.tabBarActive;
   const inactiveColor = theme.tabBarInactive;
 
@@ -122,6 +153,9 @@ function TabItem({ routeName, isFocused, isCapture, onPress }: TabItemProps) {
           onPressOut={handlePressOut}
           activeOpacity={1}
           style={styles.captureButton}
+          accessibilityRole="tab"
+          accessibilityLabel={accessibilityLabel ?? label}
+          accessibilityState={{ selected: isFocused }}
         >
           <LinearGradient
             colors={theme.accentGradient}
@@ -131,10 +165,17 @@ function TabItem({ routeName, isFocused, isCapture, onPress }: TabItemProps) {
           >
             <Text style={styles.captureIcon}>{icon}</Text>
           </LinearGradient>
+          <Text
+            numberOfLines={1}
+            ellipsizeMode="tail"
+            style={[
+              styles.label,
+              { color: isFocused ? activeColor : inactiveColor },
+            ]}
+          >
+            {label}
+          </Text>
         </TouchableOpacity>
-        <Text style={[styles.label, { color: isFocused ? activeColor : inactiveColor }]}>
-          {label}
-        </Text>
       </Animated.View>
     );
   }
@@ -147,6 +188,9 @@ function TabItem({ routeName, isFocused, isCapture, onPress }: TabItemProps) {
         onPressOut={handlePressOut}
         activeOpacity={1}
         style={styles.tabTouchable}
+        accessibilityRole="tab"
+        accessibilityLabel={accessibilityLabel ?? label}
+        accessibilityState={{ selected: isFocused }}
       >
         <Text
           style={[
@@ -159,15 +203,17 @@ function TabItem({ routeName, isFocused, isCapture, onPress }: TabItemProps) {
         {isFocused && (
           <View style={[styles.activeDot, { backgroundColor: activeColor }]} />
         )}
+        <Text
+          numberOfLines={1}
+          ellipsizeMode="tail"
+          style={[
+            styles.label,
+            { color: isFocused ? activeColor : inactiveColor },
+          ]}
+        >
+          {label}
+        </Text>
       </TouchableOpacity>
-      <Text
-        style={[
-          styles.label,
-          { color: isFocused ? activeColor : inactiveColor },
-        ]}
-      >
-        {label}
-      </Text>
     </Animated.View>
   );
 }
@@ -197,14 +243,16 @@ const styles = StyleSheet.create({
   },
   tabItem: {
     flex: 1,
+    minWidth: 0,
     alignItems: 'center',
-    gap: 3,
   },
   tabTouchable: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: 44,
-    height: 36,
+    minWidth: 48,
+    minHeight: 52,
+    paddingHorizontal: 2,
+    gap: 3,
   },
   icon: {
     fontSize: 22,
@@ -213,6 +261,8 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
     letterSpacing: 0.2,
+    maxWidth: '100%',
+    textAlign: 'center',
   },
   activeDot: {
     position: 'absolute',
@@ -224,6 +274,9 @@ const styles = StyleSheet.create({
   captureButton: {
     alignItems: 'center',
     justifyContent: 'center',
+    minWidth: 56,
+    minHeight: 70,
+    gap: 3,
   },
   captureGradient: {
     width: 52,
