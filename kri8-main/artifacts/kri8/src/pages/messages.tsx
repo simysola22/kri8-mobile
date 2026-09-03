@@ -38,6 +38,7 @@ function useMessageSSE(myId: number | undefined, partnerId: number | undefined) 
 
   useEffect(() => {
     if (!myId || !partnerId) return;
+    const activePartnerId = partnerId;
 
     let es: EventSource | null = null;
     let cancelled = false;
@@ -52,7 +53,7 @@ function useMessageSSE(myId: number | undefined, partnerId: number | undefined) 
       if (cancelled) return;
 
       const urlObj = new URL(
-        `${BASE_URL}/api/social/messages/${partnerId}/stream`,
+        `${BASE_URL}/api/social/messages/${activePartnerId}/stream`,
         window.location.href,
       );
       if (token) urlObj.searchParams.set("token", token);
@@ -63,7 +64,7 @@ function useMessageSSE(myId: number | undefined, partnerId: number | undefined) 
         try {
           const msg: Message = JSON.parse(e.data);
           // Append the new message to the thread cache
-          const key = getGetMessagesQueryKey(partnerId, {});
+          const key = getGetMessagesQueryKey(activePartnerId, {});
           queryClient.setQueryData(key, (old: Message[] = []) => {
             if (old.some((m) => m.id === msg.id)) return old; // deduplicate
             return [...old, msg];
