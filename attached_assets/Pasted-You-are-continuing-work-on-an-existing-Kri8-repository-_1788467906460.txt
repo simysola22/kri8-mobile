@@ -1,0 +1,394 @@
+You are continuing work on an existing Kri8 repository after a previous coding environment stopped unexpectedly.
+
+IMPORTANT: DO NOT assume the repository is in its original state.
+
+A previous agent had already completed part of an approved production-polish implementation. Your first task is to inspect the CURRENT working tree and determine exactly what has already been changed, what remains unfinished, and whether any partial implementation is broken.
+
+Do not blindly reapply previous changes.
+
+════════════════════════════════════
+CURRENT CONTEXT
+════════════════════════════════════
+
+Kri8 Mobile has already been tested successfully as a standalone Android APK.
+
+Confirmed working:
+
+* Standalone APK launches without Metro or Expo Go
+* Clerk Sign Up works
+* Clerk Sign In works
+* Clerk Sign Out works
+* Session persistence works
+* User ideas persist after signing out and signing back in
+* Biometric functionality works
+* The six-tab navigation was previously improved
+* The mobile UI was previously refined and is now considered acceptable for the current phase
+* Camera and voice capture are intentionally planned for Phase 3 and should NOT be implemented now
+
+The current task is to finish polishing and correcting the existing functionality BEFORE beginning Phase 3.
+
+════════════════════════════════════
+PREVIOUS AUDIT FINDINGS
+════════════════════════════════════
+
+The previous audit identified these issues:
+
+P0:
+
+1. Production trends could silently fall back to hardcoded mock data.
+2. Static mock data could falsely appear fresh because of generated current timestamps.
+3. Get Inspired reduced multi-word ideas to a single keyword.
+4. AI provider output was not runtime-validated.
+5. AI failures were silently hidden.
+6. Analyze Idea could fail without visible feedback.
+7. Mobile omitted valid backend fields:
+
+   * audienceQuestions
+   * relatedTopics
+   * relatedHashtags
+8. Hashtags could display with a double ## prefix.
+9. Mobile API errors discarded useful backend error messages.
+10. Some mobile services call backend routes that do not currently exist:
+
+    * POST /api/users/me/push-token
+    * POST /api/storage/upload-url
+    * GET /api/storage/download-url
+    * GET /api/users/{id}/creator-score
+
+P1:
+
+11. Trend freshness and caching need clearer metadata.
+12. Trend source/provider must be explicit.
+13. Estimated YouTube metrics must not be presented as genuinely measured metrics.
+14. Mobile and backend API contracts need stronger consistency.
+15. Empty-success states must be distinguishable from failed requests.
+
+P2:
+
+16. Android launcher icon is missing.
+17. Native splash/startup experience is poor.
+18. Startup currently risks showing an uncontrolled blank/white/indeterminate loading screen.
+
+════════════════════════════════════
+PREVIOUS AGENT'S LAST KNOWN STATUS
+════════════════════════════════════
+
+The previous environment stopped after reporting:
+
+"The preview is rendering the existing hosted sign-in screen correctly on port 8082. One honesty issue remains in the web Trends view: the new static-fixture timestamp would otherwise display as an invalid date, and estimated YouTube growth would still be labeled as measured growth. I’m correcting both displays and adding the same explicit source metadata to the mobile Trends section."
+
+Therefore:
+
+* Some fixes may already be applied.
+* Some files may contain uncommitted changes.
+* The trend engine may already have been modified.
+* Web Trends may be partially modified.
+* Mobile AI/Trends may be partially modified.
+* DO NOT overwrite those changes without first inspecting them.
+
+════════════════════════════════════
+PHASE 1 — RECOVERY AUDIT
+════════════════════════════════════
+
+FIRST, perform a read-only inspection.
+
+Do not modify anything yet.
+
+Run and inspect:
+
+1. git status
+2. git diff
+3. git diff --check
+4. Relevant changed files
+5. Current implementation of:
+
+   * lib/trend-engine
+   * backend trends routes
+   * web Trends page/components
+   * mobile AI screen
+   * mobile trend hooks
+   * mobile API utilities
+   * startup/root layout
+   * app.json
+
+Determine:
+
+A. Which previous changes are already present.
+B. Which changes are incomplete.
+C. Whether any changes are broken or inconsistent.
+D. Whether the previous agent's final task is still unfinished.
+E. Whether the repository currently compiles/type-checks.
+
+DO NOT modify files during this phase.
+
+════════════════════════════════════
+PHASE 2 — SPECIFIC UNFINISHED TREND FIX
+════════════════════════════════════
+
+After the recovery audit, inspect the trend display carefully.
+
+The previous agent specifically identified two unfinished honesty problems:
+
+1. Static fixture/mock data timestamps must NOT be displayed as if they were live current data.
+
+Do not produce:
+
+"Updated just now"
+
+if the underlying trend data is static.
+
+Instead use explicit metadata such as:
+
+* Fixture data
+* Mock data
+* Last updated: unavailable
+* Static dataset
+
+depending on the actual provider contract.
+
+Never show "Invalid Date".
+
+2. Estimated YouTube growth must NOT be labeled as measured growth.
+
+If growth is calculated from a heuristic, occurrence count, estimate, or inferred value, label it honestly, for example:
+
+* Estimated activity
+* Estimated momentum
+* Approximate volume
+
+Do NOT call it:
+
+* Growth
+* Live growth
+* Measured growth
+
+unless it is actually calculated from multiple time-separated measurements.
+
+The web Trends UI and mobile Trends/AI UI must communicate the same provider/source truth.
+
+════════════════════════════════════
+PHASE 3 — SOURCE METADATA
+════════════════════════════════════
+
+Ensure the trend API exposes enough metadata for clients to accurately describe the data.
+
+Audit whether the response should explicitly include fields similar to:
+
+* source
+* provider
+* fetchedAt
+* lastUpdated
+* isMock
+* isStatic
+* isStale
+* metricsQuality
+
+Do not blindly add all fields.
+
+Design the smallest clean contract that accurately represents reality.
+
+Requirements:
+
+* Clients must know whether data is mock/fixture/live.
+* Static fixtures must not pretend to be freshly fetched.
+* Estimated metrics must be distinguishable from measured metrics.
+* Web and mobile must consume the same meaning.
+* No UI should invent freshness information.
+
+════════════════════════════════════
+PHASE 4 — VERIFY AI CORRECTNESS
+════════════════════════════════════
+
+Inspect the CURRENT implementation and verify whether these previous fixes are already complete:
+
+GET INSPIRED:
+
+* Multi-word input must preserve the meaning of the entire phrase.
+* Do not reduce an idea to only the first word.
+* Example:
+  "AI video editing for solo creators"
+  must not become generic output about only "AI".
+* Validate AI/provider JSON before exposing it to clients.
+* Do not silently disguise provider failure as real AI output.
+* Render:
+
+  * relatedIdeas
+  * alternativeHooks
+  * titleSuggestions
+  * audienceQuestions
+* Show visible error state and retry path.
+
+ANALYZE IDEA:
+
+* Trim input before sending.
+* Show visible loading state.
+* Show visible error state.
+* Preserve useful backend error messages.
+* Render:
+
+  * relevanceScore
+  * relatedTopics
+  * relatedHashtags
+  * contentOpportunities
+  * suggestedAngles
+* Ensure hashtags receive exactly ONE # prefix.
+* Multi-word ideas must be analyzed as meaningful phrases, not reduced unnecessarily to one token.
+
+Do not rewrite working functionality unnecessarily.
+
+════════════════════════════════════
+PHASE 5 — API FAILURE AND EMPTY STATES
+════════════════════════════════════
+
+Verify the current implementation distinguishes:
+
+1. Loading
+2. Successful empty response
+3. Unexpected response shape
+4. API failure
+5. Unauthorized state
+
+Specifically inspect:
+
+* AI Studio
+* Trends
+* Ideas
+* Community
+
+Do not allow:
+
+"API failed" → "No data yet"
+
+Those are different states.
+
+Preserve useful backend JSON error messages instead of throwing only:
+
+"API error 400"
+
+when the backend provides something like:
+
+{ "error": "title is required" }
+
+════════════════════════════════════
+PHASE 6 — STARTUP AND BRANDING
+════════════════════════════════════
+
+Audit whether launcher and splash assets have already been implemented.
+
+Do not assume they have.
+
+Check:
+
+* app.json
+* assets directory
+* expo-splash-screen usage
+* root layout
+* Android adaptive icon configuration
+
+Requirements if unfinished:
+
+LAUNCHER ICON:
+
+* Use the existing Kri8 brand icon if it exists in the repository.
+* Do not invent a replacement brand mark without inspecting available assets.
+* Create correctly sized/configured Expo assets only if required.
+* Ensure Android adaptive icon configuration is correct.
+
+STARTUP:
+
+The app must not flash an ugly blank white screen.
+
+Use a proper branded startup flow.
+
+The desired sequence is:
+
+Native branded splash
+↓
+Clerk initializes
+↓
+Branded Kri8 loading/startup state if needed
+↓
+Authenticated app or sign-in flow
+
+Do not use arbitrary timers.
+
+Do not use setTimeout.
+
+Do not hide the splash until the application is genuinely ready.
+
+Do not create redirect races.
+
+════════════════════════════════════
+PHASE 7 — MISSING API ROUTES
+════════════════════════════════════
+
+Audit the current status of:
+
+* Push token registration
+* Storage upload/download URLs
+* Creator score
+
+For each one, determine:
+
+A. Is the service actually reachable from current UI functionality?
+B. Is the backend route now implemented?
+C. Is it intentionally deferred?
+D. Is there dead code pretending a feature exists?
+
+Do NOT silently remove functionality.
+
+If a feature is exposed to users but its API does not exist, flag it as broken.
+
+If it is currently unused infrastructure for a future phase, clearly mark it as deferred rather than pretending it works.
+
+════════════════════════════════════
+PHASE 8 — VALIDATION BEFORE EDITING
+════════════════════════════════════
+
+After the recovery audit, report:
+
+STEP 1 — Current Working Tree Status
+
+STEP 2 — Previous Changes Already Applied
+
+STEP 3 — Previous Changes Still Unfinished
+
+STEP 4 — Broken or Inconsistent Files
+
+STEP 5 — Trend Source/Freshness Audit
+
+STEP 6 — AI Studio Correctness Audit
+
+STEP 7 — Startup/Icon Audit
+
+STEP 8 — Proposed Remaining Changes
+
+STEP 9 — Exact Files To Modify
+
+STEP 10 — Exact Diffs
+
+STOP HERE.
+
+DO NOT modify files until I explicitly approve the proposed remaining changes and diffs.
+
+════════════════════════════════════
+CRITICAL RULES
+════════════════════════════════════
+
+* Prioritize correctness over speed.
+* Preserve existing working functionality.
+* Do not revert existing valid changes.
+* Do not duplicate previous work.
+* Do not assume git status is clean.
+* Inspect current files before making architectural decisions.
+* Do not use fake "live" trend labels.
+* Do not silently fall back to mock data in production.
+* Do not use auth timers.
+* Do not introduce demo mode.
+* Do not modify Clerk authentication unless the audit finds an actual defect.
+* Camera and voice capture remain Phase 3 and are out of scope.
+* Do not build a new APK yet.
+* Do not install packages unless absolutely necessary and approved.
+* Do not edit anything until I approve the exact diffs.
+
+The immediate goal is to recover the interrupted work safely, finish auditing the remaining polish issues, and present me with the exact remaining implementation plan without losing any work already completed.
