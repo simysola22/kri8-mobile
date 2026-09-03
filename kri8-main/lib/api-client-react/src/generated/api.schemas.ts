@@ -229,8 +229,11 @@ export interface TrendDashboard {
   topics: TrendingTopic[];
   hashtags: TrendingHashtag[];
   categories: ContentCategory[];
-  lastUpdated: string;
-  provider: string;
+  provider: 'mock' | 'youtube';
+  source: 'mock' | 'youtube';
+  fetchedAt: string | null;
+  isStatic: boolean;
+  metricsQuality: 'fixture' | 'estimated' | 'measured';
 }
 
 export interface IdeaAnalysisRequest {

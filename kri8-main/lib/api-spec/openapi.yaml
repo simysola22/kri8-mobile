@@ -874,11 +874,21 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ContentCategory"
-        lastUpdated:
-          type: string
         provider:
           type: string
-      required: [topics, hashtags, categories, lastUpdated, provider]
+          enum: [mock, youtube]
+        source:
+          type: string
+          enum: [mock, youtube]
+        fetchedAt:
+          type: string
+          nullable: true
+        isStatic:
+          type: boolean
+        metricsQuality:
+          type: string
+          enum: [fixture, estimated, measured]
+      required: [topics, hashtags, categories, provider, source, fetchedAt, isStatic, metricsQuality]
 
     IdeaAnalysisRequest:
       type: object

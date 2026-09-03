@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { View, Text, Platform, StyleSheet, AppState, Alert } from 'react-native';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import * as SplashScreen from 'expo-splash-screen';
 import { ClerkProvider, ClerkLoaded, useAuth, useUser } from '@clerk/expo';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -19,8 +20,15 @@ import { clearQueue } from '@/stores/offlineQueue';
 
 const PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ?? '';
 
+// Keep the native splash visible until Clerk has loaded and the app tree is ready.
+void SplashScreen.preventAutoHideAsync().catch(() => undefined);
+
 // ── Setup screen (shown when Clerk is not configured) ─────────
 function SetupScreen() {
+  useEffect(() => {
+    void SplashScreen.hideAsync();
+  }, []);
+
   return (
     <View style={styles.setup}>
       <Text style={styles.setupEmoji}>◇</Text>
@@ -224,6 +232,21 @@ function ThemedStatusBar() {
   return <StatusBar style={theme.statusBar === 'dark-content' ? 'dark' : 'light'} />;
 }
 
+function ReadyApp() {
+  useEffect(() => {
+    void SplashScreen.hideAsync();
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <ThemedStatusBar />
+        <AuthGuard />
+      </ThemeProvider>
+    </QueryClientProvider>
+  );
+}
+
 // ── Root layout ───────────────────────────────────────────────
 export default function RootLayout() {
   if (!PUBLISHABLE_KEY) {
@@ -235,12 +258,7 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <ClerkProvider tokenCache={tokenCache} publishableKey={PUBLISHABLE_KEY}>
           <ClerkLoaded>
-            <QueryClientProvider client={queryClient}>
-              <ThemeProvider>
-                <ThemedStatusBar />
-                <AuthGuard />
-              </ThemeProvider>
-            </QueryClientProvider>
+              <ReadyApp />
           </ClerkLoaded>
         </ClerkProvider>
       </SafeAreaProvider>

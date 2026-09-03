@@ -21,7 +21,7 @@ export default function AIScreen() {
   const theme = useActiveTheme();
   const insets = useSafeAreaInsets();
 
-  const { data: trends, isLoading: trendsLoading, refetch, isRefetching } = useTrendsDashboard();
+  const { data: trends, isLoading: trendsLoading, error: trendsError, refetch, isRefetching } = useTrendsDashboard();
   const getInspiration = useGetInspiration();
   const analyzeTrend = useAnalyzeTrend();
 
@@ -29,6 +29,20 @@ export default function AIScreen() {
   const [inspirationTitle, setInspirationTitle] = useState('');
   const [inspiration, setInspiration] = useState<TrendInspiration | null>(null);
   const [analysis, setAnalysis] = useState<TrendAnalysis | null>(null);
+
+  const runInspiration = () => {
+    const title = inspirationTitle.trim();
+    if (!title) return;
+    setInspiration(null);
+    getInspiration.mutate({ title }, { onSuccess: (data) => setInspiration(data) });
+  };
+
+  const runAnalysis = () => {
+    const title = analyzeTitle.trim();
+    if (!title) return;
+    setAnalysis(null);
+    analyzeTrend.mutate({ title }, { onSuccess: (data) => setAnalysis(data) });
+  };
 
   return (
     <LinearGradient colors={theme.gradient} style={styles.root}>
@@ -75,12 +89,7 @@ export default function AIScreen() {
             multiline
           />
           <GlassButton
-            onPress={() =>
-              getInspiration.mutate(
-                { title: inspirationTitle.trim() },
-                { onSuccess: (data) => setInspiration(data) },
-              )
-            }
+            onPress={runInspiration}
             loading={getInspiration.isPending}
             disabled={!inspirationTitle.trim()}
             fullWidth
@@ -99,7 +108,19 @@ export default function AIScreen() {
               {inspiration.titleSuggestions.length > 0 && (
                 <ResultGroup label="Title Suggestions" items={inspiration.titleSuggestions} variant="muted" />
               )}
+              {inspiration.audienceQuestions.length > 0 && (
+                <ResultGroup label="Audience Questions" items={inspiration.audienceQuestions} variant="accent" />
+              )}
             </View>
+          )}
+          {getInspiration.isError && (
+            <ErrorNotice
+              message={getErrorMessage(getInspiration.error, 'Inspiration failed.')}
+              onRetry={runInspiration}
+            />
+          )}
+          {!getInspiration.isPending && inspiration && !hasInspirationContent(inspiration) && (
+            <EmptyNotice message="The inspiration provider returned no suggestions." />
           )}
         </GlassCard>
 
@@ -124,12 +145,7 @@ export default function AIScreen() {
             multiline
           />
           <GlassButton
-            onPress={() =>
-              analyzeTrend.mutate(
-                { title: analyzeTitle },
-                { onSuccess: (data) => setAnalysis(data) },
-              )
-            }
+            onPress={runAnalysis}
             loading={analyzeTrend.isPending}
             disabled={!analyzeTitle.trim()}
             fullWidth
@@ -147,6 +163,16 @@ export default function AIScreen() {
                   {analysis.relevanceScore}/100
                 </Text>
               </View>
+              {analysis.relatedTopics.length > 0 && (
+                <ResultGroup label="Related Topics" items={analysis.relatedTopics.map((topic) => topic.name)} variant="accent" />
+              )}
+              {analysis.relatedHashtags.length > 0 && (
+                <ResultGroup
+                  label="Related Hashtags"
+                  items={analysis.relatedHashtags.map((hashtag) => normalizeHashtag(hashtag.tag))}
+                  variant="muted"
+                />
+              )}
               {analysis.contentOpportunities.length > 0 && (
                 <ResultGroup label="Opportunities" items={analysis.contentOpportunities} variant="success" />
               )}
@@ -155,33 +181,56 @@ export default function AIScreen() {
               )}
             </View>
           )}
+          {analyzeTrend.isError && (
+            <ErrorNotice
+              message={getErrorMessage(analyzeTrend.error, 'Trend analysis failed.')}
+              onRetry={runAnalysis}
+            />
+          )}
+          {!analyzeTrend.isPending && analysis && !hasAnalysisContent(analysis) && (
+            <EmptyNotice message="The analysis provider returned no additional insights." />
+          )}
         </GlassCard>
 
         {/* Trending topics */}
         {trendsLoading ? (
           <LoadingSpinner />
+        ) : trendsError ? (
+          <ErrorNotice
+            message={getErrorMessage(trendsError, 'Could not load trends.')}
+            onRetry={() => void refetch()}
+          />
         ) : trends ? (
           <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: theme.text }]}>
-                Trending Now
-              </Text>
-            <View style={styles.chipWrap}>
-              {trends.hashtags.slice(0, 12).map((tag) => (
-                <Badge key={tag.tag} variant="accent">
-                  #{tag.tag}
-                </Badge>
-              ))}
-            </View>
-            {trends.topics.slice(0, 5).map((topic) => (
-              <GlassCard key={topic.id} style={styles.topicCard}>
-                <Text style={[styles.topicTitle, { color: theme.text }]}>
-                  {topic.name}
-                </Text>
-                <Text style={[styles.topicDesc, { color: theme.textMuted }]}>
-                  {topic.category} · +{topic.growthPercent}% growth · {topic.platform}
-                </Text>
-              </GlassCard>
-            ))}
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>
+              Trending Now
+            </Text>
+            <Text style={[styles.metadata, { color: theme.textMuted }]}>
+              {formatTrendMetadata(trends)}
+            </Text>
+            {trends.hashtags.length === 0 && trends.topics.length === 0 ? (
+              <EmptyNotice message="No trend data is available yet." />
+            ) : (
+              <>
+                <View style={styles.chipWrap}>
+                  {trends.hashtags.slice(0, 12).map((tag) => (
+                    <Badge key={tag.tag} variant="accent">
+                      {normalizeHashtag(tag.tag)}
+                    </Badge>
+                  ))}
+                </View>
+                {trends.topics.slice(0, 5).map((topic) => (
+                  <GlassCard key={topic.id} style={styles.topicCard}>
+                    <Text style={[styles.topicTitle, { color: theme.text }]}>
+                      {topic.name}
+                    </Text>
+                    <Text style={[styles.topicDesc, { color: theme.textMuted }]}>
+                      {topic.category} · {trends.metricsQuality === 'measured' ? `+${topic.growthPercent}% growth` : `estimated activity: +${topic.growthPercent}%`} · {topic.platform}
+                    </Text>
+                  </GlassCard>
+                ))}
+              </>
+            )}
           </View>
         ) : null}
       </ScrollView>
@@ -211,6 +260,60 @@ function ResultGroup({
   );
 }
 
+function normalizeHashtag(tag: string): string {
+  return `#${tag.replace(/^#+/, '')}`;
+}
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message ? error.message : fallback;
+}
+
+function hasInspirationContent(result: TrendInspiration): boolean {
+  return [
+    result.relatedIdeas,
+    result.alternativeHooks,
+    result.titleSuggestions,
+    result.audienceQuestions,
+  ].some((items) => items.length > 0);
+}
+
+function hasAnalysisContent(result: TrendAnalysis): boolean {
+  return result.relatedTopics.length > 0 ||
+    result.relatedHashtags.length > 0 ||
+    result.contentOpportunities.length > 0 ||
+    result.suggestedAngles.length > 0;
+}
+
+function formatTrendMetadata(trends: {
+  provider: string;
+  source: string;
+  fetchedAt: string | null;
+  isStatic: boolean;
+  metricsQuality: string;
+}): string {
+  if (trends.isStatic) return 'Fixture data · Last updated: unavailable';
+  const retrieved = trends.fetchedAt
+    ? `Retrieved ${new Date(trends.fetchedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+    : 'Retrieval time unavailable';
+  const quality = trends.metricsQuality === 'measured' ? 'Measured metrics' : 'Estimated metrics';
+  return `${trends.source || trends.provider} · ${retrieved} · ${quality}`;
+}
+
+function ErrorNotice({ message, onRetry }: { message: string; onRetry: () => void }) {
+  const theme = useActiveTheme();
+  return (
+    <GlassCard style={styles.errorCard}>
+      <Text style={[styles.errorText, { color: theme.text }]}>{message}</Text>
+      <GlassButton variant="secondary" onPress={onRetry}>Retry</GlassButton>
+    </GlassCard>
+  );
+}
+
+function EmptyNotice({ message }: { message: string }) {
+  const theme = useActiveTheme();
+  return <Text style={[styles.emptyText, { color: theme.textMuted }]}>{message}</Text>;
+}
+
 const styles = StyleSheet.create({
   root: { flex: 1 },
   scroll: { paddingHorizontal: 22, gap: 22 },
@@ -219,6 +322,7 @@ const styles = StyleSheet.create({
   section: { gap: 14 },
   sectionTitle: { fontSize: 20, fontWeight: '700', letterSpacing: -0.2 },
   sectionSub: { fontSize: 14, lineHeight: 21, marginTop: -4 },
+  metadata: { fontSize: 12, lineHeight: 18 },
   input: {
     borderWidth: 1,
     borderRadius: 16,
@@ -243,4 +347,7 @@ const styles = StyleSheet.create({
   topicCard: { gap: 7 },
   topicTitle: { fontSize: 17, fontWeight: '600' },
   topicDesc: { fontSize: 13, lineHeight: 19 },
+  errorCard: { gap: 12, borderColor: 'rgba(248,113,113,0.35)' },
+  errorText: { fontSize: 14, lineHeight: 20 },
+  emptyText: { fontSize: 14, lineHeight: 20 },
 });

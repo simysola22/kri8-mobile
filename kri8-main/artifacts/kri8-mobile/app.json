@@ -13,6 +13,9 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "backgroundColor": "#0D0D1A",
+    "splash": {
+      "backgroundColor": "#0D0D1A"
+    },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "space.kri8.mobile",

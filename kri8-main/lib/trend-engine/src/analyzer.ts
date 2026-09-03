@@ -75,7 +75,7 @@ export function analyzeIdea(
     .find(c => relatedTopics.some(t => t.category.toLowerCase().includes(c.name.toLowerCase().split(" ")[0])));
 
   const contentOpportunities: string[] = [
-    ...relatedTopics.slice(0, 3).map(t => `Tie "${title}" to the trending topic: "${t.name}" (+${t.growthPercent}% growth)`),
+     ...relatedTopics.slice(0, 3).map(t => `Tie "${title}" to the trending topic: "${t.name}" (estimated activity: +${t.growthPercent}%)`),
     ...dashboard.categories
       .sort((a, b) => b.growthPercent - a.growthPercent)
       .slice(0, 2)

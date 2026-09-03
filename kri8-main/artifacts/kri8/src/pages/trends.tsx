@@ -14,25 +14,53 @@ import { cn } from "@/lib/utils";
 type TrendingTopic = { id: string; name: string; category: string; growthPercent: number; volume: number; platform: string };
 type TrendingHashtag = { tag: string; platform: string; volume: number; growthPercent: number };
 type ContentCategory = { name: string; growthPercent: number; topContent: string[] };
-type TrendDashboard = { topics: TrendingTopic[]; hashtags: TrendingHashtag[]; categories: ContentCategory[]; lastUpdated: string; provider: string };
+type TrendDashboard = {
+  topics: TrendingTopic[];
+  hashtags: TrendingHashtag[];
+  categories: ContentCategory[];
+  provider: "mock" | "youtube";
+  source: "mock" | "youtube";
+  fetchedAt: string | null;
+  isStatic: boolean;
+  metricsQuality: "fixture" | "estimated" | "measured";
+};
 type AnalysisResult = { relevanceScore: number; relatedTopics: TrendingTopic[]; relatedHashtags: TrendingHashtag[]; contentOpportunities: string[]; suggestedAngles: string[] };
 type InspirationResult = { relatedIdeas: string[]; alternativeHooks: string[]; titleSuggestions: string[]; audienceQuestions: string[] };
 
-function ScoreBadge({ score }: { score: number }) {
+function ScoreBadge({ score, label }: { score: number; label: string }) {
   const color = score >= 80 ? "text-emerald-400 bg-emerald-500/20" : score >= 50 ? "text-primary bg-primary/20" : "text-blue-400 bg-blue-500/20";
-  return <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", color)}>{score}</span>;
+  return <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", color)}>{label}: {score}%</span>;
 }
 
-function GrowthIndicator({ rate }: { rate: number }) {
-  if (rate > 5) return <span className="flex items-center gap-0.5 text-emerald-400 text-xs"><ChevronUp className="h-3 w-3" />{rate.toFixed(0)}%</span>;
-  if (rate < -5) return <span className="flex items-center gap-0.5 text-red-400 text-xs"><ChevronDown className="h-3 w-3" />{Math.abs(rate).toFixed(0)}%</span>;
-  return <span className="flex items-center gap-0.5 text-muted-foreground text-xs"><Minus className="h-3 w-3" />Stable</span>;
+function GrowthIndicator({ rate, label }: { rate: number; label: string }) {
+  if (rate > 5) return <span className="flex items-center gap-0.5 text-emerald-400 text-xs"><ChevronUp className="h-3 w-3" />{label} +{rate.toFixed(0)}%</span>;
+  if (rate < -5) return <span className="flex items-center gap-0.5 text-red-400 text-xs"><ChevronDown className="h-3 w-3" />{label} {Math.abs(rate).toFixed(0)}%</span>;
+  return <span className="flex items-center gap-0.5 text-muted-foreground text-xs"><Minus className="h-3 w-3" />{label}: stable</span>;
 }
 
 function formatCount(n: number) {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`;
   return String(n);
+}
+
+function errorMessage(error: unknown): string {
+  if (error instanceof Error && error.message) return error.message;
+  if (error && typeof error === "object" && "message" in error && typeof error.message === "string") return error.message;
+  return "The request could not be completed.";
+}
+
+function trendMetricLabel(quality: TrendDashboard["metricsQuality"]): string {
+  return quality === "measured" ? "Growth" : "Estimated activity";
+}
+
+function trendMetadata(d: TrendDashboard): string {
+  if (d.isStatic) return "Fixture data · Last updated: unavailable";
+  const retrieved = d.fetchedAt
+    ? `Retrieved ${new Date(d.fetchedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+    : "Retrieval time unavailable";
+  const quality = d.metricsQuality === "measured" ? "Measured metrics" : "Estimated metrics";
+  return `${d.source || d.provider} · ${retrieved} · ${quality}`;
 }
 
 export default function TrendsPage() {
@@ -42,7 +70,7 @@ export default function TrendsPage() {
   const [inspireForm, setInspireForm] = useState({ title: "", notes: "" });
   const [inspireResult, setInspireResult] = useState<InspirationResult | null>(null);
 
-  const { data: dashboard, isLoading: dashLoading } = useGetTrendDashboard({
+  const { data: dashboard, isLoading: dashLoading, error: dashError, refetch: refetchDashboard } = useGetTrendDashboard({
     query: { queryKey: getGetTrendDashboardQueryKey(), staleTime: 5 * 60 * 1000 },
   });
 
@@ -56,7 +84,7 @@ export default function TrendsPage() {
       { data: { title: analyzeForm.title, notes: analyzeForm.notes || undefined } },
       {
         onSuccess: (data) => setAnalyzeResult(data as unknown as AnalysisResult),
-        onError: () => toast({ title: "Analysis failed", variant: "destructive" }),
+        onError: (error) => toast({ title: "Analysis failed", description: errorMessage(error), variant: "destructive" }),
       }
     );
   };
@@ -68,7 +96,7 @@ export default function TrendsPage() {
       { data: { title: inspireForm.title, notes: inspireForm.notes || undefined } },
       {
         onSuccess: (data) => setInspireResult(data as unknown as InspirationResult),
-        onError: () => toast({ title: "Inspiration failed", variant: "destructive" }),
+        onError: (error) => toast({ title: "Inspiration failed", description: errorMessage(error), variant: "destructive" }),
       }
     );
   };
@@ -88,8 +116,8 @@ export default function TrendsPage() {
           </div>
           {d && (
             <div className="text-right text-xs text-muted-foreground">
-              <p className="font-medium capitalize">Provider: {d.provider}</p>
-              <p>Updated {new Date(d.lastUpdated).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</p>
+              <p className="font-medium capitalize">Source: {d.source || d.provider}</p>
+              <p>{d.isStatic ? "Fixture data" : d.fetchedAt ? `Retrieved ${new Date(d.fetchedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : "Retrieval time unavailable"}</p>
             </div>
           )}
         </div>
@@ -113,8 +141,27 @@ export default function TrendsPage() {
               <div className="py-16 flex justify-center">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
+            ) : dashError ? (
+              <Card className="border-destructive/40 bg-destructive/5">
+                <CardContent className="py-12 flex flex-col items-center justify-center text-center gap-3">
+                  <p className="font-medium">Trend data could not be loaded</p>
+                  <p className="text-sm text-muted-foreground">{errorMessage(dashError)}</p>
+                  <Button variant="outline" onClick={() => void refetchDashboard()}>Retry</Button>
+                </CardContent>
+              </Card>
             ) : d ? (
               <div className="space-y-6">
+                <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-muted-foreground">
+                  {trendMetadata(d)}
+                </div>
+                {d.topics.length === 0 && d.hashtags.length === 0 && d.categories.length === 0 ? (
+                  <Card className="border-dashed border-white/20">
+                    <CardContent className="py-12 text-center text-muted-foreground">
+                      Trend service responded successfully, but no trend data is available yet.
+                    </CardContent>
+                  </Card>
+                ) : (
+                <>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Trending Topics */}
                   <Card className="glass-panel">
@@ -134,15 +181,15 @@ export default function TrendsPage() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               <p className="font-medium text-sm">{topic.name}</p>
-                              <ScoreBadge score={topic.growthPercent} />
+                              <ScoreBadge score={topic.growthPercent} label={trendMetricLabel(d.metricsQuality)} />
                               <Badge variant="outline" className="border-white/20 text-xs text-muted-foreground">{topic.category}</Badge>
                             </div>
                             <div className="flex items-center gap-2 mt-1">
                               <span className="text-xs text-muted-foreground">{formatCount(topic.volume)} views</span>
                               <Badge variant="outline" className="border-white/10 text-[10px] text-muted-foreground capitalize px-1.5 py-0">{topic.platform}</Badge>
-                            </div>
-                          </div>
-                        </div>
+                             </div>
+                           </div>
+                         </div>
                       ))}
                     </CardContent>
                   </Card>
@@ -162,7 +209,7 @@ export default function TrendsPage() {
                           <span className="text-sm font-bold text-blue-400 min-w-0 truncate">{tag.tag}</span>
                           <div className="flex items-center gap-3 ml-auto shrink-0">
                             <span className="text-xs text-muted-foreground">{formatCount(tag.volume)} posts</span>
-                            <GrowthIndicator rate={tag.growthPercent} />
+                               <GrowthIndicator rate={tag.growthPercent} label={trendMetricLabel(d.metricsQuality)} />
                             <Badge variant="outline" className="text-[10px] border-white/20 px-1.5 py-0 capitalize">{tag.platform}</Badge>
                           </div>
                         </div>
@@ -187,7 +234,7 @@ export default function TrendsPage() {
                           <div key={i} className="p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors space-y-2">
                             <div className="flex items-center justify-between">
                               <p className="text-sm font-medium">{cat.name}</p>
-                              <GrowthIndicator rate={cat.growthPercent} />
+                               <GrowthIndicator rate={cat.growthPercent} label={trendMetricLabel(d.metricsQuality)} />
                             </div>
                             <div className="flex flex-wrap gap-1">
                               {cat.topContent.slice(0, 3).map((c, j) => (
@@ -199,6 +246,8 @@ export default function TrendsPage() {
                       </div>
                     </CardContent>
                   </Card>
+                )}
+                </>
                 )}
               </div>
             ) : null}

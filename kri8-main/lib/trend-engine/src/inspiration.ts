@@ -53,6 +53,29 @@ function fill(template: string, keyword: string): string {
   return template.replace(/{topic}/g, keyword).replace(/{outcome}/g, "10x results");
 }
 
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every(item => typeof item === "string");
+}
+
+function parseInspirationResponse(value: unknown): InspirationResult {
+  if (!value || typeof value !== "object") {
+    throw new Error("AI provider returned an invalid response");
+  }
+
+  const result = value as Record<string, unknown>;
+  const fields = ["relatedIdeas", "alternativeHooks", "titleSuggestions", "audienceQuestions"];
+  if (!fields.every(field => isStringArray(result[field]))) {
+    throw new Error("AI provider returned an invalid response shape");
+  }
+
+  return {
+    relatedIdeas: result.relatedIdeas as string[],
+    alternativeHooks: result.alternativeHooks as string[],
+    titleSuggestions: result.titleSuggestions as string[],
+    audienceQuestions: result.audienceQuestions as string[],
+  };
+}
+
 function pickN<T>(arr: T[], n: number): T[] {
   return [...arr].sort(() => Math.random() - 0.5).slice(0, n);
 }
@@ -93,14 +116,18 @@ Keep everything short, punchy, and creator-focused. No markdown, pure JSON.`;
       }),
     });
 
-    if (!res.ok) return null;
+    if (!res.ok) {
+      throw new Error(`AI provider request failed (${res.status})`);
+    }
     const data = (await res.json()) as { choices?: { message?: { content?: string } }[] };
     const content = data.choices?.[0]?.message?.content;
-    if (!content) return null;
+    if (!content) {
+      throw new Error("AI provider returned an empty response");
+    }
 
-    return JSON.parse(content) as InspirationResult;
-  } catch {
-    return null;
+    return parseInspirationResponse(JSON.parse(content));
+  } catch (error) {
+    throw error instanceof Error ? error : new Error("AI provider request failed");
   }
 }
 
@@ -111,7 +138,7 @@ export async function generateInspiration(
 ): Promise<InspirationResult> {
   const trendKeywords = trends.flatMap(t => [t.keyword, ...t.relatedTopics.map(rt => rt.name)]);
   const primaryKeywords = extractKeywords(`${title} ${notes}`);
-  const keyword = primaryKeywords[0] ?? title.split(" ")[0] ?? "content";
+  const keyword = primaryKeywords.slice(0, 6).join(" ") || title.trim() || "content";
 
   const aiResult = await generateWithOpenAI(title, notes, trendKeywords);
   if (aiResult) return aiResult;

@@ -585,8 +585,11 @@ export const GetTrendDashboardResponse = zod.object({
   "growthPercent": zod.number(),
   "topContent": zod.array(zod.string())
 })),
-  "lastUpdated": zod.string(),
-  "provider": zod.string()
+  "provider": zod.enum(["mock", "youtube"]),
+  "source": zod.enum(["mock", "youtube"]),
+  "fetchedAt": zod.string().nullable(),
+  "isStatic": zod.boolean(),
+  "metricsQuality": zod.enum(["fixture", "estimated", "measured"])
 })
 
 

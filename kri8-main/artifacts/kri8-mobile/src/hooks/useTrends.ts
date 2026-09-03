@@ -4,6 +4,16 @@ import type { TrendDashboard, TrendAnalysis, TrendInspiration } from '@/types';
 
 const BASE = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'https://kri8-obvh.onrender.com';
 
+export class ApiRequestError extends Error {
+  readonly status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'ApiRequestError';
+    this.status = status;
+  }
+}
+
 async function apiFetch<T>(
   path: string,
   getToken: () => Promise<string | null>,
@@ -18,7 +28,18 @@ async function apiFetch<T>(
       ...(options?.headers as Record<string, string> | undefined),
     },
   });
-  if (!res.ok) throw new Error(`API error ${res.status}`);
+  if (!res.ok) {
+    let message = `API request failed (${res.status})`;
+    try {
+      const body = await res.json() as { error?: unknown };
+      if (typeof body.error === 'string' && body.error.trim()) {
+        message = body.error;
+      }
+    } catch {
+      // Keep the safe status-based message for empty or non-JSON responses.
+    }
+    throw new ApiRequestError(message, res.status);
+  }
   return res.json() as Promise<T>;
 }
 
@@ -34,21 +55,27 @@ export function useTrendsDashboard() {
 export function useAnalyzeTrend() {
   const { getToken } = useAuth();
   return useMutation({
-    mutationFn: (input: { title: string; notes?: string }) =>
-      apiFetch<TrendAnalysis>('/trends/analyze', getToken, {
+    mutationFn: (input: { title: string; notes?: string }) => {
+      const title = input.title.trim();
+      const notes = input.notes?.trim();
+      return apiFetch<TrendAnalysis>('/trends/analyze', getToken, {
         method: 'POST',
-        body: JSON.stringify(input),
-      }),
+        body: JSON.stringify({ title, notes: notes || undefined }),
+      });
+    },
   });
 }
 
 export function useGetInspiration() {
   const { getToken } = useAuth();
   return useMutation({
-    mutationFn: (input: { title: string; notes?: string }) =>
-      apiFetch<TrendInspiration>('/trends/inspire', getToken, {
+    mutationFn: (input: { title: string; notes?: string }) => {
+      const title = input.title.trim();
+      const notes = input.notes?.trim();
+      return apiFetch<TrendInspiration>('/trends/inspire', getToken, {
         method: 'POST',
-        body: JSON.stringify(input),
-      }),
+        body: JSON.stringify({ title, notes: notes || undefined }),
+      });
+    },
   });
 }

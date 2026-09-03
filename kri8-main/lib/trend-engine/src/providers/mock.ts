@@ -71,8 +71,11 @@ export class MockTrendProvider implements TrendProvider {
       topics: TOPICS,
       hashtags: HASHTAGS,
       categories: CATEGORIES,
-      lastUpdated: new Date().toISOString(),
       provider: this.name,
+      source: this.name,
+      fetchedAt: null,
+      isStatic: true,
+      metricsQuality: "fixture",
     };
   }
 

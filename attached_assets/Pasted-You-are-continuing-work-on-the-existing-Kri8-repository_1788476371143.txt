@@ -1,0 +1,630 @@
+You are continuing work on the existing Kri8 repository.
+
+IMPORTANT: This is a continuation. Do not restart the project, repeat a full repository audit, undo previous work, or begin unrelated Phase 3 features.
+
+We have now created and configured the previously missing API credentials in Replit Secrets/environment variables.
+
+The relevant integrations are now intended to be available:
+
+* `OPENAI_API_KEY`
+* `YOUTUBE_API_KEY`
+* `TREND_PROVIDER=youtube`
+
+Do NOT ask me to paste any secret values into chat or code.
+
+Your first task is to verify only whether the environment variables are available to the running backend process. Never print, expose, log, or return their secret values.
+
+══════════════════════════════
+CURRENT CONTEXT
+══════════════════════════════
+
+A previous read-only recovery audit found these remaining issues:
+
+TREND SYSTEM
+
+1. Mock trends currently claim a fresh timestamp even though the data is static.
+2. Trend provider selection can silently fall back to mock data.
+3. YouTube provider metrics are partly estimated but can be presented as measured growth.
+4. Trend responses lack sufficiently explicit metadata about:
+
+   * source
+   * provider
+   * freshness
+   * whether data is static
+   * metric quality
+5. Web Trends can display fixture timestamps misleadingly.
+6. Mobile Trends does not clearly expose provider/freshness metadata.
+7. Dashboard, Analyze, and Get Inspired can use inconsistent trend snapshots.
+
+AI STUDIO
+
+8. Template inspiration can reduce a multi-word idea to one keyword.
+9. Multi-word phrase context is weakened before trend lookup.
+10. OpenAI JSON output is parsed and cast without runtime validation.
+11. A configured OpenAI provider failure can silently look like successful template output.
+12. Mobile omits valid AI response fields:
+
+* `audienceQuestions`
+* `relatedTopics`
+* `relatedHashtags`
+
+13. Mobile AI failures are not properly visible.
+14. Some backend error information is discarded.
+
+ERROR HANDLING
+
+15. Mobile trend hooks discard backend JSON error messages and only expose status-based errors.
+16. Mobile AI Studio lacks sufficient visible retryable failure states.
+17. Web Trends lacks a clear dashboard failure state distinct from empty data.
+18. Unauthorized, empty, loading, and failure states must remain distinguishable.
+
+HASHTAGS
+
+19. Mobile can render:
+    `##ContentCreator`
+
+The UI must normalize hashtags to exactly one `#`.
+
+STARTUP
+
+20. Mobile startup/loading behavior is still incomplete.
+21. No arbitrary authentication timers may be introduced.
+22. Do NOT add `setTimeout` auth logic.
+23. Preserve the existing Clerk architecture.
+
+BRANDING
+
+24. Mobile launcher/splash assets are not yet configured.
+25. Do NOT invent a Kri8 logo or brand mark.
+26. Only configure icon/splash artwork if a confirmed existing Kri8 asset is found in the repository.
+27. If no suitable asset exists, leave binary asset creation deferred and report it.
+
+DEFERRED ROUTES
+
+These are NOT part of this task unless required to fix an actively broken current feature:
+
+* Push token registration
+* Storage upload/download URLs
+* Creator score route
+
+Do not begin Camera Capture, Voice Capture, or unrelated Phase 3 features.
+
+══════════════════════════════
+PHASE 1 — VERIFY CONFIGURATION
+══════════════════════════════
+
+Before editing anything:
+
+1. Inspect the current working tree.
+
+2. Check `git status`.
+
+3. Check for existing uncommitted changes.
+
+4. Preserve existing work.
+
+5. Verify whether these variables are available to the backend process without revealing values:
+
+   * `OPENAI_API_KEY`
+   * `YOUTUBE_API_KEY`
+   * `TREND_PROVIDER`
+
+6. Report only:
+
+   * configured / available
+   * missing
+   * invalid configuration
+
+Never display secret values.
+
+Confirm whether:
+
+* `TREND_PROVIDER` resolves to `youtube`
+* OpenAI integration can be initialized
+* YouTube trend provider can be initialized
+
+If a configured provider cannot initialize, stop and explain the exact non-secret configuration problem.
+
+Do not silently fall back to mock data.
+
+══════════════════════════════
+PHASE 2 — IMPLEMENT THE APPROVED TREND FIXES
+══════════════════════════════
+
+Implement the previously approved fixes.
+
+Create or update a clear trend metadata contract equivalent to:
+
+* provider
+* source
+* fetchedAt
+* isStatic
+* metricsQuality
+
+Use honest semantics.
+
+For mock data:
+
+* provider: `"mock"`
+* source: `"mock"`
+* fetchedAt: `null`
+* isStatic: `true`
+* metricsQuality: `"fixture"`
+
+Mock fixtures must NEVER pretend they were freshly retrieved.
+
+For YouTube data:
+
+* provider: `"youtube"`
+* source: `"youtube"`
+* fetchedAt: actual retrieval time
+* isStatic: `false`
+* metricsQuality: `"estimated"` unless the implementation genuinely measures the metric from real time-separated observations
+
+Do not label estimated activity as measured growth.
+
+If a displayed metric is inferred rather than directly measured, label it honestly.
+
+Possible labels include:
+
+* Estimated activity
+* Estimated interest
+* Estimated volume
+
+Do not use fake freshness.
+
+══════════════════════════════
+PHASE 3 — PROVIDER FAILURE BEHAVIOR
+══════════════════════════════
+
+Provider selection must fail clearly.
+
+Rules:
+
+1. If production is configured for YouTube:
+
+   * require `YOUTUBE_API_KEY`
+   * do not silently use mock data if initialization fails
+
+2. If `TREND_PROVIDER` is missing:
+
+   * handle explicitly according to environment
+   * do not accidentally present mock fixture data as production live data
+
+3. Unknown provider names must produce clear configuration errors.
+
+4. Intentional local/development mock mode may remain supported only when explicitly selected.
+
+Do not remove the mock provider if it is useful for tests or explicit development mode.
+
+The goal is to prevent accidental production fixture data, not to destroy useful development tooling.
+
+══════════════════════════════
+PHASE 4 — AI PROVIDER CORRECTNESS
+══════════════════════════════
+
+Now that `OPENAI_API_KEY` is configured:
+
+1. Preserve the complete multi-word user idea.
+2. Do not reduce:
+
+   `AI video editing for solo creators`
+
+to only:
+
+`video`
+
+or another single keyword unless a specific algorithm genuinely requires additional keyword extraction.
+
+For inspiration fallback/template logic, preserve meaningful phrase context.
+
+For trend lookup, prefer the complete trimmed idea phrase where supported by the provider contract.
+
+Validate all OpenAI structured output at runtime.
+
+Do not do:
+
+```ts
+JSON.parse(content) as InspirationResult
+```
+
+without validating the resulting shape.
+
+Validate:
+
+* relatedIdeas
+* alternativeHooks
+* titleSuggestions
+* audienceQuestions
+
+Ensure arrays contain the expected item types.
+
+IMPORTANT PROVIDER FAILURE RULE:
+
+If OpenAI is configured and the OpenAI request fails:
+
+* do not silently pretend the fallback is an OpenAI-generated result
+* preserve a meaningful error
+* allow the client to distinguish provider failure
+
+Template generation may still exist as an intentional fallback mode only when clearly appropriate and not disguised as successful live AI output.
+
+Do not remove existing AI functionality.
+
+══════════════════════════════
+PHASE 5 — BACKEND ERROR CONTRACT
+══════════════════════════════
+
+Improve trend/AI error handling.
+
+The API should preserve safe, useful error information.
+
+Examples:
+
+* validation errors should explain what input is invalid
+* provider configuration errors should be distinguishable
+* unauthorized responses should remain unauthorized
+* provider failures should not all collapse into an unexplained generic success/fallback
+
+Do not expose:
+
+* API keys
+* provider credentials
+* internal stack traces
+* sensitive infrastructure information
+
+Normalize and trim title/notes at the API boundary before downstream processing.
+
+══════════════════════════════
+PHASE 6 — WEB TRENDS
+══════════════════════════════
+
+Update the web Trends UI.
+
+It must clearly distinguish:
+
+1. Loading
+2. Successful empty response
+3. Failed request
+4. Unauthorized response
+5. Successful live data
+6. Intentional fixture/mock data
+
+For static fixtures, do not render an invalid date.
+
+Use an honest display such as:
+
+`Fixture data · Last updated: unavailable`
+
+For live YouTube data, display retrieval time only when `fetchedAt` exists.
+
+Also surface source/quality metadata appropriately.
+
+Do not imply estimated metrics are measured growth.
+
+Mutation errors should preserve useful backend messages where safe.
+
+Add retry behavior for failed dashboard loading.
+
+══════════════════════════════
+PHASE 7 — MOBILE API ERROR HANDLING
+══════════════════════════════
+
+Update:
+
+`artifacts/kri8-mobile/src/hooks/useTrends.ts`
+
+and related request handling.
+
+Do not throw only:
+
+```ts
+new Error(`API error ${res.status}`)
+```
+
+when the backend provides a useful JSON error body.
+
+Safely parse the error response.
+
+Prefer a backend error message when available.
+
+Otherwise use a safe fallback such as:
+
+`API request failed (STATUS)`
+
+Preserve status information in a structured way where practical.
+
+Do not crash if the response body is:
+
+* empty
+* non-JSON
+* malformed JSON
+
+══════════════════════════════
+PHASE 8 — MOBILE AI STUDIO
+══════════════════════════════
+
+Update:
+
+`artifacts/kri8-mobile/app/(tabs)/ai.tsx`
+
+Requirements:
+
+Render all valid response fields.
+
+Get Inspired must support:
+
+* Related Ideas
+* Alternative Hooks
+* Title Suggestions
+* Audience Questions
+
+Analyze Idea must support:
+
+* Relevance Score
+* Related Topics
+* Related Hashtags
+* Content Opportunities
+* Suggested Angles
+
+Normalize hashtags so exactly one `#` appears.
+
+Examples:
+
+`ContentCreator` → `#ContentCreator`
+
+`#ContentCreator` → `#ContentCreator`
+
+Never:
+
+`##ContentCreator`
+
+Add visible states for:
+
+* loading
+* empty success
+* failed request
+* retry
+
+For both:
+
+* Get Inspired
+* Analyze Idea
+* Trend Dashboard
+
+When a mutation fails:
+
+* show a visible useful error
+* do not silently leave stale results pretending they are current
+* provide retry where appropriate
+
+Trim user input before sending it to the backend.
+
+══════════════════════════════
+PHASE 9 — TREND SNAPSHOT CONSISTENCY
+══════════════════════════════
+
+Review the current caching architecture.
+
+The dashboard currently has caching behavior while Analyze and Get Inspired may request separate provider snapshots.
+
+Do not make unnecessary architectural changes.
+
+Choose the smallest correct approach that makes freshness semantics clear.
+
+Possible acceptable solutions include:
+
+* a shared server-side trend snapshot
+* a clearly documented server snapshot policy
+* another equivalent architecture
+
+The key requirement is:
+
+Do not claim Dashboard, Analyze, and Get Inspired are based on the same trend snapshot if they are not.
+
+If they intentionally differ, metadata and behavior must remain honest.
+
+══════════════════════════════
+PHASE 10 — STARTUP
+══════════════════════════════
+
+Improve mobile startup handling without authentication timers.
+
+You may use `expo-splash-screen` to:
+
+* prevent premature splash dismissal
+* hide the splash when Clerk and the required application tree are genuinely ready
+
+Requirements:
+
+* No `setTimeout`
+* No 800ms delay
+* No arbitrary delay
+* No Clerk timeout
+* No fallback authentication
+* Preserve the existing missing-Clerk-key setup screen
+* Do not expose protected route content before authentication state is sufficiently resolved
+* Avoid uncontrolled blank startup states
+
+A branded React readiness view may use existing text styling:
+
+`Kri8`
+
+but do not invent binary logo artwork.
+
+══════════════════════════════
+PHASE 11 — ICON AND SPLASH ASSETS
+══════════════════════════════
+
+Search the repository for confirmed existing Kri8 branding assets.
+
+If a suitable existing asset exists and is technically appropriate:
+
+* configure it correctly for Expo
+* configure launcher icon support
+* configure adaptive icon foreground/background as appropriate
+* configure splash support
+
+Do not blindly reuse:
+
+* a favicon without checking suitability
+* a 16:9 OpenGraph image as a launcher icon
+
+If no confirmed suitable mobile asset exists:
+
+DO NOT invent one.
+
+Do not generate a replacement logo.
+
+Leave binary artwork deferred and report exactly what asset is still needed.
+
+══════════════════════════════
+PHASE 12 — TESTING
+══════════════════════════════
+
+After implementation:
+
+1. Run formatting/type checks/tests that are available.
+2. Do not install packages unless absolutely necessary.
+3. If dependencies are missing, report that clearly.
+4. Test the backend trend routes where possible.
+5. Verify:
+
+   * YouTube provider initialization
+   * OpenAI provider initialization
+   * invalid input handling
+   * hashtag normalization
+   * mock metadata honesty
+   * YouTube metadata honesty
+   * OpenAI malformed response handling where testable
+   * provider failure behavior
+6. Do not print secrets in logs or test output.
+
+If authenticated end-to-end testing is not possible, state exactly what remains unverified.
+
+══════════════════════════════
+FILES EXPECTED TO BE RELEVANT
+══════════════════════════════
+
+Core:
+
+* `lib/trend-engine/src/types.ts`
+* `lib/trend-engine/src/index.ts`
+* `lib/trend-engine/src/providers/mock.ts`
+* `lib/trend-engine/src/providers/youtube.ts`
+* `lib/trend-engine/src/inspiration.ts`
+* `lib/trend-engine/src/analyzer.ts`
+* `artifacts/api-server/src/routes/trends.ts`
+
+Web:
+
+* `artifacts/kri8/src/pages/trends.tsx`
+
+Mobile:
+
+* `artifacts/kri8-mobile/src/types/api.ts`
+* `artifacts/kri8-mobile/src/hooks/useTrends.ts`
+* `artifacts/kri8-mobile/src/services/AIAssistantService.ts`
+* `artifacts/kri8-mobile/app/(tabs)/ai.tsx`
+* `artifacts/kri8-mobile/app/_layout.tsx`
+* `artifacts/kri8-mobile/app.json`
+
+Only modify files that are genuinely necessary.
+
+══════════════════════════════
+WORKING RULES
+══════════════════════════════
+
+Before each logical implementation stage:
+
+1. Inspect the relevant current code.
+2. Make the smallest correct change.
+3. Do not remove features without explanation.
+4. Do not introduce duplicate clients/providers.
+5. Do not introduce mock fallbacks disguised as production data.
+6. Do not expose secrets.
+7. Do not begin unrelated Phase 3 work.
+8. Do not replace working architecture unnecessarily.
+
+══════════════════════════════
+FINAL REPORT
+══════════════════════════════
+
+When finished, report:
+
+### 1. Configuration verification
+
+For each of:
+
+* OpenAI
+* YouTube
+* TREND_PROVIDER
+
+Report only whether it is:
+
+* available and usable
+* missing
+* misconfigured
+
+Never reveal values.
+
+### 2. Files modified
+
+List every modified file and why.
+
+### 3. Trend system
+
+Explain:
+
+* active provider
+* mock behavior
+* YouTube behavior
+* source metadata
+* freshness metadata
+* metric quality semantics
+* failure behavior
+
+### 4. AI system
+
+Explain:
+
+* multi-word phrase handling
+* OpenAI runtime validation
+* provider failure behavior
+* template fallback behavior
+
+### 5. Web and mobile UX
+
+Confirm:
+
+* loading states
+* empty states
+* error states
+* retry behavior
+* all AI fields rendered
+* hashtag normalization
+
+### 6. Startup
+
+Explain exactly how Clerk/splash readiness now works and confirm that no timers were introduced.
+
+### 7. Branding assets
+
+State whether suitable existing Kri8 assets were found.
+
+If not, explicitly list the required future assets without inventing them.
+
+### 8. Verification
+
+List:
+
+* checks run
+* tests run
+* passed
+* failed
+* unavailable
+* remaining manual tests
+
+Prioritize correctness over speed.
+
+Do not start Camera Capture, Voice Capture, or any unrelated Phase 3 feature.

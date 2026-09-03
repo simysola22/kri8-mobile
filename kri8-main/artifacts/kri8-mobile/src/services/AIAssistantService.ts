@@ -17,6 +17,18 @@
 
 const API_BASE = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'https://kri8-obvh.onrender.com';
 
+async function getApiError(res: Response, fallback: string): Promise<Error> {
+  try {
+    const body = await res.json() as { error?: unknown };
+    if (typeof body.error === 'string' && body.error.trim()) {
+      return new Error(body.error);
+    }
+  } catch {
+    // Use the safe fallback for empty or non-JSON responses.
+  }
+  return new Error(fallback);
+}
+
 // ── Types ─────────────────────────────────────────────────────
 
 export interface AISuggestions {
@@ -77,7 +89,7 @@ export async function getAISuggestions(
     });
 
     if (!res.ok) {
-      throw new Error(`AI assistant request failed (${res.status})`);
+      throw await getApiError(res, `AI assistant request failed (${res.status})`);
     }
 
     const data = await res.json() as InspirationResponse;
@@ -117,22 +129,20 @@ export async function analyzeIdeaAgainstTrends(
   token: string,
   ideaTitle: string,
   ideaInsight: string,
-): Promise<TrendAnalysis | null> {
-  try {
-    const res = await fetch(`${API_BASE}/api/trends/analyze`, {
+): Promise<TrendAnalysis> {
+  const res = await fetch(`${API_BASE}/api/trends/analyze`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-    body: JSON.stringify({ title: ideaTitle, notes: ideaInsight }),
-    });
+      body: JSON.stringify({ title: ideaTitle.trim(), notes: ideaInsight.trim() }),
+  });
 
-    if (!res.ok) return null;
-    return res.json() as Promise<TrendAnalysis>;
-  } catch {
-    return null;
+  if (!res.ok) {
+    throw await getApiError(res, `Trend analysis request failed (${res.status})`);
   }
+  return res.json() as Promise<TrendAnalysis>;
 }
 
 // ── Helpers ───────────────────────────────────────────────────

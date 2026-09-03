@@ -2,7 +2,7 @@
  * Trend Engine — Provider Factory
  *
  * Set TREND_PROVIDER env var to switch data sources:
- *   TREND_PROVIDER=mock    — built-in placeholder data (default)
+ *   TREND_PROVIDER=mock    — built-in fixture data (development/tests only)
  *   TREND_PROVIDER=youtube — YouTube Data API v3 (requires YOUTUBE_API_KEY)
  *
  * Future providers to plug in here:
@@ -25,18 +25,23 @@ let _provider: TrendProvider | null = null;
 export function createTrendProvider(): TrendProvider {
   if (_provider) return _provider;
 
-  const name = process.env.TREND_PROVIDER ?? "mock";
+  const configuredName = process.env.TREND_PROVIDER?.trim().toLowerCase();
+  const name = configuredName ?? (process.env.NODE_ENV === "development" ? "mock" : null);
+
+  if (!name) {
+    throw new Error("TREND_PROVIDER must be set outside development (youtube or mock)");
+  }
 
   if (name === "youtube") {
     const apiKey = process.env.YOUTUBE_API_KEY;
     if (!apiKey) {
-      console.warn("[trend-engine] YOUTUBE_API_KEY not set, falling back to mock provider");
-      _provider = new MockTrendProvider();
-    } else {
-      _provider = new YouTubeTrendProvider(apiKey);
+      throw new Error("TREND_PROVIDER=youtube requires YOUTUBE_API_KEY");
     }
-  } else {
+    _provider = new YouTubeTrendProvider(apiKey);
+  } else if (name === "mock") {
     _provider = new MockTrendProvider();
+  } else {
+    throw new Error(`Unsupported TREND_PROVIDER "${name}". Expected "youtube" or "mock"`);
   }
 
   return _provider;

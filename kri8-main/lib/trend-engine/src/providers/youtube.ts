@@ -35,8 +35,11 @@ export class YouTubeTrendProvider implements TrendProvider {
       topics,
       hashtags,
       categories,
-      lastUpdated: new Date().toISOString(),
       provider: this.name,
+      source: this.name,
+      fetchedAt: new Date().toISOString(),
+      isStatic: false,
+      metricsQuality: "estimated",
     };
   }
 

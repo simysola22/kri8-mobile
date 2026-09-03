@@ -7,6 +7,11 @@ const router = Router();
 let dashboardCache: { data: unknown; expiresAt: number } | null = null;
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
+function safeErrorMessage(error: unknown): string {
+  if (error instanceof Error && error.message) return error.message;
+  return "Trend provider request failed";
+}
+
 // GET /api/trends/dashboard
 router.get("/dashboard", requireAuth, async (req: any, res): Promise<void> => {
   try {
@@ -21,41 +26,45 @@ router.get("/dashboard", requireAuth, async (req: any, res): Promise<void> => {
     res.json(dashboard);
   } catch (err) {
     req.log.error({ err }, "Failed to get trend dashboard");
-    res.status(500).json({ error: "Internal error" });
+    const message = safeErrorMessage(err);
+    const status = message.includes("TREND_PROVIDER") || message.includes("YOUTUBE_API_KEY") || message.includes("Unsupported TREND_PROVIDER")
+      ? 503
+      : 502;
+    res.status(status).json({ error: message });
   }
 });
 
 // POST /api/trends/analyze
 router.post("/analyze", requireAuth, async (req: any, res): Promise<void> => {
   try {
-    const { title, notes } = req.body as { title: string; notes?: string };
-    if (!title?.trim()) { res.status(400).json({ error: "title is required" }); return; }
+    const title = typeof req.body?.title === "string" ? req.body.title.trim() : "";
+    const notes = typeof req.body?.notes === "string" ? req.body.notes.trim() : "";
+    if (!title) { res.status(400).json({ error: "title is required" }); return; }
 
     const provider = createTrendProvider();
     const dashboard = await provider.getDashboard();
-    const result = analyzeIdea(title, notes ?? "", dashboard);
+    const result = analyzeIdea(title, notes, dashboard);
     res.json(result);
   } catch (err) {
     req.log.error({ err }, "Failed to analyze idea");
-    res.status(500).json({ error: "Internal error" });
+    res.status(502).json({ error: safeErrorMessage(err) });
   }
 });
 
 // POST /api/trends/inspire
 router.post("/inspire", requireAuth, async (req: any, res): Promise<void> => {
   try {
-    const { title, notes } = req.body as { title: string; notes?: string };
-    if (!title?.trim()) { res.status(400).json({ error: "title is required" }); return; }
+    const title = typeof req.body?.title === "string" ? req.body.title.trim() : "";
+    const notes = typeof req.body?.notes === "string" ? req.body.notes.trim() : "";
+    if (!title) { res.status(400).json({ error: "title is required" }); return; }
 
     const provider = createTrendProvider();
-    const keywordTrends = await provider.getKeywordTrends(
-      title.toLowerCase().split(/\s+/).filter(w => w.length > 3).slice(0, 5)
-    );
-    const result = await generateInspiration(title, notes ?? "", keywordTrends);
+    const keywordTrends = await provider.getKeywordTrends([title]);
+    const result = await generateInspiration(title, notes, keywordTrends);
     res.json(result);
   } catch (err) {
     req.log.error({ err }, "Failed to generate inspiration");
-    res.status(500).json({ error: "Internal error" });
+    res.status(502).json({ error: safeErrorMessage(err) });
   }
 });
 

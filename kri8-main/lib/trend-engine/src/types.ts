@@ -20,12 +20,18 @@ export interface ContentCategory {
   topContent: string[];
 }
 
+export type TrendProviderName = "mock" | "youtube";
+export type TrendMetricsQuality = "fixture" | "estimated" | "measured";
+
 export interface TrendDashboard {
   topics: TrendingTopic[];
   hashtags: TrendingHashtag[];
   categories: ContentCategory[];
-  lastUpdated: string;
-  provider: string;
+  provider: TrendProviderName;
+  source: TrendProviderName;
+  fetchedAt: string | null;
+  isStatic: boolean;
+  metricsQuality: TrendMetricsQuality;
 }
 
 export interface KeywordTrend {

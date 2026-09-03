@@ -133,8 +133,11 @@ export interface TrendDashboard {
   topics: TrendTopic[];
   hashtags: TrendHashtag[];
   categories: TrendCategory[];
-  lastUpdated: string;
-  provider: string;
+  provider: 'mock' | 'youtube';
+  source: 'mock' | 'youtube';
+  fetchedAt: string | null;
+  isStatic: boolean;
+  metricsQuality: 'fixture' | 'estimated' | 'measured';
 }
 
 export interface TrendTopic {
