@@ -23,7 +23,7 @@ const PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ?? '';
 function SetupScreen() {
   return (
     <View style={styles.setup}>
-      <Text style={styles.setupEmoji}>🔑</Text>
+      <Text style={styles.setupEmoji}>◇</Text>
       <Text style={styles.setupTitle}>Kri8 Mobile</Text>
       <Text style={styles.setupSubtitle}>Finish connecting your workspace</Text>
       <View style={styles.setupCard}>
@@ -177,7 +177,7 @@ function AppLockGate({
 
   return (
     <View style={[styles.lockScreen, { backgroundColor: theme.bg }]}>
-      <Text style={styles.lockIcon}>🔒</Text>
+      <Text style={[styles.lockIcon, { color: theme.accent }]}>◆</Text>
       <Text style={[styles.lockTitle, { color: theme.text }]}>Kri8 is locked</Text>
       <Text style={[styles.lockMessage, { color: theme.textMuted }]}>
         {message || 'Authenticate to continue.'}

@@ -78,7 +78,7 @@ function DefaultUpgradePrompt({
         { backgroundColor: theme.bgGlass, borderColor: theme.border },
       ]}
     >
-      <Text style={[styles.icon]}>✨</Text>
+      <Text style={[styles.icon, { color: theme.accent }]}>✧</Text>
       <Text style={[styles.title, { color: theme.text }]}>
         {tierName} Feature
       </Text>

@@ -32,7 +32,7 @@ export default function HomeScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.scroll,
-          { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 100 },
+           { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 112 },
         ]}
         refreshControl={
           <RefreshControl
@@ -49,7 +49,7 @@ export default function HomeScreen() {
             <Text style={[styles.greeting, { color: theme.textMuted }]}>
               {getGreeting()}
             </Text>
-            <Text style={[styles.name, { color: theme.text }]}>
+        <Text style={[styles.name, { color: theme.text }]} numberOfLines={1}>
               {user?.name ?? user?.username ?? 'Creator'}
             </Text>
           </View>
@@ -119,7 +119,7 @@ export default function HomeScreen() {
             <LoadingSpinner style={{ marginTop: 32 }} />
           ) : (recent ?? []).length === 0 ? (
             <GlassCard style={styles.emptyCard}>
-              <Text style={[styles.emptyIcon]}>💡</Text>
+              <Text style={[styles.emptyIcon, { color: theme.accent }]}>✦</Text>
               <Text style={[styles.emptyTitle, { color: theme.text }]}>
                 No ideas yet
               </Text>
@@ -196,46 +196,46 @@ function formatDate(iso: string): string {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  scroll: { paddingHorizontal: 20, gap: 16 },
+  scroll: { paddingHorizontal: 22, gap: 22 },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 8,
   },
-  greeting: { fontSize: 14, fontWeight: '500' },
-  name: { fontSize: 28, fontWeight: '800', letterSpacing: -0.5 },
-  statsCard: { marginBottom: 4 },
+  greeting: { fontSize: 13, fontWeight: '600', letterSpacing: 0.3 },
+  name: { fontSize: 30, fontWeight: '800', letterSpacing: -0.8, marginTop: 4 },
+  statsCard: { marginBottom: 2 },
   statsRow: { flexDirection: 'row', alignItems: 'center' },
   statItem: { flex: 1, alignItems: 'center', gap: 2 },
-  statValue: { fontSize: 22, fontWeight: '800' },
-  statLabel: { fontSize: 11, fontWeight: '500', letterSpacing: 0.3 },
-  statsDivider: { width: 1, height: 36 },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  statValue: { fontSize: 23, fontWeight: '800', letterSpacing: -0.4 },
+  statLabel: { fontSize: 10, fontWeight: '600', letterSpacing: 0.45, marginTop: 3 },
+  statsDivider: { width: 1, height: 42 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   searchButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.12)',
   },
   searchIcon: { color: '#FFFFFF', fontSize: 24, lineHeight: 26 },
-  section: { gap: 12 },
-  sectionTitle: { fontSize: 20, fontWeight: '700' },
-  ideaCard: { gap: 6 },
+  section: { gap: 14 },
+  sectionTitle: { fontSize: 21, fontWeight: '700', letterSpacing: -0.2 },
+  ideaCard: { gap: 8 },
   ideaHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     gap: 8,
   },
-  ideaTitle: { fontSize: 16, fontWeight: '600', flex: 1 },
-  ideaInsight: { fontSize: 13, lineHeight: 18 },
-  ideaDate: { fontSize: 11, marginTop: 2 },
-  emptyCard: { alignItems: 'center', gap: 8, paddingVertical: 32 },
-  emptyIcon: { fontSize: 40 },
-  emptyTitle: { fontSize: 18, fontWeight: '700' },
-  emptyText: { fontSize: 14, textAlign: 'center' },
+  ideaTitle: { fontSize: 17, fontWeight: '600', flex: 1, lineHeight: 23 },
+  ideaInsight: { fontSize: 14, lineHeight: 20 },
+  ideaDate: { fontSize: 11, marginTop: 4, letterSpacing: 0.2 },
+  emptyCard: { alignItems: 'center', gap: 10, paddingVertical: 40 },
+  emptyIcon: { fontSize: 34, lineHeight: 40 },
+  emptyTitle: { fontSize: 19, fontWeight: '700' },
+  emptyText: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
 });

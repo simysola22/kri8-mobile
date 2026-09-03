@@ -35,7 +35,7 @@ export default function AIScreen() {
       <ScrollView
         contentContainerStyle={[
           styles.scroll,
-          { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 100 },
+           { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 112 },
         ]}
         refreshControl={
           <RefreshControl
@@ -54,7 +54,7 @@ export default function AIScreen() {
         {/* Inspiration */}
         <GlassCard style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>
-            ✨ Get Inspired
+            Get Inspired
           </Text>
           <Text style={[styles.sectionSub, { color: theme.textMuted }]}>
             AI generates ideas, hooks, and title patterns tailored for creators.
@@ -106,7 +106,7 @@ export default function AIScreen() {
         {/* Trend analysis */}
         <GlassCard style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>
-            📊 Analyze an Idea
+            Analyze an Idea
           </Text>
           <TextInput
             style={[
@@ -162,9 +162,9 @@ export default function AIScreen() {
           <LoadingSpinner />
         ) : trends ? (
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>
-              🔥 Trending Now
-            </Text>
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>
+                Trending Now
+              </Text>
             <View style={styles.chipWrap}>
               {trends.hashtags.slice(0, 12).map((tag) => (
                 <Badge key={tag.tag} variant="accent">
@@ -213,33 +213,34 @@ function ResultGroup({
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  scroll: { paddingHorizontal: 20, gap: 16 },
-  title: { fontSize: 32, fontWeight: '800', letterSpacing: -1 },
-  sub: { fontSize: 15, marginTop: -8 },
-  section: { gap: 12 },
-  sectionTitle: { fontSize: 20, fontWeight: '700' },
-  sectionSub: { fontSize: 14, lineHeight: 20, marginTop: -4 },
+  scroll: { paddingHorizontal: 22, gap: 22 },
+  title: { fontSize: 34, fontWeight: '800', letterSpacing: -1.1 },
+  sub: { fontSize: 15, marginTop: -12, lineHeight: 22 },
+  section: { gap: 14 },
+  sectionTitle: { fontSize: 20, fontWeight: '700', letterSpacing: -0.2 },
+  sectionSub: { fontSize: 14, lineHeight: 21, marginTop: -4 },
   input: {
     borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     fontSize: 15,
-    minHeight: 60,
+    minHeight: 76,
+    lineHeight: 21,
   },
-  results: { gap: 12, marginTop: 4 },
+  results: { gap: 16, marginTop: 6 },
   relevanceRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   relevanceLabel: { fontSize: 14, fontWeight: '600' },
-  relevanceScore: { fontSize: 28, fontWeight: '800' },
-  group: { gap: 6 },
+  relevanceScore: { fontSize: 30, fontWeight: '800', letterSpacing: -0.6 },
+  group: { gap: 8 },
   groupLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase' },
   groupItem: { fontSize: 14, lineHeight: 20 },
   chipWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  topicCard: { gap: 4 },
-  topicTitle: { fontSize: 15, fontWeight: '600' },
-  topicDesc: { fontSize: 13, lineHeight: 18 },
+  topicCard: { gap: 7 },
+  topicTitle: { fontSize: 17, fontWeight: '600' },
+  topicDesc: { fontSize: 13, lineHeight: 19 },
 });

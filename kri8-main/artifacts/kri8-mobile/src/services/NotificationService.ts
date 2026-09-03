@@ -172,7 +172,7 @@ export async function scheduleReminder(
 ): Promise<string> {
   return Notifications.scheduleNotificationAsync({
     content: {
-      title: 'Time to create 🎬',
+      title: 'Time to create',
       body: ideaTitle,
       categoryIdentifier: 'reminder',
       data: { ideaId, screen: 'idea_detail' },

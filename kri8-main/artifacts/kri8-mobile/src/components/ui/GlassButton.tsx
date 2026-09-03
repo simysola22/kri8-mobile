@@ -159,9 +159,9 @@ export function GlassButton({
 }
 
 const SIZE_STYLES: Record<Size, ViewStyle> = {
-  sm: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: 10 },
-  md: { paddingVertical: 14, paddingHorizontal: 20, borderRadius: 14 },
-  lg: { paddingVertical: 18, paddingHorizontal: 28, borderRadius: 16 },
+  sm: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: 12 },
+  md: { paddingVertical: 15, paddingHorizontal: 22, borderRadius: 16 },
+  lg: { paddingVertical: 18, paddingHorizontal: 28, borderRadius: 18 },
 };
 
 const TEXT_SIZE_STYLES: Record<Size, TextStyle> = {
@@ -177,6 +177,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     flexDirection: 'row',
     gap: 8,
+    minHeight: 48,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.12)',
   },

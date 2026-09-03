@@ -19,13 +19,13 @@ import { useActiveTheme } from '@/stores/theme';
 import { selectionChanged } from '@/lib/haptics';
 import { SPRING_BOUNCY } from '@/lib/animations';
 
-// ── Icons (emoji fallback until vector icons are added in Phase 3) ──
+// ── Lightweight glyphs keep the tab bar dependency-free. ──
 const TAB_ICONS: Record<string, string> = {
-  index: '✦',
-  ideas: '💡',
-  capture: '⊕',
-  community: '◎',
-  ai: '◈',
+  index: '⌂',
+  ideas: '◇',
+  capture: '+',
+  community: '◌',
+  ai: '✧',
   profile: '○',
 };
 
@@ -237,9 +237,9 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    paddingTop: 10,
-    paddingHorizontal: 4,
-    paddingBottom: 4,
+    paddingTop: 12,
+    paddingHorizontal: 8,
+    paddingBottom: 8,
   },
   tabItem: {
     flex: 1,
@@ -249,18 +249,19 @@ const styles = StyleSheet.create({
   tabTouchable: {
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: 48,
-    minHeight: 52,
-    paddingHorizontal: 2,
-    gap: 3,
+    minWidth: 50,
+    minHeight: 58,
+    paddingHorizontal: 3,
+    gap: 5,
   },
   icon: {
-    fontSize: 22,
+    fontSize: 21,
+    lineHeight: 24,
   },
   label: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '600',
-    letterSpacing: 0.2,
+    letterSpacing: 0.35,
     maxWidth: '100%',
     textAlign: 'center',
   },
@@ -274,20 +275,20 @@ const styles = StyleSheet.create({
   captureButton: {
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: 56,
-    minHeight: 70,
-    gap: 3,
+    minWidth: 58,
+    minHeight: 76,
+    gap: 5,
   },
   captureGradient: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: -6,
+    marginBottom: -4,
   },
   captureIcon: {
-    fontSize: 28,
+    fontSize: 30,
     color: '#FFFFFF',
     fontWeight: '300',
   },

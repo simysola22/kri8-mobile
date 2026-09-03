@@ -35,7 +35,7 @@ export default function CommunityScreen() {
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={[
           styles.list,
-          { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 100 },
+           { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 112 },
         ]}
         refreshControl={
           <RefreshControl
@@ -150,22 +150,22 @@ function RequestCard({
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  list: { paddingHorizontal: 20, gap: 10 },
-  title: { fontSize: 32, fontWeight: '800', letterSpacing: -1, marginBottom: 8 },
-  section: { gap: 8, marginBottom: 8 },
-  sectionTitle: { fontSize: 20, fontWeight: '700', marginBottom: 4 },
-  friendCard: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  friendInfo: { flex: 1, gap: 2 },
-  friendName: { fontSize: 16, fontWeight: '600' },
-  friendUsername: { fontSize: 13 },
-  arrow: { fontSize: 18 },
-  requestCard: { gap: 10 },
-  requestText: { fontSize: 15 },
-  requestActions: { flexDirection: 'row', gap: 12, alignItems: 'center' },
-  acceptBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20 },
+  list: { paddingHorizontal: 22, gap: 14 },
+  title: { fontSize: 34, fontWeight: '800', letterSpacing: -1.1, marginBottom: 14 },
+  section: { gap: 12, marginBottom: 12 },
+  sectionTitle: { fontSize: 20, fontWeight: '700', marginBottom: 6 },
+  friendCard: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 82 },
+  friendInfo: { flex: 1, gap: 5 },
+  friendName: { fontSize: 17, fontWeight: '600' },
+  friendUsername: { fontSize: 14 },
+  arrow: { fontSize: 20 },
+  requestCard: { gap: 12 },
+  requestText: { fontSize: 15, lineHeight: 21 },
+  requestActions: { flexDirection: 'row', gap: 14, alignItems: 'center' },
+  acceptBtn: { paddingHorizontal: 18, paddingVertical: 10, borderRadius: 22 },
   acceptText: { fontSize: 14, fontWeight: '700' },
   rejectText: { fontSize: 14 },
-  empty: { alignItems: 'center', paddingTop: 60, gap: 12 },
-  emptyIcon: { fontSize: 48 },
-  emptyText: { fontSize: 16 },
+  empty: { alignItems: 'center', paddingTop: 76, gap: 14 },
+  emptyIcon: { fontSize: 42, lineHeight: 48 },
+  emptyText: { fontSize: 16, lineHeight: 22 },
 });

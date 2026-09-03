@@ -57,11 +57,11 @@ export function GlassCard({
 
 const styles = StyleSheet.create({
   wrapper: {
-    borderRadius: 20,
+    borderRadius: 24,
     borderWidth: 1,
     overflow: 'hidden',
   },
   inner: {
-    padding: 16,
+    padding: 20,
   },
 });

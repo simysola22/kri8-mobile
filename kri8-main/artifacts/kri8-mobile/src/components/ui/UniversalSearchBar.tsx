@@ -58,7 +58,7 @@ export function UniversalSearchBar({
           { backgroundColor: theme.bgGlass, borderColor: theme.border },
         ]}
       >
-        <Text style={[styles.searchIcon, { color: theme.textMuted }]}>🔍</Text>
+        <Text style={[styles.searchIcon, { color: theme.textMuted }]}>⌕</Text>
         <TextInput
           ref={inputRef}
           style={[styles.input, { color: theme.text }]}
@@ -181,14 +181,14 @@ const styles = StyleSheet.create({
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1,
     paddingHorizontal: 12,
-    paddingVertical: Platform.OS === 'ios' ? 10 : 6,
+    paddingVertical: Platform.OS === 'ios' ? 12 : 9,
     gap: 8,
   },
   searchIcon: {
-    fontSize: 16,
+    fontSize: 21,
   },
   input: {
     flex: 1,

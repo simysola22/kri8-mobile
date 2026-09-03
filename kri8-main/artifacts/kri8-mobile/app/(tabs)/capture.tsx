@@ -119,7 +119,7 @@ export default function CaptureScreen() {
         <ScrollView
           contentContainerStyle={[
             styles.scroll,
-            { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 100 },
+             { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 112 },
           ]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
@@ -161,9 +161,9 @@ export default function CaptureScreen() {
           <View style={styles.modeRow}>
             {(
               [
-                { key: 'text', label: '✏️ Text' },
-                { key: 'camera', label: '📷 Camera' },
-                { key: 'voice', label: '🎙️ Voice' },
+                 { key: 'text', label: 'Text' },
+                 { key: 'camera', label: 'Camera' },
+                 { key: 'voice', label: 'Voice' },
               ] as { key: CaptureMode; label: string }[]
             ).map(({ key, label }) => (
               <TouchableOpacity
@@ -356,7 +356,7 @@ export default function CaptureScreen() {
 
           {mode === 'camera' && (
             <GlassCard style={styles.comingSoon}>
-              <Text style={styles.csIcon}>📷</Text>
+              <Text style={[styles.csIcon, { color: theme.accent }]}>▣</Text>
               <Text style={[styles.csTitle, { color: theme.text }]}>
                 Camera Capture
               </Text>
@@ -369,7 +369,7 @@ export default function CaptureScreen() {
 
           {mode === 'voice' && (
             <GlassCard style={styles.comingSoon}>
-              <Text style={styles.csIcon}>🎙️</Text>
+              <Text style={[styles.csIcon, { color: theme.accent }]}>◉</Text>
               <Text style={[styles.csTitle, { color: theme.text }]}>
                 Voice Capture
               </Text>
@@ -397,45 +397,47 @@ export default function CaptureScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   flex: { flex: 1 },
-  scroll: { paddingHorizontal: 20, gap: 16 },
-  title: { fontSize: 32, fontWeight: '800', letterSpacing: -1 },
-  sub: { fontSize: 15, marginTop: -8 },
-  modeRow: { flexDirection: 'row', gap: 8 },
+  scroll: { paddingHorizontal: 22, gap: 22 },
+  title: { fontSize: 34, fontWeight: '800', letterSpacing: -1.1 },
+  sub: { fontSize: 15, marginTop: -12, lineHeight: 22 },
+  modeRow: { flexDirection: 'row', gap: 10 },
   modeChip: {
     flex: 1,
-    paddingVertical: 10,
-    borderRadius: 12,
+    paddingVertical: 12,
+    borderRadius: 16,
     borderWidth: 1,
     alignItems: 'center',
+    minHeight: 48,
   },
   modeText: { fontSize: 13, fontWeight: '600' },
-  form: { gap: 14 },
-  field: { gap: 6 },
+  form: { gap: 18 },
+  field: { gap: 8 },
   label: { fontSize: 12, fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase' },
   input: {
     borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     fontSize: 15,
-    minHeight: 80,
+    minHeight: 92,
+    lineHeight: 21,
   },
-  comingSoon: { alignItems: 'center', gap: 12, paddingVertical: 40 },
-  csIcon: { fontSize: 48 },
-  csTitle: { fontSize: 20, fontWeight: '700' },
-  csSub: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
-  statusRow: { flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 24 },
+  comingSoon: { alignItems: 'center', gap: 14, paddingVertical: 48 },
+  csIcon: { fontSize: 42, lineHeight: 50 },
+  csTitle: { fontSize: 21, fontWeight: '700' },
+  csSub: { fontSize: 14, textAlign: 'center', lineHeight: 21 },
+  statusRow: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 28 },
   localSave: { fontSize: 12 },
-  recoveryCard: { gap: 8 },
-  recoveryTitle: { fontSize: 16, fontWeight: '700' },
-  recoveryText: { fontSize: 13, lineHeight: 18 },
-  recoveryActions: { flexDirection: 'row', gap: 8, marginTop: 4 },
-  detection: { borderRadius: 12, padding: 12, gap: 6, marginTop: 8 },
+  recoveryCard: { gap: 10 },
+  recoveryTitle: { fontSize: 17, fontWeight: '700' },
+  recoveryText: { fontSize: 14, lineHeight: 20 },
+  recoveryActions: { flexDirection: 'row', gap: 10, marginTop: 6 },
+  detection: { borderRadius: 16, padding: 14, gap: 8, marginTop: 10 },
   detectionTitle: { fontSize: 14, fontWeight: '700' },
   detectionText: { fontSize: 12, lineHeight: 17 },
-  sourceRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  sourceRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 2 },
   sourceLabel: { flex: 1, fontSize: 12 },
-  aiCard: { borderWidth: 1, borderRadius: 14, padding: 12, gap: 8 },
+  aiCard: { borderWidth: 1, borderRadius: 16, padding: 14, gap: 10 },
   aiHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   aiTitle: { fontSize: 14, fontWeight: '700' },
   aiText: { fontSize: 12, lineHeight: 17 },

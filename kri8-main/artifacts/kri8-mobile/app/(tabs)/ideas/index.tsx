@@ -31,7 +31,7 @@ export default function IdeasScreen() {
 
   return (
     <LinearGradient colors={theme.gradient} style={styles.root}>
-      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 24 }]}>
         <Text style={[styles.title, { color: theme.text }]}>Ideas</Text>
 
         {/* Search */}
@@ -92,7 +92,7 @@ export default function IdeasScreen() {
           keyExtractor={(item) => String(item.id)}
           contentContainerStyle={[
             styles.list,
-            { paddingBottom: insets.bottom + 100 },
+             { paddingBottom: insets.bottom + 112 },
           ]}
           refreshControl={
             <RefreshControl
@@ -105,7 +105,7 @@ export default function IdeasScreen() {
           renderItem={({ item }) => <IdeaRow idea={item} />}
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Text style={[styles.emptyIcon]}>💡</Text>
+               <Text style={[styles.emptyIcon, { color: theme.accent }]}>✦</Text>
               <Text style={[styles.emptyText, { color: theme.textMuted }]}>
                 {search ? 'No ideas match your search' : 'No ideas yet'}
               </Text>
@@ -155,35 +155,38 @@ function IdeaRow({ idea }: { idea: Idea }) {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  header: { paddingHorizontal: 20, gap: 12, paddingBottom: 8 },
-  title: { fontSize: 32, fontWeight: '800', letterSpacing: -1 },
+  header: { paddingHorizontal: 22, gap: 16, paddingBottom: 12 },
+  title: { fontSize: 34, fontWeight: '800', letterSpacing: -1.1 },
   search: {
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: 16,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
     fontSize: 15,
+    minHeight: 52,
   },
-  filters: { flexDirection: 'row', gap: 8 },
+  filters: { flexDirection: 'row', gap: 10 },
   chip: {
     paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 20,
+    paddingVertical: 9,
+    borderRadius: 22,
     borderWidth: 1,
+    minHeight: 40,
   },
   chipText: { fontSize: 13, fontWeight: '600' },
-  list: { paddingHorizontal: 20, paddingTop: 12, gap: 10 },
+  list: { paddingHorizontal: 22, paddingTop: 10, gap: 14 },
   ideaCard: {},
   ideaRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 10,
+    gap: 14,
+    minHeight: 84,
   },
-  ideaMeta: { flex: 1, gap: 3 },
-  ideaTitle: { fontSize: 16, fontWeight: '600' },
-  ideaInsight: { fontSize: 13 },
-  ideaBadges: { gap: 4, alignItems: 'flex-end' },
-  empty: { alignItems: 'center', paddingTop: 80, gap: 12 },
-  emptyIcon: { fontSize: 48 },
-  emptyText: { fontSize: 16 },
+  ideaMeta: { flex: 1, gap: 6 },
+  ideaTitle: { fontSize: 17, fontWeight: '600', lineHeight: 23 },
+  ideaInsight: { fontSize: 14, lineHeight: 19 },
+  ideaBadges: { gap: 6, alignItems: 'flex-end' },
+  empty: { alignItems: 'center', paddingTop: 88, gap: 14 },
+  emptyIcon: { fontSize: 36, lineHeight: 44 },
+  emptyText: { fontSize: 16, lineHeight: 22, textAlign: 'center' },
 });
