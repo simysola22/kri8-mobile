@@ -701,5 +701,8 @@ export const InspireIdeaResponse = zod.object({
   "relatedIdeas": zod.array(zod.string()),
   "alternativeHooks": zod.array(zod.string()),
   "titleSuggestions": zod.array(zod.string()),
-  "audienceQuestions": zod.array(zod.string())
+  "audienceQuestions": zod.array(zod.string()),
+  "source": zod.enum(['openai', 'template'])
 })
+
+

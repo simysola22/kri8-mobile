@@ -279,11 +279,20 @@ export interface InspirationRequest {
   notes?: string;
 }
 
+export type InspirationResultSource = typeof InspirationResultSource[keyof typeof InspirationResultSource];
+
+
+export const InspirationResultSource = {
+  openai: 'openai',
+  template: 'template',
+} as const;
+
 export interface InspirationResult {
   relatedIdeas: string[];
   alternativeHooks: string[];
   titleSuggestions: string[];
   audienceQuestions: string[];
+  source: InspirationResultSource;
 }
 
 export type SearchUsersParams = {

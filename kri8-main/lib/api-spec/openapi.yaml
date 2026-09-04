@@ -950,4 +950,7 @@ components:
           type: array
           items:
             type: string
-      required: [relatedIdeas, alternativeHooks, titleSuggestions, audienceQuestions]
+        source:
+          type: string
+          enum: [openai, template]
+      required: [relatedIdeas, alternativeHooks, titleSuggestions, audienceQuestions, source]

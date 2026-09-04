@@ -99,6 +99,11 @@ export default function AIScreen() {
 
           {inspiration && (
             <View style={styles.results}>
+              <Text style={[styles.sourceLabel, { color: theme.textMuted }]}>
+                {inspiration.source === 'openai'
+                  ? 'Generated with OpenAI'
+                  : 'Generated from phrase-aware templates'}
+              </Text>
               {inspiration.relatedIdeas.length > 0 && (
                 <ResultGroup label="Ideas" items={inspiration.relatedIdeas} variant="accent" />
               )}
@@ -333,6 +338,7 @@ const styles = StyleSheet.create({
     lineHeight: 21,
   },
   results: { gap: 16, marginTop: 6 },
+  sourceLabel: { fontSize: 12, fontWeight: '600', letterSpacing: 0.2 },
   relevanceRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

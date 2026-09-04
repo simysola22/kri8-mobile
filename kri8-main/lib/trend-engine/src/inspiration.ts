@@ -57,7 +57,7 @@ function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every(item => typeof item === "string");
 }
 
-function parseInspirationResponse(value: unknown): InspirationResult {
+function parseInspirationResponse(value: unknown): Omit<InspirationResult, "source"> {
   if (!value || typeof value !== "object") {
     throw new Error("AI provider returned an invalid response");
   }
@@ -84,15 +84,23 @@ async function generateWithOpenAI(
   title: string,
   notes: string,
   trendKeywords: string[],
-): Promise<InspirationResult | null> {
+): Promise<Omit<InspirationResult, "source"> | null> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return null;
 
   try {
-    const prompt = `You are a content strategy expert helping a creator brainstorm.
+    const prompt = `You are a content strategy expert helping a creator turn an idea into a practical content plan.
 Idea title: "${title}"
 Notes: "${notes || "none"}"
 Trending context: ${trendKeywords.slice(0, 5).join(", ")}
+
+Use the complete title as the primary subject. Preserve multi-word concepts as
+meaningful phrases. Infer the real-world meaning, audience intent, creator goal,
+platform fit, and differentiated angles from the title and notes.
+Make suggestions specific, practical, and creator-ready rather than generic
+keyword commentary. Do not merely insert one keyword into a generic template.
+Do not provide chain-of-thought, hidden reasoning, or analysis; return only the
+requested JSON object.
 
 Return a JSON object with exactly these keys:
 - relatedIdeas: array of 10 unique video/content ideas
@@ -138,15 +146,21 @@ export async function generateInspiration(
 ): Promise<InspirationResult> {
   const trendKeywords = trends.flatMap(t => [t.keyword, ...t.relatedTopics.map(rt => rt.name)]);
   const primaryKeywords = extractKeywords(`${title} ${notes}`);
-  const keyword = primaryKeywords.slice(0, 6).join(" ") || title.trim() || "content";
+  const keyword = title.trim() || primaryKeywords.slice(0, 6).join(" ") || "content";
 
   const aiResult = await generateWithOpenAI(title, notes, trendKeywords);
-  if (aiResult) return aiResult;
+  if (aiResult) return { ...aiResult, source: "openai" };
 
   const relatedIdeas = pickN(IDEA_TEMPLATES, 10).map(t => fill(t, keyword));
   const alternativeHooks = pickN(HOOK_TEMPLATES, 5).map(t => fill(t, keyword));
   const titleSuggestions = TITLE_PATTERNS.map(t => fill(t, keyword));
   const audienceQuestions = pickN(AUDIENCE_QUESTION_TEMPLATES, 5).map(t => fill(t, keyword));
 
-  return { relatedIdeas, alternativeHooks, titleSuggestions, audienceQuestions };
+  return {
+    relatedIdeas,
+    alternativeHooks,
+    titleSuggestions,
+    audienceQuestions,
+    source: "template",
+  };
 }

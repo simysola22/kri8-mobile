@@ -153,7 +153,35 @@ router.get("/messages/:userId", requireAuth, async (req: any, res): Promise<void
     if (!me) { res.status(401).json({ error: "User not found" }); return; }
 
     const partnerId = Number(req.params.userId);
-    if (isNaN(partnerId)) { res.status(400).json({ error: "Invalid userId" }); return; }
+    if (isNaN(partnerId) || partnerId === me.id) {
+      res.status(400).json({ error: "Invalid userId" });
+      return;
+    }
+
+    const friendship = await db
+      .select({ id: friendshipsTable.id })
+      .from(friendshipsTable)
+      .where(
+        and(
+          eq(friendshipsTable.status, "accepted"),
+          or(
+            and(
+              eq(friendshipsTable.requesterId, me.id),
+              eq(friendshipsTable.addresseeId, partnerId),
+            ),
+            and(
+              eq(friendshipsTable.requesterId, partnerId),
+              eq(friendshipsTable.addresseeId, me.id),
+            ),
+          ),
+        ),
+      )
+      .limit(1);
+
+    if (!friendship[0]) {
+      res.status(403).json({ error: "You can only access messages with friends" });
+      return;
+    }
 
     const limit = Math.min(Number(req.query.limit ?? 50), 100);
     const before = req.query.before ? Number(req.query.before) : undefined;

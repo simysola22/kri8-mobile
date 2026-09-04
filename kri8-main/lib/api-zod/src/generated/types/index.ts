@@ -26,6 +26,7 @@ export * from './ideaStats';
 export * from './ideaUpdate';
 export * from './inspirationRequest';
 export * from './inspirationResult';
+export * from './inspirationResultSource';
 export * from './listIdeasParams';
 export * from './markUsedInput';
 export * from './message';

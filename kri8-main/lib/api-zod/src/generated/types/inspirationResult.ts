@@ -5,10 +5,12 @@
  * kri8 API specification
  * OpenAPI spec version: 0.2.0
  */
+import type { InspirationResultSource } from './inspirationResultSource';
 
 export interface InspirationResult {
   relatedIdeas: string[];
   alternativeHooks: string[];
   titleSuggestions: string[];
   audienceQuestions: string[];
+  source: InspirationResultSource;
 }

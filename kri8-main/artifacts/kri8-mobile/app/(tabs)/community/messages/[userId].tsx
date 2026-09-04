@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
+  Alert,
   View,
   Text,
   TextInput,
@@ -12,10 +13,11 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useUser } from '@clerk/expo';
 import { useActiveTheme } from '@/stores/theme';
 import { GlassCard } from '@/components/ui/GlassCard';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useMessages, useSendMessage } from '@/hooks/useSocial';
+import { useCurrentUser } from '@/hooks/useUser';
 import { tapLight } from '@/lib/haptics';
 import type { Message } from '@/types';
 
@@ -25,11 +27,11 @@ export default function MessagesScreen() {
   const theme = useActiveTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { user: clerkUser } = useUser();
   const listRef = useRef<FlatList>(null);
+  const { data: currentUser } = useCurrentUser();
 
   const [content, setContent] = useState('');
-  const { data: messages } = useMessages(recipientId);
+  const { data: messages, isLoading, isError, error, refetch } = useMessages(recipientId);
   const sendMessage = useSendMessage();
 
   // Scroll to bottom when new messages arrive
@@ -44,7 +46,15 @@ export default function MessagesScreen() {
     const text = content.trim();
     setContent('');
     await tapLight();
-    await sendMessage.mutateAsync({ userId: recipientId, content: text });
+    try {
+      await sendMessage.mutateAsync({ userId: recipientId, content: text });
+    } catch (sendError) {
+      setContent(text);
+      Alert.alert(
+        'Message not sent',
+        getErrorMessage(sendError, 'Please try again.'),
+      );
+    }
   };
 
   return (
@@ -67,7 +77,7 @@ export default function MessagesScreen() {
       >
         <FlatList
           ref={listRef}
-          data={messages ?? []}
+          data={isLoading || isError ? [] : messages ?? []}
           keyExtractor={(item) => String(item.id)}
           contentContainerStyle={[
             styles.messageList,
@@ -76,16 +86,29 @@ export default function MessagesScreen() {
           renderItem={({ item }) => (
             <MessageBubble
               message={item}
-              isOwn={item.senderId.toString() !== userId}
+              isOwn={item.senderId === currentUser?.id}
             />
           )}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
-            <View style={styles.empty}>
-              <Text style={[styles.emptyText, { color: theme.textMuted }]}>
-                No messages yet. Say hello!
-              </Text>
-            </View>
+            isLoading ? (
+              <LoadingSpinner style={{ marginTop: 64 }} />
+            ) : isError ? (
+              <View style={styles.empty}>
+                <Text style={[styles.emptyText, { color: theme.text }]}>
+                  {getErrorMessage(error, 'Could not load this conversation.')}
+                </Text>
+                <TouchableOpacity onPress={() => void refetch()}>
+                  <Text style={[styles.retryText, { color: theme.accent }]}>Retry</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={styles.empty}>
+                <Text style={[styles.emptyText, { color: theme.textMuted }]}>
+                  No messages yet. Say hello!
+                </Text>
+              </View>
+            )
           }
         />
 
@@ -147,6 +170,10 @@ export default function MessagesScreen() {
   );
 }
 
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message ? error.message : fallback;
+}
+
 function MessageBubble({
   message,
   isOwn,
@@ -202,6 +229,7 @@ const styles = StyleSheet.create({
   bubbleText: { fontSize: 15, lineHeight: 21 },
   empty: { alignItems: 'center', paddingTop: 80 },
   emptyText: { fontSize: 15 },
+  retryText: { fontSize: 15, fontWeight: '700', marginTop: 12 },
   inputBar: {
     flexDirection: 'row',
     alignItems: 'flex-end',

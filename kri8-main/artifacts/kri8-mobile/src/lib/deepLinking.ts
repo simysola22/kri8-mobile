@@ -105,7 +105,7 @@ export function routeToExpoPath(route: DeepLinkRoute): string {
     case 'idea':
       return `/(tabs)/ideas/${route.id}`;
     case 'profile':
-      return `/(tabs)/community/profile/${route.username}`;
+      return `/(tabs)/profile/${route.username}`;
     case 'community':
       return '/(tabs)/community';
     case 'calendar':

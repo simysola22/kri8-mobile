@@ -54,6 +54,7 @@ export interface InspirationResult {
   alternativeHooks: string[];
   titleSuggestions: string[];
   audienceQuestions: string[];
+  source: "openai" | "template";
 }
 
 /** Implement this interface to add a new trend data source (TikTok, YouTube, etc.) */

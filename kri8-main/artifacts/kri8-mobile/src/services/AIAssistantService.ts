@@ -188,4 +188,5 @@ interface InspirationResponse {
   alternativeHooks?: string[];
   titleSuggestions?: string[];
   audienceQuestions?: string[];
+  source?: 'openai' | 'template';
 }

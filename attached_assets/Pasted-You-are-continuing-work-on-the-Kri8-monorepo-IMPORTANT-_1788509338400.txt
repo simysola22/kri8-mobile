@@ -1,0 +1,534 @@
+You are continuing work on the Kri8 monorepo.
+
+IMPORTANT: A read-only audit has already been completed. The proposed changes below have been reviewed.
+
+You may now IMPLEMENT the approved changes.
+
+Do not restart the project, redesign unrelated systems, remove existing functionality, or begin Phase 3 features.
+
+══════════════════════════════
+PRIMARY OBJECTIVES
+══════════════════════════════
+
+There are two immediate problems:
+
+1. The mobile "Get Inspired" AI experience is producing poor, shallow results and sometimes appears to focus on only the first word of a multi-word idea.
+
+Example:
+
+User enters:
+
+"house hunting"
+
+The app must understand "house hunting" as the complete concept.
+
+It must NOT reduce the concept to:
+
+"house"
+
+and produce generic results such as:
+
+"The psychology of house — why it works better than you think"
+
+The results should instead understand the real subject and generate creator-relevant ideas around house hunting, such as experiences, mistakes, psychology, strategy, decision-making, checklists, stories, comparisons, or other genuinely relevant angles.
+
+2. The mobile Community area has backend functionality and partial frontend functionality for searching users, friendships, conversations, and messages, but these features are not properly exposed in the standalone app.
+
+Finish those integrations.
+
+══════════════════════════════
+PART 1 — GET INSPIRED FIX
+══════════════════════════════
+
+Implement the approved phrase-preservation and AI-quality improvements.
+
+Relevant files include:
+
+lib/trend-engine/src/inspiration.ts
+lib/trend-engine/src/types.ts
+lib/api-spec/openapi.yaml
+lib/api-zod/src/generated/types/inspirationResult.ts
+lib/api-client-react/src/generated/api.schemas.ts
+artifacts/kri8-mobile/src/types/api.ts
+artifacts/kri8-mobile/app/(tabs)/ai.tsx
+artifacts/kri8-mobile/src/services/AIAssistantService.ts
+
+Requirements:
+
+### Preserve complete concepts
+
+The complete trimmed title must remain the primary semantic subject.
+
+For example:
+
+"house hunting"
+
+must remain:
+
+"house hunting"
+
+Do not reduce it to:
+
+"house"
+
+Do not construct fallback ideas primarily from individually extracted tokens when the original phrase is available.
+
+The template fallback should prioritize:
+
+const concept = title.trim()
+
+before using extracted keywords.
+
+### Improve the OpenAI prompt
+
+Strengthen the prompt so the model explicitly:
+
+* treats multi-word titles as meaningful phrases
+* uses the complete title as the primary subject
+* infers the real-world meaning and audience intent
+* identifies useful creator angles
+* considers what makes the topic interesting
+* produces differentiated ideas
+* avoids generic keyword commentary
+* avoids merely putting one keyword into generic templates
+* generates practical, specific, creator-ready content concepts
+
+For example, for "house hunting", the model should understand the activity and context of searching for a home, rather than treating "house" as an isolated keyword.
+
+Do NOT ask the model to reveal chain-of-thought or hidden reasoning.
+
+Return only the required structured JSON.
+
+### Add generation provenance
+
+Add:
+
+source: "openai" | "template"
+
+to the final InspirationResult returned to clients.
+
+Rules:
+
+* Successful validated OpenAI generation → source: "openai"
+* Intentional template generation because no AI provider is configured → source: "template"
+
+Do NOT silently turn a configured OpenAI provider failure into template output.
+
+If OPENAI_API_KEY is configured and OpenAI fails, return a meaningful failure to the API client.
+
+Do not fake successful AI output.
+
+### Runtime validation
+
+Keep runtime schema validation for OpenAI responses.
+
+Do not use:
+
+JSON.parse(...) as InspirationResult
+
+without validating the resulting structure.
+
+Validate the four expected arrays before accepting the AI response.
+
+The server should add the internal source metadata after validation.
+
+### OpenAPI
+
+Update the canonical OpenAPI schema first.
+
+Then regenerate dependent generated types.
+
+Do not manually create divergent copies of generated contracts.
+
+══════════════════════════════
+PART 2 — VERIFY OPENAI ACTUALLY WORKS
+══════════════════════════════
+
+OPENAI_API_KEY now exists in the Replit environment.
+
+Do not display, print, log, or expose the key.
+
+Verify locally whether the configured API can successfully reach the OpenAI generation path.
+
+Because trend endpoints require Clerk authentication, use an existing authenticated test path if available.
+
+Do not weaken authentication merely to test OpenAI.
+
+If a real authenticated local test is not possible, inspect logs and configuration safely and report exactly what remains unverified.
+
+IMPORTANT:
+
+The mobile APK points to:
+
+https://kri8-obvh.onrender.com
+
+Therefore determine whether the deployed Render backend must also have:
+
+OPENAI_API_KEY
+
+configured independently.
+
+Do not assume a Replit secret automatically exists on Render.
+
+If the deployed backend configuration cannot be inspected from this environment, explicitly state that instead of guessing.
+
+After implementation, the client should visibly indicate:
+
+"Generated with OpenAI"
+
+when source is openai.
+
+It should indicate something like:
+
+"Generated from phrase-aware templates"
+
+when source is template.
+
+This is important so I can immediately tell whether the real AI path is being used.
+
+══════════════════════════════
+PART 3 — BACKEND SOCIAL SECURITY FIX
+══════════════════════════════
+
+Modify:
+
+artifacts/api-server/src/routes/social.ts
+
+The route:
+
+GET /api/social/messages/:userId
+
+must enforce the same accepted-friend authorization model as message sending.
+
+Requirements:
+
+* authenticated caller required
+* validate userId
+* reject self-conversations
+* verify an accepted friendship exists between caller and requested partner
+* return 403 when they are not accepted friends
+* only then return conversation history and update read state
+
+Do not change the existing POST message authorization to something weaker.
+
+Do not expose message history to arbitrary authenticated users who guess numeric IDs.
+
+If practical, reuse or centralize the friendship authorization check to reduce duplication, but do not perform an unrelated social-system redesign.
+
+══════════════════════════════
+PART 4 — MOBILE COMMUNITY: SEARCH FOR PEOPLE
+══════════════════════════════
+
+Keep the existing six tabs.
+
+Do NOT add a seventh Messages tab.
+
+Community remains the social hub.
+
+Modify the existing Community experience to expose the backend functionality already present.
+
+Relevant files:
+
+artifacts/kri8-mobile/src/types/api.ts
+artifacts/kri8-mobile/src/hooks/useSocial.ts
+artifacts/kri8-mobile/app/(tabs)/community/index.tsx
+
+Add:
+
+### Discover people
+
+A search field:
+
+"Search by name or username"
+
+Requirements:
+
+* use the existing GET /api/users/search?q= endpoint
+* require at least 2 meaningful characters
+* trim whitespace
+* debounce if appropriate
+* use the existing authenticated API pattern
+* preserve backend error messages
+* gracefully handle loading
+* gracefully handle empty results
+* gracefully handle API failure
+* never assume a response is automatically an array
+
+Normalize expected response shapes safely.
+
+### Search results
+
+Each result should show the existing public user information available from the API.
+
+Allow:
+
+* Open profile
+* Send friend request
+
+Do not expose email addresses or Clerk IDs.
+
+### Friend request state
+
+Do not show a misleading "Add" button for everyone.
+
+Use available friendship/request state where possible:
+
+* Friend
+* Pending
+* Add
+
+Prevent duplicate request attempts.
+
+After sending a request:
+
+* update/refetch relevant social state
+* give visible feedback
+* preserve errors if the request fails
+
+══════════════════════════════
+PART 5 — MOBILE COMMUNITY: CONVERSATIONS
+══════════════════════════════
+
+The backend already exposes:
+
+GET /api/social/conversations
+
+The mobile app already queries conversations.
+
+Render them.
+
+Each conversation should show:
+
+* partner avatar if available
+* partner name or username
+* latest message preview
+* unread count when greater than zero
+
+Selecting a conversation should open:
+
+/(tabs)/community/messages/[userId]
+
+Do not add another tab.
+
+The hierarchy should be:
+
+Community
+
+→ Discover people
+→ Friend requests
+→ Conversations
+→ Friends
+
+Accepted friends should continue to provide a route into messaging.
+
+══════════════════════════════
+PART 6 — FRIEND REQUEST RESPONSE TYPES
+══════════════════════════════
+
+Correct the mobile FriendRequest typing to match the real backend response.
+
+Support nested requester/addressee public user data where returned.
+
+Do not rely only on numeric IDs if the API provides actual requester identity.
+
+Render real names/usernames rather than:
+
+"User #123 wants to connect"
+
+where public identity data exists.
+
+Keep compatibility with the current backend shape.
+
+Normalize defensively.
+
+══════════════════════════════
+PART 7 — MOBILE MESSAGE RELIABILITY
+══════════════════════════════
+
+Modify:
+
+artifacts/kri8-mobile/app/(tabs)/community/messages/[userId].tsx
+
+and supporting hooks as needed.
+
+Requirements:
+
+### Errors
+
+Do not reduce backend errors to only:
+
+API error 403
+
+Parse safe JSON error bodies and preserve useful backend messages.
+
+For example:
+
+"You can only access messages with friends"
+
+should be shown meaningfully to the user.
+
+### Failed sends
+
+Do not permanently lose typed text when sending fails.
+
+Recommended behavior:
+
+1. capture trimmed text
+2. attempt sending
+3. if successful, keep composer cleared
+4. if failed:
+
+   * restore the text
+   * show the actual useful error
+
+### Loading and failure states
+
+The thread must explicitly handle:
+
+* loading
+* empty conversation
+* API failure
+* unauthorized/forbidden response
+
+### Message ownership
+
+Do not infer current-user ownership simply from the route partner ID.
+
+Use the authenticated application's actual user identity/database identity.
+
+Inspect the existing authentication/profile data flow and use the established source of truth.
+
+Do not invent a second identity system.
+
+══════════════════════════════
+PART 8 — DEEP LINKS AND NOTIFICATIONS
+══════════════════════════════
+
+Fix the existing incorrect profile route in:
+
+artifacts/kri8-mobile/src/lib/deepLinking.ts
+
+Ensure profile deep links point to the real mobile profile route.
+
+Fix notification reply routing in:
+
+artifacts/kri8-mobile/app/_layout.tsx
+
+When a valid numeric senderId is available, navigate directly to:
+
+/(tabs)/community/messages/[senderId]
+
+Otherwise fall back safely to Community.
+
+Do not start advanced push-notification logic.
+
+Only fix the routing integration already present.
+
+══════════════════════════════
+PART 9 — DO NOT ADD MOBILE SSE YET
+══════════════════════════════
+
+Do NOT introduce a new mobile SSE implementation in this task.
+
+The existing mobile polling behavior remains active.
+
+Do not pass Clerk bearer tokens through URLs.
+
+Do not copy the browser EventSource workaround into mobile.
+
+A secure native realtime transport can be evaluated separately later.
+
+══════════════════════════════
+PART 10 — DO NOT START PHASE 3
+══════════════════════════════
+
+Do NOT begin any of these features:
+
+* Offline-first sync
+* Camera-first capture
+* Voice Capture
+* Camera OCR
+* Share Sheet
+* Home screen widgets
+* Lock screen quick capture
+* Advanced push notification intelligence
+* AI Everywhere expansion
+* Premium interaction polish
+
+Also do not redesign:
+
+* the six-tab navigation
+* Clerk authentication
+* trend providers
+* database architecture
+* existing web social features
+
+unless a directly necessary bug prevents the approved work.
+
+══════════════════════════════
+IMPLEMENTATION ORDER
+══════════════════════════════
+
+Work incrementally:
+
+1. Inspect the current relevant files again before editing.
+2. Implement phrase-preserving inspiration logic.
+3. Add source provenance and update the canonical API contract.
+4. Regenerate API types from the canonical contract.
+5. Verify the OpenAI execution path safely.
+6. Fix message-history authorization.
+7. Implement mobile user search and friend requests.
+8. Render mobile conversations and unread counts.
+9. Improve mobile message error/retry behavior.
+10. Fix deep-link and notification routing.
+11. Run validation after each logical stage where practical.
+
+══════════════════════════════
+VALIDATION
+══════════════════════════════
+
+Run appropriate checks, including where applicable:
+
+* trend-engine typecheck
+* API server typecheck
+* mobile typecheck
+* OpenAPI/Zod generation and typecheck
+* web build if shared contracts affect it
+* git diff --check
+* Expo config validation
+
+Do not install unrelated dependencies.
+
+Do not make speculative dependency upgrades.
+
+Do not start an EAS build yet unless all implementation and validation steps pass.
+
+══════════════════════════════
+FINAL REPORT
+══════════════════════════════
+
+When finished, report:
+
+1. Files changed
+2. Exact functionality implemented
+3. Get Inspired before/after behavior
+4. Whether local OpenAI generation was actually confirmed
+5. Whether Render deployment configuration can be confirmed from this environment
+6. How generation provenance is displayed
+7. Social features now working in mobile
+8. Backend authorization changes
+9. Tests/typechecks/builds run and their results
+10. Any failures or uncertainties
+11. Whether a new standalone APK build is now recommended
+
+Be completely honest.
+
+Do not claim OpenAI is working unless you actually verified the OpenAI path.
+
+Do not claim the Render backend has OPENAI_API_KEY unless you can verify it.
+
+Do not expose secrets.
+
+Preserve all existing functionality.
+
+Prioritize correctness over speed.

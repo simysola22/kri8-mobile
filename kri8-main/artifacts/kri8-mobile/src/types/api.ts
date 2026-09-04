@@ -103,11 +103,13 @@ export interface PublicProfile {
 
 export interface FriendRequest {
   id: number;
-  requesterId: number;
-  addresseeId: number;
+  requester?: UserPublic;
+  addressee?: UserPublic;
+  requesterId?: number;
+  addresseeId?: number;
   status: 'pending' | 'accepted' | 'rejected';
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string;
 }
 
 export interface FriendsList {
@@ -123,6 +125,12 @@ export interface Message {
   content: string;
   isRead: boolean;
   createdAt: string;
+}
+
+export interface Conversation {
+  partner: UserPublic;
+  lastMessage: Message;
+  unreadCount: number;
 }
 
 export interface MessageInput {
@@ -175,6 +183,7 @@ export interface TrendInspiration {
   alternativeHooks: string[];
   titleSuggestions: string[];
   audienceQuestions: string[];
+  source?: 'openai' | 'template';
 }
 
 export type ThemeName =
