@@ -1,0 +1,528 @@
+You are continuing work on Kri8, the standalone mobile creator app.
+
+IMPORTANT: We have now installed and manually tested the standalone Android APK. This is not a theoretical audit. The following issues were discovered during real app testing.
+
+Do NOT start Phase 3 features yet.
+
+Do NOT begin:
+
+* Offline-first sync
+* Camera-first capture
+* Voice Capture
+* Camera OCR
+* Share Sheet
+* Home screen widgets
+* Lock screen capture
+* Advanced push notification logic
+* AI Everywhere expansion
+* Premium interaction polish
+
+First, fix the currently existing functionality so the core product works properly.
+
+══════════════════════════════
+PRIORITY 1 — FIX "GET INSPIRED"
+══════════════════════════════
+
+The current Get Inspired feature is producing poor-quality results.
+
+Real test:
+
+Input:
+
+"house hunting"
+
+Current type of output:
+
+"The psychology of house — why it works better than you think"
+
+This is unacceptable.
+
+The system appears to still be reducing a multi-word concept into individual words or heavily prioritizing the first word.
+
+I need you to audit the COMPLETE Get Inspired pipeline:
+
+Mobile input
+→ API request
+→ backend route
+→ trend engine
+→ keyword extraction
+→ AI prompt
+→ OpenAI response
+→ fallback/template generation
+→ mobile rendering
+
+Find exactly where phrase context is being lost.
+
+Do not assume the previous fix actually solved this.
+
+VERIFY THE CURRENT CODE.
+
+The complete phrase must remain meaningful throughout the pipeline.
+
+For example:
+
+"house hunting"
+
+must be understood as:
+
+* searching for a house
+* buying/renting considerations
+* real estate decision-making
+* the experience/process of house hunting
+
+It must NOT be treated primarily as:
+
+* "house"
+* "hunting"
+
+independently.
+
+Similarly:
+
+"moving to a new city"
+
+must remain one concept.
+
+"starting university for the first time"
+
+must remain one concept.
+
+"how to survive long distance relationships"
+
+must remain one concept.
+
+══════════════════════════════
+GET INSPIRED QUALITY REQUIREMENTS
+══════════════════════════════
+
+Audit whether OpenAI is actually being used.
+
+Check:
+
+1. Is OPENAI_API_KEY actually available to the backend runtime?
+2. Is the OpenAI provider initialized successfully?
+3. Is the OpenAI code path actually reached?
+4. Does the backend silently fall back to templates?
+5. If OpenAI fails, is that failure visible?
+6. Is the current APK talking to the latest deployed backend?
+7. Is the deployed Render backend running the latest code?
+8. Are API responses showing AI-generated results or fallback results?
+
+DO NOT expose secret values.
+
+Only report whether configuration is present and whether the provider successfully initializes.
+
+IMPORTANT:
+
+Do NOT silently disguise an AI provider failure as a successful "Get Inspired" result.
+
+If real AI generation is configured and fails, the application must expose a meaningful error.
+
+Template fallback should be clearly distinguishable from AI-generated output.
+
+══════════════════════════════
+IMPROVE THE AI PROMPT
+══════════════════════════════
+
+If OpenAI is working, redesign the prompt so it behaves like a creator strategist.
+
+The model must understand the user's COMPLETE idea or topic before generating anything.
+
+Do not tell it to simply generate generic content ideas from keywords.
+
+The generated ideas should be:
+
+* specific
+* context-aware
+* intellectually interesting
+* relevant to the exact phrase
+* useful for creators
+* non-generic
+* varied in angle
+
+For "house hunting", better directions could include concepts such as:
+
+* hidden psychological biases that make people choose the wrong home
+* how to tell whether you love a house or just love the staging
+* the mistakes first-time house hunters make when comparing locations
+* why house hunting becomes emotionally exhausting
+* how estate agents influence perceived value
+
+These are examples of DEPTH and CONTEXT.
+
+Do not hardcode these examples as outputs.
+
+The system must generate intelligent ideas dynamically for arbitrary topics.
+
+The AI should first internally identify:
+
+* the complete topic
+* user intent
+* context
+* possible creator angles
+* interesting tensions
+* psychological/social/business/practical dimensions where relevant
+
+Then generate ideas from that understanding.
+
+Do not expose chain-of-thought or internal reasoning.
+
+══════════════════════════════
+FALLBACK GENERATION
+══════════════════════════════
+
+If no AI provider is configured, fallback generation must STILL preserve the complete phrase.
+
+Never do this:
+
+const keyword = title.split(" ")[0]
+
+Never reduce:
+
+"house hunting"
+
+to:
+
+"house"
+
+The fallback system should use the entire normalized phrase.
+
+If intelligent generation cannot be provided without the AI provider, return fewer but honest, phrase-aware template results rather than pretending to generate sophisticated AI ideas.
+
+══════════════════════════════
+PRIORITY 2 — FRIEND DISCOVERY
+══════════════════════════════
+
+The mobile application currently has no obvious place to search for friends/users.
+
+We know that social/community and messaging-related functionality already exists somewhere in the Kri8 codebase.
+
+Do NOT rebuild duplicate systems before auditing what already exists.
+
+Audit:
+
+* web social pages
+* web messaging pages
+* API routes
+* database schema
+* generated API clients
+* mobile hooks
+* mobile services
+* existing social types
+* existing user/profile endpoints
+* friendship/follow/collaboration logic
+* message routes
+* SSE/message streaming infrastructure
+
+Determine what already exists and what is missing from the mobile application.
+
+I want a clear user discovery flow.
+
+At minimum, users should be able to:
+
+1. Open Community or Social.
+2. Search for another Kri8 user.
+3. See matching users.
+4. Open a user's profile.
+5. Take the appropriate existing social action if the backend supports it:
+
+   * connect
+   * follow
+   * add friend
+   * collaborate
+     Do not invent a new database model if an equivalent model already exists.
+6. Start or access a conversation where messaging support already exists.
+
+Search should support useful fields already available in the user model, such as:
+
+* name
+* username
+* email only if privacy rules and existing architecture permit it
+
+Do not expose private information unnecessarily.
+
+══════════════════════════════
+PRIORITY 3 — MESSAGING
+══════════════════════════════
+
+The standalone mobile app currently does not provide a proper Messaging section even though messaging infrastructure exists in the repository.
+
+Audit the existing implementation before changing anything.
+
+Check:
+
+Frontend/web:
+
+* messages.tsx
+* social pages
+* message hooks
+* generated API client
+* SSE implementation
+
+Backend:
+
+* message routes
+* authentication
+* authorization
+* conversation/thread logic
+* SSE stream
+* database persistence
+
+Mobile:
+
+* existing Messages screen
+* hooks
+* services
+* navigation
+* API integration
+
+Determine why messaging is not accessible in the standalone app.
+
+Then make the existing messaging functionality accessible in the mobile architecture.
+
+The desired user flow is:
+
+Community
+→ Search users
+→ Select user
+→ Profile or conversation action
+→ Message
+
+Also provide a direct Messages entry point.
+
+If a dedicated Messages tab already fits the existing six-tab architecture without harming the UX, analyze it.
+
+Otherwise, integrate Messages through Community/Profile/navigation in the cleanest way.
+
+Do not add a seventh tab automatically.
+
+Make a deliberate UX decision based on the current navigation architecture.
+
+══════════════════════════════
+MESSAGING REQUIREMENTS
+══════════════════════════════
+
+Use the existing backend and database where possible.
+
+Do not create duplicate message storage.
+
+Messages must:
+
+* belong to authenticated users
+* persist in the database
+* survive app restart
+* load conversation history
+* support loading states
+* support empty states
+* support error states
+* preserve backend error messages
+* prevent unauthorized access
+* ensure users can only access conversations they are authorized to access
+
+If SSE is already implemented:
+
+* audit whether it works with the separate mobile/API deployment
+* verify authentication works
+* verify the mobile app receives updates
+* keep it if correct
+
+If SSE cannot work with the current authentication architecture, explain the exact blocker before replacing it.
+
+Do not silently remove real-time functionality.
+
+══════════════════════════════
+REAL APK / DEPLOYMENT VERIFICATION
+══════════════════════════════
+
+The current standalone APK uses:
+
+https://kri8-obvh.onrender.com
+
+Verify that all testing is against the correct deployed backend.
+
+After any approved backend change:
+
+* verify local/typecheck
+* verify API startup
+* verify the relevant authenticated API paths
+* verify deployment configuration
+* verify the standalone app will communicate with the updated backend
+
+If the current APK cannot receive frontend changes until a new build is produced, state that clearly.
+
+Do not claim an APK is fixed unless a new APK containing the changes has been built.
+
+══════════════════════════════
+RESPONSE SHAPES
+══════════════════════════════
+
+Continue enforcing safe API handling.
+
+No mobile screen should assume an endpoint directly returns an array.
+
+Support expected response shapes such as:
+
+[]
+
+{ data: [] }
+
+{ items: [] }
+
+{ users: [] }
+
+Normalize responses before calling:
+
+.map()
+
+.filter()
+
+.reduce()
+
+.flatMap()
+
+.length
+
+══════════════════════════════
+ERROR HANDLING
+══════════════════════════════
+
+For Get Inspired:
+
+Show whether the failure is:
+
+* AI provider unavailable
+* backend/API failure
+* invalid AI response
+* network failure
+
+Do not expose secrets or sensitive provider internals.
+
+For Community and Messages:
+
+Show meaningful retryable errors.
+
+Do not replace backend error messages with only:
+
+"Something went wrong"
+
+unless there is genuinely no safer specific message.
+
+══════════════════════════════
+PHASE 1 — READ-ONLY AUDIT
+══════════════════════════════
+
+Before modifying ANY files:
+
+1. Inspect the complete Get Inspired pipeline.
+2. Trace a multi-word phrase such as "house hunting" through the actual code.
+3. Determine whether OpenAI is actually being used.
+4. Check whether fallback/template mode is being triggered.
+5. Verify the deployed backend/API relationship.
+6. Audit all existing social and messaging infrastructure.
+7. Find all existing user discovery/search functionality.
+8. Find all existing mobile message-related code.
+9. Inspect the existing navigation architecture.
+10. Identify exactly why these features are not properly exposed in the standalone app.
+
+══════════════════════════════
+OUTPUT REQUIRED
+══════════════════════════════
+
+STEP 1 — Get Inspired root-cause report
+
+Explain exactly why:
+
+"house hunting"
+
+can still produce weak, first-word-style or generic ideas.
+
+Show the complete execution path responsible.
+
+STEP 2 — OpenAI verification
+
+Report:
+
+* configured: yes/no
+* provider initialization: success/failure
+* real AI code path reached: yes/no
+* template fallback reached: yes/no
+* why
+
+Never reveal secret values.
+
+STEP 3 — Social and messaging audit
+
+List:
+
+* existing backend functionality
+* existing web functionality
+* existing mobile functionality
+* missing mobile integrations
+* unused existing code
+
+STEP 4 — Recommended UX
+
+Show the proposed navigation flow for:
+
+User discovery
+→ User profile
+→ Social action
+→ Conversation
+
+And:
+
+Messages
+→ Conversation list
+→ Conversation
+→ Real-time updates
+
+STEP 5 — Files requiring changes
+
+List every file and explain why it needs modification.
+
+STEP 6 — Exact proposed diffs
+
+Show the actual diffs.
+
+Do not summarize them vaguely.
+
+STEP 7 — STOP
+
+STOP HERE.
+
+DO NOT MODIFY FILES.
+
+DO NOT INSTALL PACKAGES.
+
+DO NOT REDEPLOY.
+
+DO NOT START A NEW APK BUILD.
+
+I will explicitly approve the proposed changes before implementation.
+
+══════════════════════════════
+NON-NEGOTIABLE RULES
+══════════════════════════════
+
+* Preserve existing functionality.
+* Reuse existing code before creating duplicate systems.
+* Do not start Phase 3.
+* Do not silently fall back from failed AI to fake AI output.
+* Do not reduce multi-word ideas to the first word.
+* Do not hardcode example outputs.
+* Do not invent a second messaging system.
+* Do not invent a second social/user model.
+* Do not expose secrets.
+* Do not modify files until approval.
+* Prioritize correctness over speed.
+* If an architectural decision is genuinely uncertain, stop and explain the uncertainty rather than guessing.
+
+Goal:
+
+Before Phase 3 begins, Kri8's existing core features must actually feel intelligent and complete.
+
+Get Inspired should understand complete human concepts rather than keywords.
+
+Users should be able to discover other users and access the existing messaging infrastructure from the standalone mobile application.
+
+After the audit and proposed diffs, STOP and wait for my approval.
