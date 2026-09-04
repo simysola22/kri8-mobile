@@ -1,0 +1,300 @@
+We have completed the current round of Kri8 Mobile fixes and want to create a fresh **standalone Android build** for real-device testing before beginning Phase 3.
+
+Do NOT start Phase 3 features yet.
+
+Do NOT modify unrelated functionality.
+
+Your task is to audit the current mobile build configuration, verify the completed work, and produce a new installable standalone Android APK.
+
+## GOAL
+
+Build the current version of Kri8 Mobile as a standalone Android application that I can install directly on my phone.
+
+The APK must work independently.
+
+It must NOT require:
+
+* Metro
+* Expo Go
+* a QR code
+* a development server
+* a Replit preview session
+* a development client
+
+---
+
+# STEP 1 — PRE-BUILD AUDIT
+
+Before building, inspect:
+
+* `artifacts/kri8-mobile/app.json`
+* `artifacts/kri8-mobile/eas.json`
+* `artifacts/kri8-mobile/package.json`
+* mobile environment variable usage
+* Clerk configuration
+* API base URL configuration
+* splash-screen configuration
+* Android build configuration
+
+Confirm exactly which EAS build profile will be used.
+
+The intended output is:
+
+* Android standalone APK
+* Internal distribution / directly installable
+* Preview/testing build
+* No development client
+
+If the existing configuration already supports this, do not redesign it unnecessarily.
+
+---
+
+# STEP 2 — VERIFY CURRENT FUNCTIONALITY
+
+Verify the currently completed features still compile and are included:
+
+## Authentication
+
+* Clerk initialization
+* Sign in
+* Sign out
+* Session persistence
+* Protected app access
+* Correct redirects
+* No demo auth fallback
+* No auth timers
+* No Metro dependency
+
+## Navigation
+
+Verify the six primary tabs remain:
+
+1. Home
+2. Ideas
+3. Capture
+4. Community
+5. AI
+6. Profile
+
+Verify nested detail routes are not incorrectly displayed as tabs.
+
+## AI Studio
+
+Verify:
+
+### Get Inspired
+
+* Multi-word ideas are preserved correctly
+* Input is trimmed
+* Full phrase context reaches the backend
+* Results are not reduced to only the first word
+* Related ideas display
+* Hooks display
+* Title suggestions display
+* Audience questions display
+* Failures show visible error feedback
+* Retry remains possible
+
+### Analyze an Idea
+
+Verify:
+
+* Input is trimmed
+* Analyze button triggers the request correctly
+* Score displays
+* Related topics display
+* Related hashtags display
+* Content opportunities display
+* Suggested angles display
+* Hashtags contain exactly one `#`
+* API failures are visible
+* Empty results are distinct from failed requests
+
+## Trends
+
+Verify:
+
+* Trend provider metadata is included
+* Fixture/mock data is honestly labeled
+* Static fixture data does not pretend to be freshly updated
+* YouTube data is labeled correctly
+* Estimated metrics are not falsely labeled as measured growth
+* Fetch/retrieval time is displayed only when meaningful
+* Trend request failures have a visible state
+* Pull-to-refresh still works
+
+## Startup
+
+Verify:
+
+* No arbitrary `setTimeout` loading logic
+* Native splash lifecycle uses the intended Expo splash mechanism
+* Clerk loading does not produce an uncontrolled blank application state
+* Missing Clerk configuration still shows the existing setup/error screen correctly
+* Do not invent a launcher icon if no confirmed Kri8 icon asset exists
+
+---
+
+# STEP 3 — VALIDATION
+
+Run all available relevant validation before building.
+
+At minimum:
+
+```bash
+pnpm --dir artifacts/kri8-mobile run typecheck
+```
+
+Also run the appropriate Expo configuration validation.
+
+Run:
+
+```bash
+git diff --check
+```
+
+If any validation fails:
+
+STOP.
+
+Do not hide, suppress, or bypass the error.
+
+Report:
+
+* exact failing command
+* exact error
+* affected file
+* whether it blocks the APK build
+
+Only continue if the mobile build is in a valid state.
+
+Do not modify source files merely to make the build command pass unless a confirmed build-blocking issue requires a fix. If a source modification is required, STOP and show me the exact proposed diff first.
+
+---
+
+# STEP 4 — ENVIRONMENT VERIFICATION
+
+Do not print any secret values.
+
+Verify only that the required build environment variables exist where needed.
+
+For mobile, verify:
+
+* `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`
+* `EXPO_PUBLIC_API_BASE_URL`
+
+Confirm that the API points to the intended deployed backend:
+
+`https://kri8-obvh.onrender.com`
+
+Do not expose the actual Clerk key.
+
+Also verify that the backend trend provider configuration is not being silently replaced by mock data.
+
+The configured OpenAI and YouTube integrations should remain part of the existing backend configuration. Do not remove or overwrite their configuration.
+
+---
+
+# STEP 5 — BUILD
+
+Create a fresh Android standalone preview APK.
+
+Use the existing EAS configuration if possible.
+
+The build must:
+
+* use the `preview` profile, unless the existing configuration clearly requires another equivalent internal APK profile
+* produce an `.apk`
+* be directly installable on Android
+* use internal distribution
+* not use a development client
+
+Do not build an AAB unless the configuration requires a separate production release process.
+
+The primary deliverable right now is an installable APK.
+
+---
+
+# STEP 6 — POST-BUILD VERIFICATION
+
+After the build completes, report:
+
+* Build ID
+* Final build status
+* Build profile
+* Artifact type
+* Whether it is a standalone APK
+* Whether Metro is required: YES/NO
+* Whether Expo Go is required: YES/NO
+* Whether a development server is required: YES/NO
+* Configured API base URL
+* Confirmation that the build is intended for direct Android installation
+
+Provide the APK artifact link.
+
+Do not claim that features were visually tested on a physical Android device unless they actually were.
+
+Clearly separate:
+
+### Verified by automated/build checks
+
+from
+
+### Requires real-device testing
+
+---
+
+# IMPORTANT SCOPE RULES
+
+Do NOT begin implementing any Phase 3 features.
+
+Do NOT start:
+
+* Camera-first capture
+* Voice capture
+* Widgets
+* Share Sheet
+* Lock screen capture
+* OCR
+* AI Everywhere expansion
+* New push notification features
+* Premium interaction work
+
+We are only creating a stable standalone APK of the current progress so we can test everything properly before Phase 3.
+
+Do not change:
+
+* existing authentication architecture
+* backend APIs
+* database architecture
+* navigation architecture
+* trend provider architecture
+* existing features
+
+unless a confirmed build-blocking defect makes it necessary.
+
+If anything is uncertain, STOP and report it instead of making assumptions.
+
+## FINAL OUTPUT FORMAT
+
+### 1. Pre-build audit
+
+### 2. Validation results
+
+### 3. Environment verification
+
+Do not reveal secrets.
+
+### 4. Build result
+
+### 5. APK link
+
+### 6. Verified by automated checks
+
+### 7. Requires real Android device testing
+
+### 8. Any blockers or unresolved issues
+
+The objective is simple:
+
+**Give me the latest Kri8 Mobile application as a real, standalone Android APK containing all current completed work, so I can test it thoroughly before we begin Phase 3.**
