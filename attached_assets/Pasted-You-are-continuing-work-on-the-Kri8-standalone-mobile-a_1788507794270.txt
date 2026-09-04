@@ -1,0 +1,401 @@
+You are continuing work on the Kri8 standalone mobile application.
+
+The previous pre-build audit is complete.
+
+DO NOT start any Phase 3 features yet.
+
+DO NOT add Camera Capture, Voice Capture, OCR, Share Sheet, Widgets, Offline Sync, or any other new functionality.
+
+Your ONLY task is to make the existing standalone Expo Android project fully healthy and verify the APK build.
+
+══════════════════════════════
+CURRENT STATE
+══════════════════════════════
+
+Project:
+
+`artifacts/kri8-mobile`
+
+Target:
+
+Standalone Android APK
+
+EAS profile:
+
+`preview`
+
+Package:
+
+`space.kri8.mobile`
+
+Expo SDK:
+
+54
+
+The app currently has:
+
+* Clerk authentication
+* persisted Clerk token cache
+* six-tab navigation
+* Home
+* Ideas
+* Capture
+* Community
+* AI
+* Profile
+* AI inspiration
+* AI analysis
+* Trends
+* retry/error/empty states
+* biometric lock
+* push infrastructure
+* splash configuration
+* deployed backend API
+* no Phase 3 features started
+
+The deployed API base URL is already configured.
+
+DO NOT change the API URL.
+
+DO NOT remove Clerk.
+
+DO NOT remove any existing functionality.
+
+══════════════════════════════
+PREVIOUS VALIDATION
+══════════════════════════════
+
+These already pass:
+
+```bash
+pnpm --dir artifacts/kri8-mobile run typecheck
+```
+
+```bash
+pnpm --dir artifacts/kri8-mobile exec expo config --json
+```
+
+```bash
+git diff --check
+```
+
+Expo Doctor previously reported:
+
+```text
+16/18 checks passed. 2 checks failed.
+
+Missing peer dependency:
+react-dom
+
+Required by:
+react-native-web
+
+Major version mismatch:
+
+expo-build-properties
+expected: ~1.0.10
+found: 0.14.8
+
+Patch mismatches:
+
+expo
+expected: ~54.0.37
+found: 54.0.36
+
+expo-constants
+expected: ~18.0.14
+found: 18.0.13
+
+expo-file-system
+expected: ~19.0.24
+found: 19.0.23
+
+expo-local-authentication
+expected: ~17.0.9
+found: 17.0.8
+```
+
+══════════════════════════════
+PHASE 1 — INSPECT BEFORE EDITING
+══════════════════════════════
+
+Before changing anything:
+
+1. Inspect:
+
+```text
+artifacts/kri8-mobile/package.json
+artifacts/kri8-mobile/pnpm-lock.yaml
+artifacts/kri8-mobile/app.json
+artifacts/kri8-mobile/eas.json
+```
+
+2. Check the currently installed Expo SDK dependency requirements using the project's Expo tooling.
+
+3. Determine whether `react-dom` is actually required for this standalone Android project or whether it is only being flagged because `react-native-web` exists as a dependency.
+
+Do not blindly install dependencies.
+
+Explain:
+
+* why each Expo Doctor error exists
+* whether it affects Android standalone builds
+* whether it should be fixed
+* the smallest correct fix
+
+══════════════════════════════
+PHASE 2 — SHOW PROPOSED DIFF FIRST
+══════════════════════════════
+
+Before modifying files, show the EXACT proposed changes.
+
+For every dependency change, show:
+
+```text
+package name
+current version
+recommended version
+reason
+```
+
+Do not make unrelated upgrades.
+
+Do not upgrade Expo SDK major versions.
+
+Stay on Expo SDK 54.
+
+Do not manually guess package versions if Expo tooling can determine the compatible versions.
+
+If the correct solution is to use:
+
+```bash
+expo install
+```
+
+or the pnpm equivalent, use Expo's compatibility resolution rather than inventing versions.
+
+STOP and show the proposed diff before applying changes.
+
+══════════════════════════════
+PHASE 3 — APPLY ONLY AFTER THE DIFF
+══════════════════════════════
+
+After showing the proposed changes, apply only the minimum dependency fixes required.
+
+Rules:
+
+* Keep Expo SDK 54.
+* Preserve the existing EAS preview APK profile.
+* Preserve Clerk.
+* Preserve all navigation.
+* Preserve all API configuration.
+* Preserve splash behavior.
+* Preserve biometric lock.
+* Preserve AI and Trends.
+* Do not add Phase 3 functionality.
+* Do not alter environment variable names.
+* Do not expose secrets.
+* Do not change the deployed backend URL.
+
+If `react-dom` is genuinely unnecessary for Android and removing the dependency causing the warning is safer than adding web dependencies, explain this clearly before changing anything.
+
+If it is required by the existing project configuration, install the Expo-compatible version.
+
+══════════════════════════════
+PHASE 4 — VALIDATE EVERYTHING
+══════════════════════════════
+
+After dependency fixes, run:
+
+```bash
+pnpm --dir artifacts/kri8-mobile run typecheck
+```
+
+Then:
+
+```bash
+pnpm --dir artifacts/kri8-mobile exec expo config --json
+```
+
+Then:
+
+```bash
+cd artifacts/kri8-mobile && pnpm dlx expo-doctor@latest
+```
+
+Then:
+
+```bash
+git diff --check
+```
+
+Report the exact results.
+
+The target is:
+
+```text
+Expo Doctor: all relevant checks passing
+Mobile TypeScript: passing
+Expo config: passing
+git diff --check: passing
+```
+
+If any check still fails:
+
+STOP.
+
+Do not hide the error.
+
+Do not work around it with:
+
+* --force
+* --legacy-peer-deps
+* arbitrary overrides
+* disabling checks
+* removing functionality
+
+Investigate the real cause.
+
+══════════════════════════════
+PHASE 5 — VERIFY THE EXISTING EAS BUILD
+══════════════════════════════
+
+Check the status of this existing EAS build:
+
+Build ID:
+
+`3b169580-36d2-4741-9970-c87440bb3d15`
+
+Profile:
+
+`preview`
+
+Platform:
+
+Android
+
+Determine whether it:
+
+* completed successfully
+* failed
+* is still running
+
+If successful:
+
+Report the APK artifact availability.
+
+If failed:
+
+Read the actual build failure logs and identify whether the failure was caused by the dependency issues or something else.
+
+Do not claim the APK is available unless the build actually completed successfully.
+
+══════════════════════════════
+PHASE 6 — ONLY IF REQUIRED, START A NEW BUILD
+══════════════════════════════
+
+Only start another Android EAS build if:
+
+1. the previous build failed, OR
+2. dependency changes make the previous build obsolete.
+
+Before starting a replacement build:
+
+* confirm Expo Doctor health
+* confirm typecheck passes
+* confirm Expo config passes
+* confirm git diff --check passes
+
+Then build:
+
+```text
+Android
+preview profile
+internal distribution
+APK
+```
+
+Do not build an AAB.
+
+Do not create a development client.
+
+The final artifact must be installable as a standalone Android APK without:
+
+* Expo Go
+* Metro
+* Replit
+* a development server
+
+══════════════════════════════
+FINAL REPORT
+══════════════════════════════
+
+Return:
+
+## 1. Dependency Audit
+
+For every Expo Doctor issue:
+
+* root cause
+* whether it affects standalone Android
+* fix applied
+
+## 2. Files Changed
+
+List every changed file.
+
+Explain every change.
+
+## 3. Dependency Versions
+
+Show:
+
+```text
+Package | Before | After | Reason
+```
+
+## 4. Validation Results
+
+Show results for:
+
+* Mobile TypeScript
+* Expo config
+* Expo Doctor
+* git diff --check
+
+## 5. EAS Build Status
+
+State clearly:
+
+* existing build status
+* whether a replacement build was required
+* final build status
+
+## 6. APK
+
+Only provide the artifact information if EAS confirms the build succeeded.
+
+Do not claim success before verification.
+
+## 7. Phase 3 Status
+
+Explicitly confirm that NONE of these were started:
+
+* Offline-first sync
+* Camera-first capture
+* Voice Capture
+* Camera OCR
+* Share Sheet
+* Home screen widgets
+* Lock screen capture
+* advanced push notification logic
+* AI Everywhere expansion
+* premium interaction polish
+
+The purpose of this task is NOT to add features.
+
+The purpose is to establish a clean, healthy, production-ready baseline for the existing standalone Kri8 Android app before Phase 3 begins.
+
+Prioritize correctness over speed.
+
+Never silently ignore a failed validation check.
