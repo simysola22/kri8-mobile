@@ -136,7 +136,7 @@ function AuthGuard() {
         }
         case 'reply': {
           const senderId = data.senderId;
-          if (senderId && /^\d+$/.test(String(senderId))) {
+          if (senderId && /^\d+$/.test(String(senderId)) && Number(senderId) > 0) {
             router.push(`/(tabs)/community/messages/${senderId}` as never);
           } else {
             router.push(`/(tabs)/community` as never);

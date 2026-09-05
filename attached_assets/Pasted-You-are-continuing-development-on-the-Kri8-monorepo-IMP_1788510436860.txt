@@ -1,0 +1,665 @@
+You are continuing development on the **Kri8 monorepo**.
+
+IMPORTANT: This is a continuation of work already started in another environment. Do not restart the audit from scratch, do not undo completed changes, and do not modify unrelated functionality.
+
+Repository structure:
+
+* `artifacts/kri8` — React/Vite web app
+* `artifacts/kri8-mobile` — Expo/React Native mobile app
+* `artifacts/api-server` — Express backend
+* `lib/*` — shared libraries, API contracts, Zod types, trend engine, etc.
+
+The GitHub repository contains the current state of the project. First inspect the repository and determine which of the changes described below are already present.
+
+# PREVIOUS APPROVED WORK
+
+The user approved implementation of the following changes after a read-only audit.
+
+## 1. GET INSPIRED / AI FIX
+
+Problem observed in the APK:
+
+The "Get Inspired" feature produced shallow, low-quality results. For example, entering:
+
+`house hunting`
+
+could produce something like:
+
+`The psychology of house — why it works better than you think`
+
+This is unacceptable because "house hunting" is a complete concept, not merely the keyword "house".
+
+The previous audit found this pipeline:
+
+```text
+Mobile AI screen
+  app/(tabs)/ai.tsx
+    ↓
+useGetInspiration()
+  src/hooks/useTrends.ts
+    ↓
+POST /api/trends/inspire
+    ↓
+artifacts/api-server/src/routes/trends.ts
+    ↓
+createTrendProvider()
+provider.getKeywordTrends([title])
+    ↓
+generateInspiration(title, notes, keywordTrends)
+  lib/trend-engine/src/inspiration.ts
+    ↓
+OpenAI request OR template fallback
+    ↓
+Results rendered in ai.tsx
+```
+
+The phrase could be weakened by keyword tokenization.
+
+Approved requirements:
+
+* Preserve the complete user title/concept.
+* Multi-word concepts must be treated as semantic phrases.
+* Improve the OpenAI prompt substantially.
+* Generate useful, specific, differentiated creator ideas.
+* Avoid generic first-word keyword output.
+* Do not expose or request chain-of-thought.
+* Return only the required structured output from the model.
+* If OpenAI is genuinely unavailable, template fallback may remain.
+* The client must be able to tell whether results came from OpenAI or templates.
+* Do not silently disguise template output as AI output.
+* Configured OpenAI failures should remain real failures, not silently become fake successful template responses.
+
+The approved conceptual change was:
+
+```ts
+export interface InspirationResult {
+  relatedIdeas: string[];
+  alternativeHooks: string[];
+  titleSuggestions: string[];
+  audienceQuestions: string[];
+  source: "openai" | "template";
+}
+```
+
+The OpenAI prompt should explicitly instruct the model to:
+
+* use the complete title as the primary subject
+* preserve multi-word concepts as phrases
+* infer audience intent
+* infer creator goal where useful
+* consider platform/content fit
+* create differentiated angles
+* make suggestions actionable and creator-specific
+* avoid generic trend commentary
+
+The template fallback should prioritize:
+
+```ts
+title.trim()
+```
+
+over reconstructed tokenized keywords.
+
+Example principle:
+
+```ts
+const keyword =
+  title.trim() ||
+  primaryKeywords.slice(0, 6).join(" ") ||
+  "content";
+```
+
+Successful OpenAI output should be returned as:
+
+```ts
+{ ...aiResult, source: "openai" }
+```
+
+Template output should be returned as:
+
+```ts
+{
+  relatedIdeas,
+  alternativeHooks,
+  titleSuggestions,
+  audienceQuestions,
+  source: "template",
+}
+```
+
+Likely files:
+
+* `lib/trend-engine/src/inspiration.ts`
+* `lib/trend-engine/src/types.ts` if the type is defined there
+* `lib/api-spec/openapi.yaml`
+* generated API/Zod/client contract files
+* `artifacts/kri8-mobile/src/types/api.ts`
+* `artifacts/kri8-mobile/src/services/AIAssistantService.ts`
+* `artifacts/kri8-mobile/app/(tabs)/ai.tsx`
+
+Generated API contracts must come from the canonical OpenAPI schema where possible. Do not manually create divergent contracts.
+
+For rollout compatibility, the mobile `source` field may be optional if necessary while an older deployed backend still exists:
+
+```ts
+source?: "openai" | "template";
+```
+
+---
+
+# 2. SOCIAL / FRIEND SEARCH / MESSAGING
+
+The user discovered that the mobile app had no obvious way to search for friends and no properly exposed messaging section, despite much of the functionality already existing in the web-derived codebase.
+
+Do NOT create a new social system.
+
+The existing backend already supports functionality including:
+
+* `GET /api/users/search?q=`
+* `GET /api/profile/:username`
+* `GET /api/social/friends`
+* `POST /api/social/friends/:userId`
+* `PATCH /api/social/friends/:requestId/respond`
+* `GET /api/social/messages/:userId`
+* `POST /api/social/messages/:userId`
+* `GET /api/social/conversations`
+* `GET /api/social/messages/:userId/stream`
+
+Existing database structures already cover users, friendships, messages, read state, and conversation indexing.
+
+Reuse and expose the existing system.
+
+## Community UX
+
+Do NOT add a seventh visible tab.
+
+Keep the existing mobile navigation structure.
+
+The existing Community area should become the social hub:
+
+```text
+Community
+  ├── Discover/search users
+  │     ├── Matching users
+  │     ├── Open public profile
+  │     └── Add friend / Pending / Friend
+  │
+  ├── Friend Requests
+  │     ├── Accept
+  │     └── Decline
+  │
+  ├── Conversations
+  │     ├── Partner avatar/name
+  │     ├── Last message
+  │     ├── Unread count
+  │     └── Open conversation
+  │
+  └── Friends
+        └── Open conversation
+```
+
+Expected flow:
+
+```text
+Community
+→ Search user
+→ Open profile or send friend request
+→ Friendship accepted
+→ Conversation list or friend row
+→ Message thread
+→ Existing polling updates
+```
+
+The existing global search can remain as a cross-app shortcut.
+
+## Mobile integrations required
+
+Ensure the mobile app has:
+
+1. User search in Community.
+2. Search results from the existing authenticated backend endpoint.
+3. Ability to send friend requests.
+4. Existing friends and pending requests correctly displayed.
+5. Correct identities from nested backend friend-request responses.
+6. Conversations actually rendered.
+7. Partner name/avatar.
+8. Last message preview.
+9. Unread count.
+10. Navigation to the existing message thread.
+11. Clear loading, empty, and error states.
+12. Search results that do not crash if response shape is unexpected.
+
+Likely files:
+
+* `artifacts/kri8-mobile/src/types/api.ts`
+* `artifacts/kri8-mobile/src/hooks/useSocial.ts`
+* `artifacts/kri8-mobile/app/(tabs)/community/index.tsx`
+* `artifacts/kri8-mobile/app/(tabs)/community/messages/[userId].tsx`
+
+Expected types include the equivalent of:
+
+```ts
+export interface FriendRequest {
+  id: number;
+  requester?: UserPublic;
+  addressee?: UserPublic;
+  requesterId?: number;
+  addresseeId?: number;
+  status: "pending" | "accepted" | "rejected";
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface Conversation {
+  partner: UserPublic;
+  lastMessage: Message;
+  unreadCount: number;
+}
+```
+
+Do not blindly assume these exact definitions if the actual backend contract differs. Inspect the real code and contract.
+
+---
+
+# 3. SOCIAL SECURITY FIX
+
+The previous audit found an important backend authorization issue.
+
+`GET /api/social/messages/:userId` authenticated the caller but did not verify that the requested partner was an accepted friend.
+
+The POST route already required an accepted friendship.
+
+The GET route must enforce equivalent authorization before returning conversation history.
+
+Requirements:
+
+* Reject invalid numeric IDs.
+* Reject self-conversations through this route where appropriate.
+* Verify an accepted friendship exists between the authenticated user and the requested partner.
+* Return `403` if they are not accepted friends.
+* Preserve existing valid messaging functionality.
+* Do not weaken existing authorization.
+
+Likely file:
+
+* `artifacts/api-server/src/routes/social.ts`
+
+Prefer eventually sharing/centralizing the friendship authorization logic if that can be done cleanly without a broad refactor, but do not create unnecessary architecture churn.
+
+---
+
+# 4. MOBILE API ERROR HANDLING
+
+The mobile social API helper previously reduced backend errors to:
+
+```text
+API error <status>
+```
+
+Improve this so JSON backend errors such as:
+
+```json
+{ "error": "You can only access messages with friends" }
+```
+
+are preserved and shown to the user.
+
+Requirements:
+
+* Safely parse response text as JSON where possible.
+* Preserve server-provided string error messages.
+* Fall back to `API error <status>` when no useful backend error exists.
+* Do not crash on non-JSON responses.
+
+Search hooks must normalize unexpected response shapes where appropriate.
+
+For user search, support the actual canonical backend response, but defensively handle shapes such as:
+
+```ts
+[]
+```
+
+and:
+
+```ts
+{ users: [] }
+```
+
+without crashing.
+
+Do not invent API response shapes. Inspect the backend and canonical contract.
+
+---
+
+# 5. MESSAGE THREAD RELIABILITY
+
+The mobile message thread needs to handle:
+
+* loading
+* empty state
+* query error
+* send failure
+* message ownership correctly
+
+On send:
+
+* Store the text before clearing.
+* Do not permanently lose the user's text if sending fails.
+* Restore the text to the composer on failure.
+* Show a useful error alert/message.
+
+Conceptually:
+
+```ts
+const text = content.trim();
+setContent("");
+
+try {
+  await sendMessage.mutateAsync({
+    userId: recipientId,
+    content: text,
+  });
+} catch (error) {
+  setContent(text);
+  // show useful error
+}
+```
+
+Message ownership must use the authenticated application's actual user identity/database ID, not merely infer "me" by assuming anyone other than the route partner is the current user.
+
+Inspect the existing identity/profile/user mapping and use the real source of truth.
+
+Likely file:
+
+* `artifacts/kri8-mobile/app/(tabs)/community/messages/[userId].tsx`
+
+---
+
+# 6. SSE DECISION
+
+Do NOT add a new mobile SSE implementation in this continuation.
+
+The web app already has SSE.
+
+The mobile app currently polls messages and conversations.
+
+The prior audit found the existing web SSE path may put a bearer token into a URL due to `EventSource` limitations.
+
+Do not introduce bearer-token-in-URL authentication for mobile.
+
+Keep the existing mobile polling behavior for now unless there is an already-established safe transport implementation in the repository.
+
+Do not start Phase 3 real-time architecture work.
+
+---
+
+# 7. ROUTING FIXES
+
+Two routing issues were identified.
+
+## Public profile deep link
+
+Inspect:
+
+* `artifacts/kri8-mobile/src/lib/deepLinking.ts`
+
+A profile route was previously believed to point to a nonexistent Community profile path.
+
+The intended existing route is likely equivalent to:
+
+```text
+/(tabs)/profile/[username]
+```
+
+Verify the actual Expo Router structure before changing it.
+
+## Notification reply routing
+
+Inspect:
+
+* `artifacts/kri8-mobile/app/_layout.tsx`
+
+A reply notification should open the specific conversation when a valid numeric sender ID exists.
+
+Conceptually:
+
+```ts
+if (senderId && /^\d+$/.test(String(senderId))) {
+  router.push(`/(tabs)/community/messages/${senderId}`);
+} else {
+  router.push(`/(tabs)/community`);
+}
+```
+
+Verify actual route names before applying.
+
+---
+
+# 8. CURRENT IMPLEMENTATION STATUS
+
+In the previous environment, implementation had already begun and then the environment stopped.
+
+The following was reported as completed or substantially completed before the stop:
+
+* AI contract/source marker work
+* phrase-preserving fallback work
+* improved AI generation prompt
+* backend message-history friendship authorization
+* shared mobile social error handling
+* mobile user-search plumbing
+* route fixes
+* message-thread reliability improvements
+* generated API contract regeneration
+
+However, the Community UI patch initially hit a context mismatch and was being split into smaller hunks.
+
+The final reported state was:
+
+> "The shared libraries now typecheck cleanly after regeneration. I’m running the API server, mobile, and web typechecks in parallel next; any failures should now point to the implementation changes rather than the contract generator."
+
+Then the environment stopped.
+
+Therefore:
+
+## FIRST TASK
+
+Inspect GitHub and determine the exact current repository state.
+
+Do not assume every change above is committed or present.
+
+Specifically check:
+
+1. Git status/history if available.
+2. `lib/trend-engine/src/inspiration.ts`
+3. `lib/api-spec/openapi.yaml`
+4. Generated contract files.
+5. `artifacts/api-server/src/routes/social.ts`
+6. `artifacts/kri8-mobile/src/types/api.ts`
+7. `artifacts/kri8-mobile/src/hooks/useSocial.ts`
+8. `artifacts/kri8-mobile/app/(tabs)/community/index.tsx`
+9. `artifacts/kri8-mobile/app/(tabs)/community/messages/[userId].tsx`
+10. `artifacts/kri8-mobile/src/lib/deepLinking.ts`
+11. `artifacts/kri8-mobile/app/_layout.tsx`
+
+Compare actual code against the requirements above.
+
+Do not overwrite already-correct changes.
+
+---
+
+# 9. IMPORTANT CODEGEN HISTORY
+
+During the previous implementation, API contract generation exposed duplicate barrel export collisions involving generated types such as:
+
+```text
+GetMessagesParams
+```
+
+The issue was reportedly caused by duplicate barrel exports between generated API/type modules.
+
+A narrow fix was applied so shared libraries typechecked cleanly.
+
+Do not blindly regenerate or manually rewrite generated files.
+
+Before changing generated code:
+
+1. Inspect the generator source/configuration.
+2. Inspect the current generated files.
+3. Preserve canonical generation.
+4. Avoid introducing duplicate exports.
+5. If generation creates collisions again, fix the generator/barrel configuration rather than repeatedly hand-patching generated output unless the repository architecture explicitly requires otherwise.
+
+Do not undo the existing narrow compatibility fix without understanding why it exists.
+
+---
+
+# 10. VALIDATION REQUIRED NOW
+
+Resume from the point where the previous environment stopped.
+
+First run or inspect the results of the relevant checks.
+
+At minimum verify:
+
+### Shared libraries
+
+* relevant TypeScript checks/builds
+
+### API server
+
+* TypeScript/build/test command used by the repository
+
+### Mobile app
+
+* TypeScript check
+* Expo-compatible validation if available
+
+### Web app
+
+* TypeScript/build check
+
+### General
+
+* inspect `git diff`
+* run `git diff --check`
+
+If failures are unrelated pre-existing issues, distinguish them clearly from failures caused by these changes.
+
+Do not claim success without actually checking.
+
+---
+
+# 11. OPENAI / DEPLOYMENT NOTE
+
+Previous audit findings:
+
+* Replit had `OPENAI_API_KEY` configured.
+* Replit had `TREND_PROVIDER` configured.
+* The Render backend was reachable.
+* The deployed `/api/trends/inspire` route required authentication.
+* It was not possible to prove from the public health endpoint that Render was running the latest repository source.
+* A local unauthenticated test of the protected route returned `401`.
+
+Do not expose secret values.
+
+Do not report OpenAI as missing merely because you cannot read secret values.
+
+Do not make deployment changes unless explicitly requested.
+
+After code validation, if the implementation is complete, explain that the deployed backend/APK will not automatically receive source changes until the normal deployment/build process occurs.
+
+Do not start a new APK build unless explicitly asked.
+
+---
+
+# 12. DEPENDENCY AUDIT
+
+There was a separate earlier dependency audit proposing:
+
+* adding `react-dom`
+* aligning several Expo SDK 54 package versions
+* regenerating `pnpm-lock.yaml`
+
+Those dependency changes were NOT part of the social/AI implementation continuation.
+
+Do not install packages or modify dependencies as part of this task unless a validation failure proves it is necessary and you explain why first.
+
+Do not mix dependency migration with this feature-fix continuation.
+
+---
+
+# 13. DO NOT START PHASE 3
+
+Do NOT start any of these:
+
+* Offline-first sync
+* Camera-first capture
+* Voice Capture
+* Camera OCR
+* Share Sheet
+* Home screen widgets
+* Lock screen capture
+* Advanced push notification logic
+* AI Everywhere expansion
+* Premium interaction polish
+
+Only complete and validate the approved AI and social/messaging work.
+
+---
+
+# 14. WORKING RULES
+
+* Preserve existing functionality.
+* Do not remove features without explanation.
+* Do not replace working systems with duplicate systems.
+* Prefer existing backend endpoints and database models.
+* Normalize API data before rendering where response shape uncertainty exists.
+* No new seventh navigation tab.
+* No insecure token-in-URL solution.
+* No secrets displayed.
+* No deployment or APK build unless explicitly requested.
+* Prioritize correctness over speed.
+* If a real architectural decision is uncertain and cannot be resolved by inspecting the repository, stop and explain the uncertainty rather than guessing.
+
+# REQUIRED OUTPUT
+
+Start by giving me:
+
+## Step 1 — Current repository state
+
+What from the previous implementation is already present?
+
+## Step 2 — Validation results
+
+Run the checks that were in progress when the previous environment stopped and show:
+
+* shared libraries
+* API server
+* mobile
+* web
+* git diff check
+
+## Step 3 — Remaining work
+
+List only what still needs to be completed.
+
+## Step 4 — Complete remaining implementation
+
+Implement only the approved unfinished work.
+
+## Step 5 — Final validation
+
+Re-run all relevant checks.
+
+## Step 6 — Final change summary
+
+Clearly separate:
+
+* completed
+* already existed
+* newly fixed
+* remaining limitations
+
+Do not start Phase 3, dependency upgrades, deployment, or an APK build.
+
+The immediate objective is to finish and validate the approved **Get Inspired quality fixes plus Community friend discovery and messaging integration**, while preserving all existing Kri8 functionality.

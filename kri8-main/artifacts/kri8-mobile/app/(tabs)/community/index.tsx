@@ -30,8 +30,21 @@ import type { Conversation, UserPublic, FriendRequest } from '@/types';
 export default function CommunityScreen() {
   const theme = useActiveTheme();
   const insets = useSafeAreaInsets();
-  const { data: friends, isLoading, refetch, isRefetching } = useFriends();
-  const { data: conversations } = useConversations();
+  const {
+    data: friends,
+    isLoading,
+    isError: isFriendsError,
+    error: friendsError,
+    refetch,
+    isRefetching,
+  } = useFriends();
+  const {
+    data: conversations,
+    isLoading: isConversationsLoading,
+    isError: isConversationsError,
+    error: conversationsError,
+    refetch: refetchConversations,
+  } = useConversations();
   const [search, setSearch] = React.useState('');
   const { data: searchResults = [], isLoading: isSearching, isFetching: isSearchFetching } =
     useSearchUsers(search);
@@ -154,10 +167,21 @@ export default function CommunityScreen() {
             <Text style={[styles.sectionTitle, { color: theme.text }]}>
               Conversations
             </Text>
-            {conversations?.map((conversation) => (
+            {isConversationsLoading && <LoadingSpinner />}
+            {isConversationsError && (
+              <View style={styles.inlineError}>
+                <Text style={[styles.helperText, { color: theme.text }]}>
+                  {getErrorMessage(conversationsError, 'Could not load conversations.')}
+                </Text>
+                <TouchableOpacity onPress={() => void refetchConversations()}>
+                  <Text style={[styles.retryText, { color: theme.accent }]}>Retry</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            {!isConversationsLoading && !isConversationsError && conversations?.map((conversation) => (
               <ConversationRow key={conversation.partner.id} conversation={conversation} />
             ))}
-            {conversations?.length === 0 && (
+            {!isConversationsLoading && !isConversationsError && conversations?.length === 0 && (
               <Text style={[styles.helperText, { color: theme.textMuted }]}>
                 Your conversations will appear here.
               </Text>
@@ -167,11 +191,21 @@ export default function CommunityScreen() {
               Friends
             </Text>
             {isLoading && <LoadingSpinner style={{ marginTop: 24 }} />}
+            {isFriendsError && (
+              <View style={styles.inlineError}>
+                <Text style={[styles.helperText, { color: theme.text }]}>
+                  {getErrorMessage(friendsError, 'Could not load friends.')}
+                </Text>
+                <TouchableOpacity onPress={() => void refetch()}>
+                  <Text style={[styles.retryText, { color: theme.accent }]}>Retry</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </>
         }
         renderItem={({ item }) => <FriendRow user={item} />}
         ListEmptyComponent={
-          !isLoading ? (
+          !isLoading && !isFriendsError ? (
             <View style={styles.empty}>
               <Text style={styles.emptyIcon}>◎</Text>
               <Text style={[styles.emptyText, { color: theme.textMuted }]}>
@@ -334,8 +368,8 @@ function ConversationRow({ conversation }: { conversation: Conversation }) {
   );
 }
 
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error && error.message ? error.message : 'Please try again.';
+function getErrorMessage(error: unknown, fallback = 'Please try again.'): string {
+  return error instanceof Error && error.message ? error.message : fallback;
 }
 
 const styles = StyleSheet.create({
@@ -352,6 +386,8 @@ const styles = StyleSheet.create({
   },
   searchResults: { gap: 10 },
   helperText: { fontSize: 14, lineHeight: 20 },
+  inlineError: { gap: 8, marginBottom: 4 },
+  retryText: { fontSize: 14, fontWeight: '700' },
   section: { gap: 12, marginBottom: 12 },
   sectionTitle: { fontSize: 20, fontWeight: '700', marginBottom: 6 },
   discoverCard: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 68 },

@@ -153,7 +153,7 @@ router.get("/messages/:userId", requireAuth, async (req: any, res): Promise<void
     if (!me) { res.status(401).json({ error: "User not found" }); return; }
 
     const partnerId = Number(req.params.userId);
-    if (isNaN(partnerId) || partnerId === me.id) {
+    if (!Number.isInteger(partnerId) || partnerId <= 0 || partnerId === me.id) {
       res.status(400).json({ error: "Invalid userId" });
       return;
     }
