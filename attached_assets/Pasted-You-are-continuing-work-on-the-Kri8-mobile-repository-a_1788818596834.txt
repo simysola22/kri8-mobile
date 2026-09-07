@@ -1,0 +1,386 @@
+You are continuing work on the **Kri8 mobile repository** after a previous environment completed the approved AI inspiration + social + messaging continuation work.
+
+**IMPORTANT: DO NOT REDO THE IMPLEMENTATION.**
+
+The previous environment already implemented and committed the approved changes. Your job now is to **verify the existing state, recover the environment if necessary, and only fix genuine remaining issues.**
+
+## CURRENT STATE
+
+The following implementation is already present in Git history/source:
+
+### AI / Get Inspired
+
+* Multi-word concepts are preserved in template fallback generation.
+* OpenAI inspiration prompt explicitly treats the complete title as the primary subject.
+* Prompt includes creator intent, audience, platform fit, differentiated angles, and actionable creator guidance.
+* Inspiration response includes:
+
+  * `source: "openai"`
+  * `source: "template"`
+* OpenAI failures remain real errors.
+* Template fallback only occurs when OpenAI is unavailable.
+* OpenAPI schema includes `source`.
+* Generated Zod types include `source`.
+* Generated client types include `source`.
+
+### Mobile Community
+
+Community is the existing social hub. **Do not add a seventh navigation tab.**
+
+It already supports:
+
+* user search
+* friend requests
+* pending requests
+* accepted friends
+* conversations
+* unread counts
+* navigation to message threads
+* loading states
+* empty states
+* error states
+* retry behavior
+
+### Messaging
+
+Already implemented:
+
+* authenticated message ownership
+* backend error preservation
+* composer restoration after failed sends
+* loading state
+* empty state
+* error state
+* retry
+* polling-based message refresh
+* no insecure mobile SSE authentication
+
+### Backend security
+
+`GET /api/social/messages/:userId` already:
+
+* requires authentication
+* validates the user ID
+* rejects invalid IDs
+* rejects zero/non-positive IDs
+* rejects self-conversations
+* verifies an accepted friendship before returning messages
+
+### Routing
+
+Already fixed:
+
+* profile deep-link routing
+* notification reply routing
+* notification sender ID validation
+
+### Validation previously completed
+
+The previous environment successfully reported:
+
+* shared library typecheck: PASS
+* API server typecheck: PASS
+* mobile typecheck: PASS
+* web typecheck: PASS
+* API server build: PASS
+* web production build: PASS
+* Expo web export: PASS
+* `git diff --check`: PASS
+* API workflow healthy
+* web preview healthy
+* no browser errors
+
+No dependency declarations or deployment settings were changed.
+
+---
+
+# YOUR TASK
+
+## STEP 1 — INSPECT BEFORE MODIFYING
+
+Inspect:
+
+* git status
+* recent git history
+* the commit containing the previous implementation
+* current source tree
+* package manifests
+* pnpm lockfile
+* workspace configuration
+* existing Replit workflows
+
+Determine whether the approved implementation is already present.
+
+**Do not recreate files or patches that already exist.**
+
+---
+
+## STEP 2 — VERIFY GIT STATE
+
+Confirm:
+
+1. Is the working tree clean?
+2. What commit contains the previous implementation?
+3. Are the AI/social/messaging changes present in that commit?
+4. Are there any uncommitted source changes?
+5. Are there any accidental generated files or temporary artifacts?
+
+Do not reset or revert anything.
+
+Do not rewrite Git history.
+
+---
+
+## STEP 3 — DEPENDENCY ENVIRONMENT
+
+The previous environment reported that this checkout may have missing `node_modules`.
+
+Check whether dependencies are actually installed.
+
+If dependencies are missing:
+
+* inspect the existing `pnpm-lock.yaml`
+* do NOT modify package.json
+* do NOT modify pnpm-lock.yaml
+* do NOT add packages
+* do NOT upgrade packages
+
+Attempt installation using the **existing lockfile only**.
+
+If installation cannot complete because the environment lacks a required package in its local pnpm store or has no network access, STOP and report that clearly.
+
+Do not change dependency declarations to work around an environment problem.
+
+---
+
+## STEP 4 — VALIDATE EXISTING IMPLEMENTATION
+
+Once dependencies are available, run the existing project checks.
+
+At minimum:
+
+* shared library typecheck
+* API server typecheck
+* mobile typecheck
+* web typecheck
+* API build
+* web build
+* Expo web export
+* `git diff --check`
+
+Use the repository's existing scripts rather than inventing new ones.
+
+Do not alter scripts just to make checks pass.
+
+---
+
+# STEP 5 — RUNTIME VERIFICATION
+
+If the environment supports the existing workflows, start them using the existing configuration.
+
+Verify:
+
+### API
+
+* API starts successfully
+* `/api/healthz` responds successfully
+* trends route is reachable
+* social routes start correctly
+
+### Web
+
+* existing web workflow starts
+* sign-in/landing page renders
+* no browser runtime errors
+
+### Mobile
+
+* Expo workflow starts
+* no startup TypeScript/runtime errors
+* existing Community route resolves
+* existing message route resolves
+
+Do not start an APK build.
+
+Do not deploy anything.
+
+---
+
+# STEP 6 — TARGETED CODE REVIEW
+
+Review only these areas for genuine remaining defects:
+
+### Get Inspired
+
+* Does `"house hunting"` remain `"house hunting"` throughout the generation pipeline?
+* Does template fallback use the complete title rather than only the first token?
+* Does OpenAI receive the complete title?
+* Is generation source accurately reported?
+* Are malformed OpenAI responses rejected?
+
+### Community
+
+* Does user search call `/api/users/search?q=...`?
+* Can a search result send a friend request?
+* Does the UI correctly distinguish:
+
+  * Add
+  * Pending
+  * Friend
+* Are pending requests rendered with actual user identity?
+* Are conversations rendered?
+* Are unread counts rendered?
+* Does tapping a conversation open the existing message route?
+
+### Messaging
+
+* Can only authenticated users access messages?
+* Can only accepted friends access message history?
+* Are self-conversations rejected?
+* Does failed sending restore the message text?
+* Does the UI expose backend errors?
+* Is sender ownership based on the authenticated user rather than the conversation partner ID?
+* Does polling continue to work?
+
+### Routing
+
+* Does profile deep linking point to the actual mobile profile route?
+* Does notification reply routing open the correct conversation?
+* Are invalid sender IDs handled safely?
+
+---
+
+# STEP 7 — CRITICAL GET INSPIRED TEST
+
+The original user-reported problem was:
+
+Input:
+
+`house hunting`
+
+Bad output:
+
+`The psychology of house — why it works better than you think`
+
+This is the exact behavior we need to prevent.
+
+Do not merely check that the string `"house hunting"` reaches the API.
+
+Verify that generated ideas are actually **semantically about house hunting**, not merely the word `"house"`.
+
+Examples of acceptable directions:
+
+* house-hunting mistakes
+* how to evaluate a house before buying/renting
+* emotional psychology behind choosing a home
+* red flags when house hunting
+* comparing properties objectively
+* budgeting and decision-making while house hunting
+
+Generic ideas such as:
+
+`The psychology of house`
+
+should be considered a quality failure.
+
+Do not attempt to solve this by simply replacing `"house"` with `"house hunting"` in strings. The goal is semantic relevance.
+
+---
+
+# STEP 8 — DO NOT EXPAND SCOPE
+
+Do NOT:
+
+* start Phase 3
+* rebuild authentication
+* change Clerk architecture
+* change database schema
+* introduce SSE to mobile
+* redesign navigation
+* add another tab
+* migrate hosting
+* change dependencies
+* change package versions
+* redesign unrelated screens
+* add camera/OCR/voice features
+* implement future features
+* change web behavior unless a regression is directly caused by the existing implementation
+
+This is a **verification and hardening pass only.**
+
+---
+
+# STEP 9 — IF A REAL BUG IS FOUND
+
+If and only if a genuine code defect remains:
+
+1. Explain the defect.
+2. Identify the exact file.
+3. Show the smallest proposed diff.
+4. Explain why the change is necessary.
+5. Apply only that minimal fix.
+6. Re-run the affected validation.
+7. Run `git diff --check`.
+
+Do not make speculative improvements.
+
+---
+
+# FINAL OUTPUT
+
+Report:
+
+## 1. Git State
+
+## 2. Existing Implementation Confirmed
+
+## 3. Dependency Environment
+
+## 4. Validation Results
+
+## 5. Runtime Results
+
+## 6. Get Inspired Quality Test
+
+Specifically report what happens with:
+
+`house hunting`
+
+## 7. Community Test
+
+Specifically verify:
+
+* search
+* add friend
+* pending requests
+* friends
+* conversations
+* unread counts
+
+## 8. Messaging Test
+
+Specifically verify:
+
+* open conversation
+* load history
+* send message
+* failed send behavior
+* polling
+
+## 9. Remaining Bugs
+
+Only list genuine bugs.
+
+## 10. Changes Made
+
+If none, explicitly say:
+
+**No source changes were required.**
+
+## 11. APK
+
+Do NOT build an APK yet.
+
+Wait for further instructions.
+
+**Prioritize correctness over speed. Do not assume something is broken merely because it cannot be tested in the current environment.**
