@@ -1,0 +1,187 @@
+Continue Kri8 from the current verified state.
+
+The Clerk keys have now been added to the environment.
+
+DO NOT reimplement or redesign anything that has already been completed.
+
+## STEP 1: VERIFY ENVIRONMENT
+
+Confirm the Clerk environment variables are now available to the relevant workflows.
+
+Use the existing configuration only.
+
+Expected variables:
+
+* CLERK_SECRET_KEY
+* CLERK_PUBLISHABLE_KEY
+* VITE_CLERK_PUBLISHABLE_KEY
+* EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY
+* DATABASE_URL
+
+Do not print secret values.
+
+Do not modify authentication architecture.
+
+## STEP 2: DATABASE
+
+The previous environment reported that the configured PostgreSQL database was missing the `users` relation.
+
+Before building the APK, verify whether the existing database schema/migrations have now been applied.
+
+If `users` still does not exist:
+
+* inspect the existing migration system
+* identify the existing migration that creates `users`
+* apply the existing non-destructive migration if safe
+
+DO NOT create a duplicate users table.
+
+DO NOT bypass the database.
+
+DO NOT create mock users.
+
+DO NOT change authorization logic merely to make the test pass.
+
+If applying the schema is unsafe or ambiguous, STOP and report the exact blocker.
+
+## STEP 3: AUTHENTICATED RUNTIME TEST
+
+Now that Clerk is configured, test the real authenticated application.
+
+Verify:
+
+1. Anonymous user sees LandingPage.
+2. Sign Up works.
+3. Sign In works.
+4. Authenticated user reaches Dashboard.
+5. Session survives refresh.
+6. Session survives app restart where applicable.
+7. Sign Out works.
+8. Sign Out returns to LandingPage.
+9. Protected routes reject unauthenticated users.
+10. No demo/mock/fallback authentication appears anywhere.
+
+Do not add authentication workarounds if anything fails.
+
+## STEP 4: COMMUNITY RUNTIME TEST
+
+Using authenticated users, test:
+
+* Community opens correctly.
+* User search works.
+* Search results render.
+* Add Friend works.
+* Pending state appears.
+* Incoming requests render correctly.
+* Accept request works.
+* Friend state appears correctly.
+* Conversations appear.
+* Last-message previews render.
+* Unread counts render.
+* Conversation navigation works.
+
+Verify loading, empty, error, and retry states.
+
+## STEP 5: MESSAGING RUNTIME TEST
+
+Test an actual conversation between accepted friends.
+
+Verify:
+
+* message history loads
+* messages display correctly
+* sender ownership is correct
+* sending works
+* conversation preview updates
+* failed sends restore composer text
+* backend errors are displayed
+* polling continues
+* self-conversations are rejected
+* unauthorized message-history access is rejected
+
+Do NOT introduce SSE bearer tokens or change the existing polling architecture.
+
+## STEP 6: AI / GET INSPIRED
+
+Test:
+
+house hunting
+
+Verify that the complete multi-word concept remains intact.
+
+Test both template and OpenAI generation if the OpenAI key is available.
+
+Verify provenance:
+
+* openai
+* template
+
+Do not weaken the semantic behavior.
+
+## STEP 7: FINAL VALIDATION
+
+Run:
+
+* shared library typecheck
+* API server typecheck
+* mobile typecheck
+* web typecheck
+* API build
+* web production build
+* Expo web export
+* git diff --check
+
+Fix only genuine regressions discovered during these checks.
+
+Do not perform unrelated refactoring.
+
+## STEP 8: BUILD THE STANDALONE ANDROID APP
+
+ONLY after the authenticated runtime tests and validation above pass, create a standalone Android APK.
+
+Use the existing Expo/EAS configuration.
+
+Requirements:
+
+* standalone APK
+* production-capable build
+* existing Clerk configuration
+* existing Render API configuration
+* no Expo Go dependency
+* no development server dependency
+* no mock/demo authentication
+* no new features
+* no navigation changes
+
+Use the existing:
+
+EXPO_PUBLIC_API_BASE_URL
+
+configuration for the deployed API.
+
+Build the APK with EAS.
+
+DO NOT change package versions or dependency versions unless the build genuinely requires it.
+
+DO NOT modify the application architecture just to make EAS build.
+
+## FINAL OUTPUT
+
+Report:
+
+1. Clerk verification
+2. Database verification
+3. Authentication runtime results
+4. Community runtime results
+5. Messaging runtime results
+6. AI runtime results
+7. Static validation results
+8. APK build status
+9. APK download URL/artifact
+10. Any remaining blockers
+
+IMPORTANT:
+
+Do not stop after static checks.
+
+The objective now is to produce the actual standalone Android APK after confirming the authenticated application works end-to-end.
