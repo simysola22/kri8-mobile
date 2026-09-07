@@ -1,0 +1,180 @@
+You are continuing work on the Kri8 mobile repository from GitHub.
+
+IMPORTANT: Do not assume the repository is at its original state. Previous implementation work has already been completed and validated.
+
+First, inspect the current repository and Git status before making any changes.
+
+## CONTINUATION STATE
+
+The following work was previously approved and implemented:
+
+### AI / Get Inspired
+
+* Preserved complete user phrases in inspiration fallback generation.
+* Improved the OpenAI inspiration prompt so multi-word concepts are treated as complete concepts rather than independent keywords.
+* Added guidance to infer creator intent, audience intent, platform fit, and differentiated content angles.
+* Added generation provenance:
+
+  * `source: "openai"`
+  * `source: "template"`
+* OpenAI failures should remain real API failures.
+* Do NOT silently fall back to templates when OpenAI is configured but fails.
+* Template fallback is only for the missing/unavailable OpenAI configuration path.
+* Updated the canonical OpenAPI contract and regenerated dependent API/Zod/client types.
+* Mobile accepts the source field compatibly during rollout.
+
+### Social / Community
+
+The backend already supports:
+
+* user search
+* public profiles
+* friend requests
+* accepting/rejecting requests
+* friends
+* conversations
+* messages
+* unread counts
+* SSE on the web backend
+
+The mobile app was updated to expose:
+
+* user discovery/search
+* sending friend requests
+* pending requests
+* accepted friends
+* conversations
+* unread counts
+* navigation into existing message threads
+
+Do NOT add a seventh navigation tab.
+
+Community remains the social hub.
+
+### Messaging
+
+Previously implemented:
+
+* backend error messages are preserved instead of only showing generic HTTP errors
+* failed sends restore the message composer text
+* failed sends are shown to the user
+* message thread has loading state
+* message thread has empty state
+* message thread has error state
+* message ownership uses the authenticated application's database user ID rather than inferring ownership only from the route partner ID
+* existing polling remains in place
+
+Do NOT add insecure mobile SSE authentication.
+
+In particular, do not put Clerk bearer tokens in URL query strings merely to make EventSource work.
+
+### Backend security
+
+`GET /api/social/messages/:userId` was fixed to:
+
+* require authentication
+* reject invalid IDs
+* reject non-integer IDs
+* reject zero IDs
+* reject self-conversation IDs
+* verify the requested user is an accepted friend before returning message history
+
+Do not weaken this authorization.
+
+### Routing
+
+Previously fixed:
+
+* profile deep-link routing
+* notification reply routing
+
+Notification replies should only open a specific conversation when `senderId` is a valid positive numeric ID.
+
+Otherwise they should safely fall back to Community.
+
+### Community resilience
+
+Community was updated so friends and conversations have:
+
+* loading states
+* error states
+* retry behavior
+* empty states
+
+Do not silently display an empty state when a query actually failed.
+
+## VALIDATION PREVIOUSLY COMPLETED
+
+The previous environment successfully passed:
+
+* Shared library TypeScript check
+* API server TypeScript check
+* Mobile TypeScript check
+* Web TypeScript check
+* API server build
+* Web production build
+* Expo web export
+* `git diff --check`
+* API runtime health check
+* Web preview/browser check
+
+The API, web, mobile, and mockup workflows were also successfully started.
+
+Dependencies were installed from the existing lockfile only.
+
+No dependency declarations were intentionally changed.
+
+No database schema change was made.
+
+No deployment was started.
+
+No APK build was started.
+
+## FIRST TASK — VERIFY CURRENT STATE
+
+Before editing anything:
+
+1. Inspect the repository structure.
+2. Inspect `git status`.
+3. Inspect recent commits/history if available.
+4. Search for the implemented changes listed above.
+5. Compare the current code against this continuation brief.
+6. Run the relevant typechecks/build checks if the environment is ready.
+
+Produce a concise report:
+
+### Present and verified
+
+List completed changes you can confirm in the repository.
+
+### Missing or incomplete
+
+List anything from this brief that is genuinely absent.
+
+### Regressions
+
+List anything that appears broken or inconsistent.
+
+### Environment issues
+
+Separate missing dependencies, missing environment variables, or unavailable services from actual code failures.
+
+DO NOT report an implementation as missing merely because it cannot be runtime-tested without an authenticated Clerk token or access to external deployment secrets.
+
+## EDITING RULE
+
+Do not reimplement completed work.
+
+Do not modify files merely to recreate changes that already exist.
+
+If all continuation requirements are present and validation passes, stop and report that the continuation is complete.
+
+If something is genuinely missing or regressed:
+
+1. Explain the exact issue.
+2. Show the exact proposed diff.
+3. STOP and wait for approval before modifying that functionality.
+
+Prioritize correctness over speed.
+
+Do not make architectural assumptions without verifying the current repository first.
