@@ -171,7 +171,10 @@ export interface TrendCategory {
 }
 
 export interface TrendAnalysis {
+  canonicalQuery: string;
   relevanceScore: number;
+  confidence: 'high' | 'medium' | 'low' | 'insufficient';
+  scoringEvidence: string[];
   relatedTopics: TrendTopic[];
   relatedHashtags: TrendHashtag[];
   contentOpportunities: string[];
@@ -179,6 +182,7 @@ export interface TrendAnalysis {
 }
 
 export interface TrendInspiration {
+  canonicalQuery: string;
   relatedIdeas: string[];
   alternativeHooks: string[];
   titleSuggestions: string[];

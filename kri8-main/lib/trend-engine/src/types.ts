@@ -42,7 +42,10 @@ export interface KeywordTrend {
 }
 
 export interface IdeaAnalysisResult {
+  canonicalQuery: string;
   relevanceScore: number;
+  confidence: "high" | "medium" | "low" | "insufficient";
+  scoringEvidence: string[];
   relatedTopics: TrendingTopic[];
   relatedHashtags: TrendingHashtag[];
   contentOpportunities: string[];
@@ -50,6 +53,7 @@ export interface IdeaAnalysisResult {
 }
 
 export interface InspirationResult {
+  canonicalQuery: string;
   relatedIdeas: string[];
   alternativeHooks: string[];
   titleSuggestions: string[];

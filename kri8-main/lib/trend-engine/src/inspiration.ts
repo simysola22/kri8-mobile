@@ -21,7 +21,7 @@ const HOOK_TEMPLATES = [
 ];
 
 const TITLE_PATTERNS = [
-  "{topic}: The Complete 2025 Guide",
+  "{topic}: A Practical Creator Guide",
   "How to Master {topic} (Step-by-Step)",
   "{topic} for Beginners — Everything You Need to Know",
   "The REAL Way to Use {topic} as a Creator",
@@ -40,13 +40,12 @@ const IDEA_TEMPLATES = [
   "Behind-the-scenes: how I built my {topic} process from scratch",
   "{topic} case study — what I wish I knew when I started",
   "Tools I use for {topic} (and why I switched from the popular ones)",
-  "The {topic} mistake that cost me 3 months of progress",
+  "The {topic} mistake I wish I avoided sooner",
   "Comparing the top 5 {topic} strategies — which one actually wins?",
-  "How to automate your {topic} workflow in 2025",
+  "What to check before committing to {topic}",
   "Day-in-the-life: what {topic} really looks like for a solo creator",
   "Collaborating on {topic} — what I learned from working with other creators",
-  "The psychology of {topic} — why it works better than you think",
-  "{topic} myths vs. reality — I tested them all",
+  "{topic} myths vs. reality — what I learned",
 ];
 
 function fill(template: string, keyword: string): string {
@@ -146,10 +145,11 @@ export async function generateInspiration(
 ): Promise<InspirationResult> {
   const trendKeywords = trends.flatMap(t => [t.keyword, ...t.relatedTopics.map(rt => rt.name)]);
   const primaryKeywords = extractKeywords(`${title} ${notes}`);
-  const keyword = title.trim() || primaryKeywords.slice(0, 6).join(" ") || "content";
+  const canonicalQuery = title.trim().replace(/\s+/g, " ");
+  const keyword = canonicalQuery || primaryKeywords.slice(0, 6).join(" ") || "content";
 
   const aiResult = await generateWithOpenAI(title, notes, trendKeywords);
-  if (aiResult) return { ...aiResult, source: "openai" };
+  if (aiResult) return { ...aiResult, canonicalQuery: keyword, source: "openai" };
 
   const relatedIdeas = pickN(IDEA_TEMPLATES, 10).map(t => fill(t, keyword));
   const alternativeHooks = pickN(HOOK_TEMPLATES, 5).map(t => fill(t, keyword));
@@ -157,6 +157,7 @@ export async function generateInspiration(
   const audienceQuestions = pickN(AUDIENCE_QUESTION_TEMPLATES, 5).map(t => fill(t, keyword));
 
   return {
+    canonicalQuery: keyword,
     relatedIdeas,
     alternativeHooks,
     titleSuggestions,

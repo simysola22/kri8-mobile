@@ -272,10 +272,6 @@ function ThemedStatusBar() {
 }
 
 function ReadyApp() {
-  useEffect(() => {
-    void SplashScreen.hideAsync();
-  }, []);
-
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>

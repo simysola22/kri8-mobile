@@ -4,7 +4,7 @@ const TOPICS: TrendingTopic[] = [
   { id: "t1", name: "AI-Powered Video Editing", category: "Technology", growthPercent: 127, volume: 2400000, platform: "youtube" },
   { id: "t2", name: "Faceless YouTube Channels", category: "Strategy", growthPercent: 89, volume: 1800000, platform: "youtube" },
   { id: "t3", name: "Short-Form Storytelling", category: "Content", growthPercent: 74, volume: 3200000, platform: "tiktok" },
-  { id: "t4", name: "Creator Economy 2025", category: "Business", growthPercent: 56, volume: 980000, platform: "youtube" },
+  { id: "t4", name: "Creator Economy", category: "Business", growthPercent: 56, volume: 980000, platform: "youtube" },
   { id: "t5", name: "Authentic Day-in-Life", category: "Lifestyle", growthPercent: 43, volume: 5100000, platform: "instagram" },
   { id: "t6", name: "Niche Content Strategy", category: "Strategy", growthPercent: 91, volume: 760000, platform: "youtube" },
   { id: "t7", name: "Batch Content Recording", category: "Productivity", growthPercent: 67, volume: 420000, platform: "youtube" },
@@ -37,7 +37,7 @@ const HASHTAGS: TrendingHashtag[] = [
 ];
 
 const CATEGORIES: ContentCategory[] = [
-  { name: "Technology & AI", growthPercent: 89, topContent: ["AI video tools", "Automation tutorials", "Tech reviews 2025"] },
+  { name: "Technology & AI", growthPercent: 89, topContent: ["AI video tools", "Automation tutorials", "Tech reviews"] },
   { name: "Creator Strategy", growthPercent: 72, topContent: ["YouTube growth tactics", "Monetization methods", "Niche selection"] },
   { name: "Lifestyle & Vlog", growthPercent: 34, topContent: ["Day in the life", "Morning routines", "Travel vlogs"] },
   { name: "Business & Finance", growthPercent: 56, topContent: ["Side hustle ideas", "Passive income", "Freelancing tips"] },
@@ -82,7 +82,7 @@ export class MockTrendProvider implements TrendProvider {
   async getKeywordTrends(keywords: string[]): Promise<KeywordTrend[]> {
     return keywords.map(keyword => ({
       keyword,
-      trendScore: Math.min(100, Math.max(0, scoreKeywordMatch(keyword, TOPICS).length * 30 + Math.floor(Math.random() * 20))),
+      trendScore: Math.min(100, scoreKeywordMatch(keyword, TOPICS).length * 30),
       relatedTopics: scoreKeywordMatch(keyword, TOPICS),
       relatedHashtags: scoreHashtagMatch(keyword, HASHTAGS),
     }));

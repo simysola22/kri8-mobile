@@ -1,0 +1,661 @@
+# CREATE MOBILE — PRODUCTION POLISH & BUG FIX PASS
+
+You are working on the Kri8/Create mobile application.
+
+This is a focused production bug-fix and visual-quality pass.
+
+DO NOT redesign unrelated screens.
+DO NOT change the navigation structure.
+DO NOT change authentication.
+DO NOT change backend architecture unless a confirmed bug requires it.
+DO NOT remove existing functionality.
+DO NOT introduce mock data.
+DO NOT create query-specific hardcoded fixes.
+
+Prioritize production-quality behavior and stable underlying implementations over superficial patches.
+
+---
+
+# IMPORTANT: PROVIDED CREATE APP ICON
+
+The first attached image is the NEW Create app icon design.
+
+It depicts:
+
+* a camera viewed directly from the front
+* the camera facing a mirror
+* the mirror reflecting the camera repeatedly
+* an infinite camera/mirror recursion effect
+* dark black background
+* premium black/charcoal physical materials
+* subtle warm amber/gold lighting
+* rounded-square composition
+* centered visual
+* cinematic depth
+* high-end premium appearance
+
+THIS IS THE INTENDED CREATE APP ICON.
+
+Use this supplied image as the source/reference for the app icon.
+
+Do NOT invent a different icon concept.
+
+Do NOT create a generic camera icon.
+
+Do NOT replace the concept with a letter C.
+
+Do NOT recreate the icon as a random gradient or emoji.
+
+The final Android/iOS application icon should use the supplied camera-in-mirror artwork as its actual icon asset.
+
+Inspect the existing Expo app configuration and determine the correct icon configuration for:
+
+* Android
+* iOS
+* adaptive icon where applicable
+* splash/icon metadata where applicable
+
+Preserve the existing app package/bundle identifiers.
+
+Do not change the application identity.
+
+If the asset needs resizing/cropping for platform requirements, preserve the central camera/mirror composition and do not distort it.
+
+---
+
+# PHASE 1 — LOADING SCREEN
+
+The current mobile loading screen is WRONG.
+
+The current implementation appears to have taken a screenshot/reference of the web application's loading screen and animated the screenshot itself.
+
+That is NOT acceptable.
+
+The web loading screen was provided as a visual reference, not as an image to animate.
+
+## REQUIRED IMPLEMENTATION
+
+Recreate the loading screen using actual React Native components/assets.
+
+Do NOT:
+
+* animate a screenshot
+* zoom a screenshot
+* pan a screenshot
+* use a Ken Burns effect
+* fake the loading screen with a single image
+* create an artificial long delay
+
+The mobile loading screen should visually match the web loading screen's:
+
+* branding
+* logo
+* typography
+* alignment
+* spacing
+* background
+* proportions
+* visual hierarchy
+
+Use native React Native layout/components.
+
+Animation should be subtle and premium.
+
+Preferred behavior:
+
+1. Loading screen appears.
+2. Logo/brand has a restrained fade/scale entrance.
+3. Application initializes.
+4. Loading screen transitions naturally into Home.
+5. No unnecessary artificial delay.
+
+Do not change authentication or navigation to achieve this.
+
+---
+
+# PHASE 2 — COMMUNITY SCREEN
+
+The second attached image is a screenshot of the current Community screen.
+
+It exposes a serious layout bug in the Discover/Search result card.
+
+The current result card is rendering the user's information in an extremely narrow column.
+
+The result resembles:
+
+* name broken into individual characters/very narrow lines
+* metadata compressed vertically
+* button positioned incorrectly
+* excessive empty space
+* card height becoming abnormally large
+* poor visual hierarchy
+* unusable result presentation
+
+This must be fixed at the component/layout level.
+
+## DO NOT PATCH WITH RANDOM WIDTHS
+
+Inspect the actual Community result component.
+
+Determine why the user's information container is being constrained.
+
+Investigate:
+
+* flexDirection
+* flex
+* flexGrow
+* flexShrink
+* width
+* maxWidth
+* minWidth
+* alignItems
+* justifyContent
+* nested row/column containers
+* avatar width
+* button width
+* text container width
+* absolute positioning
+* percentage widths
+* responsive layout assumptions
+
+The user information should have a proper horizontal layout.
+
+Preferred structure:
+
+Avatar | User information | Action
+
+For example:
+
+[ Avatar ]   Name
+@username / metadata
+[ Add ]
+
+The exact styling should match the existing Create design system.
+
+The name must remain readable as normal text.
+
+Do not allow the text to collapse into a narrow column.
+
+Do not hardcode widths specifically for one username.
+
+The layout must work for:
+
+* short usernames
+* long usernames
+* long display names
+* different screen widths
+* Android
+* iOS
+
+## COMMUNITY SEARCH
+
+The search functionality should remain unchanged logically.
+
+If a user searches for another account:
+
+* loading state must be clear
+* matching users should render correctly
+* no-match state should be clear
+* errors should be visible
+* Add Friend should work
+* Pending should work
+* Friends should work
+
+Do not invent fake users for testing.
+
+Use the real API.
+
+---
+
+# PHASE 3 — COMMUNITY VISUAL QUALITY
+
+After fixing the layout bug, perform a focused visual refinement of the Community screen.
+
+Maintain the existing Create visual identity.
+
+Improve:
+
+* spacing
+* card proportions
+* typography hierarchy
+* avatar sizing
+* action-button placement
+* search field proportions
+* vertical rhythm
+* empty state
+* loading state
+* error state
+
+Do NOT completely redesign the page.
+
+The result should feel like a polished production social/creator application rather than a prototype.
+
+The search result card should have a compact, natural height.
+
+---
+
+# PHASE 4 — AI STUDIO / GET INSPIRED
+
+There is a serious semantic bug in Get Inspired.
+
+When the user enters:
+
+"house hunting"
+
+the application currently produces ideas such as:
+
+* "How I built my house..."
+* "The psychology of house..."
+* "housework..."
+* other generic house-related concepts
+
+This is WRONG.
+
+The system must preserve the complete user intent.
+
+"house hunting" is a semantic concept.
+
+It must NOT silently become:
+
+"house"
+
+or:
+
+"housework"
+
+or:
+
+"houses"
+
+or:
+
+"home"
+
+unless those are explicitly derived concepts and the system clearly understands the distinction.
+
+## IMPORTANT
+
+DO NOT add:
+
+if query === "house hunting"
+
+or any other query-specific workaround.
+
+Fix the underlying semantic pipeline.
+
+Trace:
+
+User input
+→ mobile
+→ API
+→ trend engine
+→ search terms
+→ AI prompt
+→ fallback/template
+→ response
+→ mobile rendering
+
+Maintain separate concepts:
+
+canonicalQuery
+searchTerms
+
+Example:
+
+canonicalQuery = "house hunting"
+
+searchTerms = ["house hunting", ...]
+
+The canonicalQuery must remain available to the AI generation stage.
+
+Multi-word concepts must remain semantic units.
+
+---
+
+# PHASE 5 — GET INSPIRED QUALITY
+
+Generated ideas must be directly useful for the user's actual query.
+
+For:
+
+"house hunting"
+
+valid directions include:
+
+* first-time house hunting
+* house hunting mistakes
+* house hunting in Lagos
+* apartment hunting experiences
+* what to check during house hunting
+* house-hunting stories
+* house-hunting creator formats
+
+Invalid generic degradation includes:
+
+* generic houses
+* house decoration
+* housework
+* architecture
+* generic home psychology
+* unrelated real-estate concepts
+
+The system should understand intent before generating.
+
+---
+
+# PHASE 6 — REMOVE STALE 2025 CONTEXT
+
+The user is seeing generated angles such as:
+
+"House hunting in the 2025 creator's perspective."
+
+This is unacceptable.
+
+DO NOT merely replace 2025 with 2026.
+
+Find where stale 2025 data is coming from.
+
+Search the entire relevant codebase for:
+
+2025
+2024
+creator perspective
+static trend fixtures
+fallback templates
+hardcoded trend examples
+
+Determine whether the source is:
+
+* prompt text
+* fallback template
+* fixture
+* static trend provider
+* cached data
+* AI instructions
+* generated mock content
+* database record
+
+Remove stale context from production generation.
+
+A year should only appear when it is genuinely relevant.
+
+Do not inject a year into every generated angle.
+
+---
+
+# PHASE 7 — ANALYZE IDEAS
+
+The current Analyze Ideas feature frequently returns trend relevance scores around 50–100.
+
+This needs investigation.
+
+Determine whether the score is coming from:
+
+* hardcoded defaults
+* fallback scoring
+* arbitrary constants
+* AI output
+* trend similarity
+* trend freshness
+* missing-data behavior
+
+A score must represent actual evidence.
+
+If insufficient trend evidence exists, the system should represent insufficient confidence rather than pretending that a precise score exists.
+
+Do not manufacture a confidence score.
+
+Document the scoring inputs.
+
+---
+
+# PHASE 8 — RELATED TOPICS
+
+Separate:
+
+1. topic relevance
+2. format relevance
+
+A trend does not need to literally be about the same subject to be useful.
+
+Example:
+
+Trend:
+"Everything I ate on my birthday"
+
+Possible adaptation:
+
+"Everything I checked before renting this apartment"
+
+The original trend is not about house hunting.
+
+Its FORMAT is useful.
+
+The system should understand and communicate that distinction.
+
+Do not list unrelated trends as though they are directly about the user's topic.
+
+---
+
+# PHASE 9 — OPPORTUNITIES
+
+Opportunities must explain:
+
+* source trend
+* why it is relevant
+* how to adapt it
+* creator mechanism being borrowed
+
+Bad:
+
+"Use NYFW trend for house hunting."
+
+Good:
+
+"Use the invitation-style structure of this NYFW content as a 'come house hunting with me' format."
+
+The output must be actionable.
+
+---
+
+# PHASE 10 — ANGLES
+
+Angles must be:
+
+* current
+* specific
+* creator-oriented
+* actionable
+* directly relevant to the canonical query
+
+Do not generate stale years.
+
+Do not generate generic summaries.
+
+Do not produce awkward phrases such as:
+
+"2025 creator's perspective."
+
+---
+
+# PHASE 11 — PROFILE USERNAME
+
+The Profile screen currently does not allow the user to change their username.
+
+Fix the username editing flow properly.
+
+Required flow:
+
+Profile
+→ Edit username
+→ validate
+→ check availability
+→ save
+→ backend update
+→ refresh profile
+→ Community/search reflects new username
+
+Validation should handle:
+
+* empty username
+* invalid characters
+* excessive length
+* leading/trailing whitespace
+* duplicate username
+* API failure
+
+The backend must remain the source of truth.
+
+Do not implement username changes using local-only state.
+
+Do not fake successful updates.
+
+After changing the username, refresh all relevant user/profile data.
+
+---
+
+# PHASE 12 — HELP / SUPPORT
+
+The question-mark icon at the top of Profile currently appears to have no useful production destination.
+
+Convert it into a proper Help & Support entry.
+
+Keep this simple for now.
+
+It should provide options such as:
+
+* Report a problem
+* Contact support
+* App feedback
+* FAQ / Help
+
+Do not build an unnecessarily complex support platform.
+
+Use a dedicated customer-support email once the production domain mailbox is configured.
+
+Do not invent an email address that has not been configured.
+
+If no support mailbox exists yet, implement the UI so the address can be configured centrally rather than hardcoded across components.
+
+---
+
+# PHASE 13 — REGRESSION PROTECTION
+
+Do not modify unrelated features.
+
+Existing functionality must remain intact:
+
+* Home
+* Ideas
+* Capture
+* Community
+* AI
+* Profile
+* authentication
+* API
+* database
+* friend requests
+* messaging
+* notifications
+* AI generation
+* trend analysis
+
+No new tab.
+
+No new navigation structure.
+
+No mock data.
+
+No demo mode.
+
+No authentication changes.
+
+---
+
+# REQUIRED AUDIT BEFORE EDITING
+
+Before modifying code, inspect:
+
+1. Current loading screen implementation
+2. Current app icon configuration
+3. Community search result component
+4. Community styles/layout
+5. AI Get Inspired data flow
+6. Analyze Ideas scoring
+7. Related Topics generation
+8. Opportunities generation
+9. Angles generation
+10. Profile username update implementation
+11. Profile Help button
+12. Relevant API endpoints
+
+Identify root causes.
+
+Then implement the fixes.
+
+---
+
+# VALIDATION
+
+Run:
+
+* mobile TypeScript check
+* API TypeScript check if backend changes are made
+* relevant tests
+* production build/export
+* git diff --check
+
+Test at minimum:
+
+### Community
+
+* search short username
+* search long username
+* no results
+* result with Add Friend
+* pending state
+* existing friend state
+* multiple results
+
+### AI
+
+* house hunting
+* apartment hunting
+* gym transformation
+* wedding photography
+* Lagos nightlife
+* iPhone photography
+* university life
+* single-word query
+
+For every multi-word query, verify that the complete semantic concept remains intact.
+
+### Profile
+
+* edit valid username
+* duplicate username
+* invalid username
+* API failure
+* refresh after successful change
+
+### Loading
+
+Verify that the screen is rendered using native components rather than an animated screenshot.
+
+---
+
+# OUTPUT
+
+Report:
+
+1. Root causes
+2. Files modified
+3. Changes made
+4. Why each change was necessary
+5. Tests performed
+6. Test results
+7. Any remaining limitations
+
+Do not make unrelated architectural changes.
+
+Prioritize correctness and production quality over speed.

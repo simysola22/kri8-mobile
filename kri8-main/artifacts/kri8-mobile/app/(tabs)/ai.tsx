@@ -184,6 +184,17 @@ export default function AIScreen() {
               {analysis.suggestedAngles.length > 0 && (
                 <ResultGroup label="Angles" items={analysis.suggestedAngles} variant="accent" />
               )}
+              <View style={styles.evidenceCard}>
+                <Text style={[styles.groupLabel, { color: theme.textMuted }]}>Evidence</Text>
+                <Text style={[styles.evidenceTitle, { color: theme.text }]}>
+                  {analysis.confidence === 'insufficient'
+                    ? 'Insufficient trend evidence'
+                    : `${analysis.confidence[0].toUpperCase()}${analysis.confidence.slice(1)} confidence`}
+                </Text>
+                {analysis.scoringEvidence.map((item) => (
+                  <Text key={item} style={[styles.evidenceItem, { color: theme.textMuted }]}>• {item}</Text>
+                ))}
+              </View>
             </View>
           )}
           {analyzeTrend.isError && (
@@ -230,7 +241,7 @@ export default function AIScreen() {
                       {topic.name}
                     </Text>
                     <Text style={[styles.topicDesc, { color: theme.textMuted }]}>
-                      {topic.category} · {trends.metricsQuality === 'measured' ? `+${topic.growthPercent}% growth` : `estimated activity: +${topic.growthPercent}%`} · {topic.platform}
+                       {topic.category} · {formatTopicSignal(topic.growthPercent, trends.metricsQuality)} · {topic.platform}
                     </Text>
                   </GlassCard>
                 ))}
@@ -356,4 +367,13 @@ const styles = StyleSheet.create({
   errorCard: { gap: 12, borderColor: 'rgba(248,113,113,0.35)' },
   errorText: { fontSize: 14, lineHeight: 20 },
   emptyText: { fontSize: 14, lineHeight: 20 },
+  evidenceCard: { gap: 7, paddingTop: 4 },
+  evidenceTitle: { fontSize: 15, fontWeight: '700' },
+  evidenceItem: { fontSize: 13, lineHeight: 19 },
 });
+
+function formatTopicSignal(growthPercent: number, quality: string): string {
+  if (quality === 'measured') return `+${growthPercent}% growth`;
+  if (quality === 'estimated') return 'Estimated trend signal';
+  return 'Reference signal';
+}

@@ -46,7 +46,13 @@ export default function CommunityScreen() {
     refetch: refetchConversations,
   } = useConversations();
   const [search, setSearch] = React.useState('');
-  const { data: searchResults = [], isLoading: isSearching, isFetching: isSearchFetching } =
+  const {
+    data: searchResults = [],
+    isLoading: isSearching,
+    isFetching: isSearchFetching,
+    isError: isSearchError,
+    error: searchError,
+  } =
     useSearchUsers(search);
   const sendRequest = useSendFriendRequest();
   const respond = useRespondToFriendRequest();
@@ -123,7 +129,12 @@ export default function CommunityScreen() {
               {search.trim().length >= 2 && (
                 <View style={styles.searchResults}>
                   {(isSearching || isSearchFetching) && <LoadingSpinner />}
-                  {!isSearching && !isSearchFetching && searchResults.length === 0 && (
+                  {isSearchError && (
+                    <Text style={[styles.helperText, { color: theme.text }]}>
+                      {getErrorMessage(searchError, 'Could not search users. Please try again.')}
+                    </Text>
+                  )}
+                  {!isSearching && !isSearchFetching && !isSearchError && searchResults.length === 0 && (
                     <Text style={[styles.helperText, { color: theme.textMuted }]}>
                       No matching users yet.
                     </Text>
@@ -311,7 +322,7 @@ function DiscoverRow({
   );
 
   return (
-    <GlassCard style={styles.discoverCard}>
+    <GlassCard noPadding style={styles.discoverCard}>
       {user.username ? (
         <Link href={`/(tabs)/profile/${user.username}`} asChild>
           <TouchableOpacity style={styles.discoverIdentity} activeOpacity={0.85}>
@@ -324,6 +335,15 @@ function DiscoverRow({
       <TouchableOpacity
         onPress={onAdd}
         disabled={disabled || state !== 'add'}
+        accessibilityRole="button"
+        accessibilityLabel={
+          state === 'friend'
+            ? `${user.name ?? user.username ?? 'User'} is already a friend`
+            : state === 'pending'
+              ? `Friend request to ${user.name ?? user.username ?? 'user'} is pending`
+              : `Add ${user.name ?? user.username ?? 'user'} as a friend`
+        }
+        accessibilityState={{ disabled: disabled || state !== 'add' }}
         style={[
           styles.requestButton,
           { backgroundColor: state === 'add' ? theme.accentSoft : theme.bgGlass },
@@ -390,10 +410,18 @@ const styles = StyleSheet.create({
   retryText: { fontSize: 14, fontWeight: '700' },
   section: { gap: 12, marginBottom: 12 },
   sectionTitle: { fontSize: 20, fontWeight: '700', marginBottom: 6 },
-  discoverCard: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 68 },
-  discoverIdentity: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  discoverInfo: { flex: 1, gap: 4 },
-  requestButton: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 20 },
+  discoverCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    minHeight: 70,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 18,
+  },
+  discoverIdentity: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  discoverInfo: { flex: 1, minWidth: 0, gap: 4 },
+  requestButton: { flexShrink: 0, minWidth: 68, alignItems: 'center', paddingHorizontal: 14, paddingVertical: 9, borderRadius: 20 },
   requestButtonText: { fontSize: 13, fontWeight: '700' },
   conversationCard: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 78 },
   conversationInfo: { flex: 1, gap: 4 },

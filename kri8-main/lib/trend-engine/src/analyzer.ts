@@ -12,7 +12,7 @@ const STOP_WORDS = new Set([
 export function extractKeywords(text: string): string[] {
   return text
     .toLowerCase()
-    .replace(/[^a-z0-9\s'-]/g, " ")
+    .replace(/[^\p{L}\p{N}\s'-]/gu, " ")
     .split(/\s+/)
     .map(w => w.replace(/^['-]+|['-]+$/g, ""))
     .filter(w => w.length > 2 && !STOP_WORDS.has(w))
@@ -23,11 +23,33 @@ export function extractKeywords(text: string): string[] {
     .slice(0, 20);
 }
 
-function termOverlap(a: string, b: string): number {
-  const aWords = a.toLowerCase().split(/\s+/);
-  const bWords = b.toLowerCase().split(/\s+/);
-  const matches = aWords.filter(w => bWords.some(bw => bw.includes(w) || w.includes(bw)));
-  return matches.length / Math.max(aWords.length, 1);
+function normalizePhrase(text: string): string {
+  return text.toLowerCase().replace(/[^\p{L}\p{N}\s'-]/gu, " ").replace(/\s+/g, " ").trim();
+}
+
+function phraseOverlap(a: string, b: string): number {
+  const left = normalizePhrase(a);
+  const right = normalizePhrase(b);
+  if (!left || !right) return 0;
+  if (left === right) return 1;
+  if (left.includes(right) || right.includes(left)) return 0.9;
+
+  const leftWords = new Set(extractKeywords(left));
+  const rightWords = new Set(extractKeywords(right));
+  if (leftWords.size === 0 || rightWords.size === 0) return 0;
+  const shared = [...leftWords].filter(word => rightWords.has(word)).length;
+  return shared / Math.max(leftWords.size, rightWords.size);
+}
+
+function qualityWeight(dashboard: TrendDashboard): number {
+  switch (dashboard.metricsQuality) {
+    case "measured":
+      return 1;
+    case "estimated":
+      return 0.75;
+    case "fixture":
+      return 0.45;
+  }
 }
 
 export function analyzeIdea(
@@ -35,60 +57,96 @@ export function analyzeIdea(
   notes: string,
   dashboard: TrendDashboard
 ): IdeaAnalysisResult {
-  const keywords = extractKeywords(`${title} ${notes}`);
+  const canonicalQuery = normalizePhrase(title);
+  const keywords = extractKeywords(`${canonicalQuery} ${notes}`);
 
   const topicScores = dashboard.topics.map(topic => {
-    const score = keywords.reduce((acc, kw) => {
-      const overlap = termOverlap(kw, topic.name) + termOverlap(kw, topic.category);
-      return acc + overlap;
-    }, 0);
+    const score = Math.max(
+      phraseOverlap(canonicalQuery, topic.name),
+      keywords.reduce((acc, kw) => Math.max(acc, phraseOverlap(kw, topic.name)), 0),
+    );
     return { topic, score };
   });
 
   const hashtagScores = dashboard.hashtags.map(ht => {
     const tag = ht.tag.replace("#", "").toLowerCase();
-    const score = keywords.reduce((acc, kw) => {
-      return acc + (tag.includes(kw) || kw.includes(tag) ? 1 : 0);
-    }, 0);
+    const score = Math.max(
+      phraseOverlap(canonicalQuery, tag),
+      keywords.reduce((acc, kw) => Math.max(acc, phraseOverlap(kw, tag)), 0),
+    );
     return { ht, score };
   });
 
   const relatedTopics = topicScores
-    .filter(t => t.score > 0)
+    .filter(t => t.score >= 0.35)
     .sort((a, b) => b.score - a.score)
     .slice(0, 5)
     .map(t => t.topic);
 
   const relatedHashtags = hashtagScores
-    .filter(h => h.score > 0)
+    .filter(h => h.score >= 0.35)
     .sort((a, b) => b.score - a.score)
     .slice(0, 8)
     .map(h => h.ht);
 
-  const relevanceScore = Math.min(100, Math.round(
-    (relatedTopics.length / 5) * 50 +
-    (relatedHashtags.length / 8) * 30 +
-    (keywords.length > 5 ? 20 : keywords.length * 4)
-  ));
+  const matchedTopicEvidence = topicScores
+    .filter(({ topic }) => relatedTopics.some(candidate => candidate.id === topic.id))
+    .reduce((sum, item) => sum + item.score, 0);
+  const matchedHashtagEvidence = hashtagScores
+    .filter(({ ht }) => relatedHashtags.some(candidate => candidate.tag === ht.tag))
+    .reduce((sum, item) => sum + item.score, 0);
+  const quality = qualityWeight(dashboard);
+  const phraseCoverage = canonicalQuery
+    ? Math.min(1, relatedTopics.some(topic => phraseOverlap(canonicalQuery, topic.name) >= 0.9) ? 1 : keywords.length / 6)
+    : 0;
+  const relevanceScore = Math.min(
+    100,
+    Math.round(
+      quality * (
+        matchedTopicEvidence * 30 +
+        matchedHashtagEvidence * 20 +
+        phraseCoverage * 30
+      ),
+    ),
+  );
 
-  const topCategory = dashboard.categories
-    .find(c => relatedTopics.some(t => t.category.toLowerCase().includes(c.name.toLowerCase().split(" ")[0])));
-
-  const contentOpportunities: string[] = [
-     ...relatedTopics.slice(0, 3).map(t => `Tie "${title}" to the trending topic: "${t.name}" (estimated activity: +${t.growthPercent}%)`),
-    ...dashboard.categories
-      .sort((a, b) => b.growthPercent - a.growthPercent)
-      .slice(0, 2)
-      .map(c => `Position this in the growing "${c.name}" category`),
-  ].slice(0, 5);
-
-  const suggestedAngles = [
-    `"${title}" — the 2025 creator's perspective`,
-    `How ${keywords[0] ?? "this"} is changing the game for content creators`,
-    `${keywords.slice(0, 2).join(" + ")} — a deep dive breakdown`,
-    `The beginner's guide to ${keywords[0] ?? title.split(" ")[0]}`,
-    topCategory ? `Why ${topCategory.name} creators can't ignore this` : `What nobody tells you about ${title}`,
+  const confidence =
+    relatedTopics.length === 0 && relatedHashtags.length === 0
+      ? "insufficient"
+      : relevanceScore >= 65 && dashboard.metricsQuality !== "fixture"
+        ? "high"
+        : relevanceScore >= 35
+          ? "medium"
+          : "low";
+  const scoringEvidence = [
+    `Matched ${relatedTopics.length} trend topic(s) and ${relatedHashtags.length} hashtag(s) using phrase and token overlap.`,
+    `Trend evidence quality: ${dashboard.metricsQuality}.`,
+    `Score combines match strength, phrase coverage, and the provider's evidence quality.`,
   ];
+  if (relatedTopics.length === 0 && relatedHashtags.length === 0) {
+    scoringEvidence.push("No direct trend evidence matched this idea, so opportunities and angles were withheld.");
+  }
 
-  return { relevanceScore, relatedTopics, relatedHashtags, contentOpportunities, suggestedAngles };
+  const contentOpportunities = relatedTopics.slice(0, 3).map((topic) =>
+    `Source trend: "${topic.name}". Why relevant: it overlaps with "${canonicalQuery}". Adaptation: frame the idea through ${topic.category.toLowerCase()} creator content. Creator mechanism: borrow the trend's recognizable framing while keeping the subject specific to "${canonicalQuery}".`,
+  );
+
+  const suggestedAngles = relatedTopics.length > 0
+    ? [
+        `A creator-ready ${relatedTopics[0].category.toLowerCase()} format for "${canonicalQuery}"`,
+        `What to show, test, or compare while exploring "${canonicalQuery}"`,
+        `The practical mistakes creators make with "${canonicalQuery}" — and what to do instead`,
+      ]
+    : [];
+
+  return {
+    canonicalQuery,
+    relevanceScore,
+    confidence,
+    scoringEvidence,
+    relatedTopics,
+    relatedHashtags,
+    contentOpportunities,
+    suggestedAngles,
+  };
 }

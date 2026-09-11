@@ -7,9 +7,8 @@ const router = Router();
 let dashboardCache: { data: unknown; expiresAt: number } | null = null;
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
-function safeErrorMessage(error: unknown): string {
-  if (error instanceof Error && error.message) return error.message;
-  return "Trend provider request failed";
+function isConfigurationError(error: unknown): boolean {
+  return error instanceof Error && /TREND_PROVIDER|YOUTUBE_API_KEY|Unsupported TREND_PROVIDER/.test(error.message);
 }
 
 // GET /api/trends/dashboard
@@ -26,11 +25,9 @@ router.get("/dashboard", requireAuth, async (req: any, res): Promise<void> => {
     res.json(dashboard);
   } catch (err) {
     req.log.error({ err }, "Failed to get trend dashboard");
-    const message = safeErrorMessage(err);
-    const status = message.includes("TREND_PROVIDER") || message.includes("YOUTUBE_API_KEY") || message.includes("Unsupported TREND_PROVIDER")
-      ? 503
-      : 502;
-    res.status(status).json({ error: message });
+    res.status(isConfigurationError(err) ? 503 : 502).json({
+      error: isConfigurationError(err) ? "Trend provider is not configured" : "Trend provider request failed",
+    });
   }
 });
 
@@ -40,6 +37,8 @@ router.post("/analyze", requireAuth, async (req: any, res): Promise<void> => {
     const title = typeof req.body?.title === "string" ? req.body.title.trim() : "";
     const notes = typeof req.body?.notes === "string" ? req.body.notes.trim() : "";
     if (!title) { res.status(400).json({ error: "title is required" }); return; }
+    if (title.length > 240) { res.status(400).json({ error: "title must be 240 characters or fewer" }); return; }
+    if (notes.length > 2000) { res.status(400).json({ error: "notes must be 2000 characters or fewer" }); return; }
 
     const provider = createTrendProvider();
     const dashboard = await provider.getDashboard();
@@ -47,7 +46,7 @@ router.post("/analyze", requireAuth, async (req: any, res): Promise<void> => {
     res.json(result);
   } catch (err) {
     req.log.error({ err }, "Failed to analyze idea");
-    res.status(502).json({ error: safeErrorMessage(err) });
+    res.status(502).json({ error: "Trend analysis failed" });
   }
 });
 
@@ -57,6 +56,8 @@ router.post("/inspire", requireAuth, async (req: any, res): Promise<void> => {
     const title = typeof req.body?.title === "string" ? req.body.title.trim() : "";
     const notes = typeof req.body?.notes === "string" ? req.body.notes.trim() : "";
     if (!title) { res.status(400).json({ error: "title is required" }); return; }
+    if (title.length > 240) { res.status(400).json({ error: "title must be 240 characters or fewer" }); return; }
+    if (notes.length > 2000) { res.status(400).json({ error: "notes must be 2000 characters or fewer" }); return; }
 
     const provider = createTrendProvider();
     const keywordTrends = await provider.getKeywordTrends([title]);
@@ -64,7 +65,7 @@ router.post("/inspire", requireAuth, async (req: any, res): Promise<void> => {
     res.json(result);
   } catch (err) {
     req.log.error({ err }, "Failed to generate inspiration");
-    res.status(502).json({ error: safeErrorMessage(err) });
+    res.status(502).json({ error: "Inspiration generation failed" });
   }
 });
 

@@ -4,6 +4,21 @@ import { eq, or, ilike, ne, and } from "drizzle-orm";
 import { isDevMode } from "../middlewares/devAuthMiddleware";
 
 const router = Router();
+const USERNAME_PATTERN = /^[a-zA-Z0-9_]{3,30}$/;
+
+function normalizeUsername(value: unknown): string {
+  return typeof value === "string" ? value.trim().toLowerCase() : "";
+}
+
+function usernameValidationError(username: string): string | null {
+  if (!username) return "Username is required";
+  if (username.length < 3) return "Username must be at least 3 characters";
+  if (username.length > 30) return "Username must be 30 characters or fewer";
+  if (!USERNAME_PATTERN.test(username)) {
+    return "Username can only contain letters, numbers, and underscores";
+  }
+  return null;
+}
 
 function safeGetAuth(req: any): { userId: string | null; sessionClaims: Record<string, unknown> } {
   if (isDevMode) return { userId: null, sessionClaims: {} };
@@ -94,11 +109,33 @@ router.patch("/me", requireAuth, async (req: any, res): Promise<void> => {
       return;
     }
 
-    const { name, username, themePreference, bio, avatarUrl, isPublic } =
-      req.body;
+    const { name, username, themePreference, bio, avatarUrl, isPublic } = req.body;
     const updates: Partial<typeof usersTable.$inferInsert> = {};
     if (name !== undefined) updates.name = name;
-    if (username !== undefined) updates.username = username;
+    if (username !== undefined) {
+      const normalizedUsername = normalizeUsername(username);
+      const validationError = usernameValidationError(normalizedUsername);
+      if (validationError) {
+        res.status(400).json({ error: validationError, code: "INVALID_USERNAME" });
+        return;
+      }
+
+      const duplicate = await db
+        .select({ id: usersTable.id })
+        .from(usersTable)
+        .where(
+          and(
+            eq(usersTable.username, normalizedUsername),
+            ne(usersTable.id, existing[0].id),
+          ),
+        )
+        .limit(1);
+      if (duplicate.length > 0) {
+        res.status(409).json({ error: "That username is already taken", code: "USERNAME_TAKEN" });
+        return;
+      }
+      updates.username = normalizedUsername;
+    }
     if (bio !== undefined) updates.bio = bio;
     if (avatarUrl !== undefined) updates.avatarUrl = avatarUrl;
     if (isPublic !== undefined) updates.isPublic = isPublic;
@@ -124,7 +161,50 @@ router.patch("/me", requireAuth, async (req: any, res): Promise<void> => {
     });
   } catch (err) {
     req.log.error({ err }, "Failed to update user");
+    if (err && typeof err === "object" && "code" in err && err.code === "23505") {
+      res.status(409).json({ error: "That username is already taken", code: "USERNAME_TAKEN" });
+      return;
+    }
     res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// GET /api/users/username-availability?username=
+router.get("/username-availability", requireAuth, async (req: any, res): Promise<void> => {
+  try {
+    const username = normalizeUsername(req.query.username);
+    const validationError = usernameValidationError(username);
+    if (validationError) {
+      res.json({ available: false, username, reason: validationError });
+      return;
+    }
+
+    const clerkUserId: string = req.clerkUserId;
+    const meRows = await db
+      .select({ id: usersTable.id })
+      .from(usersTable)
+      .where(eq(usersTable.clerkUserId, clerkUserId))
+      .limit(1);
+
+    const matches = await db
+      .select({ id: usersTable.id })
+      .from(usersTable)
+      .where(
+        and(
+          eq(usersTable.username, username),
+          meRows[0] ? ne(usersTable.id, meRows[0].id) : undefined,
+        ),
+      )
+      .limit(1);
+
+    res.json({
+      available: matches.length === 0,
+      username,
+      ...(matches.length > 0 ? { reason: "That username is already taken" } : {}),
+    });
+  } catch (err) {
+    req.log.error({ err }, "Failed to check username availability");
+    res.status(500).json({ error: "Could not check username availability" });
   }
 });
 
