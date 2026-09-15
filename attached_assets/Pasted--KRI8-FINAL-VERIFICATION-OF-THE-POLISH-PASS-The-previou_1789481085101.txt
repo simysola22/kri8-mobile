@@ -1,0 +1,250 @@
+## KRI8 — FINAL VERIFICATION OF THE POLISH PASS
+
+The previous focused polish pass has been implemented.
+
+DO NOT start another broad refactor.
+
+DO NOT change unrelated functionality.
+
+DO NOT redesign the application.
+
+This task is now primarily a verification and finalization pass.
+
+---
+
+# 1. CREATE APP ICON — EXACT ASSET REQUIRED
+
+The intended Create app icon is the camera-in-mirror artwork previously specified:
+
+* black/dark background
+* front-facing camera
+* camera facing a mirror
+* recursive camera reflection
+* multiple cameras receding into the mirror
+* premium black/charcoal materials
+* subtle warm amber/gold lighting
+* rounded-square composition
+* cinematic/high-end appearance
+
+The exact reference artwork is NOT currently available inside the repository.
+
+DO NOT generate a different icon concept.
+
+DO NOT create a generic camera icon.
+
+DO NOT use the old Kri8 icon as a substitute.
+
+DO NOT claim this is complete until the correct artwork is available as a repository asset.
+
+For now:
+
+1. Verify exactly which Expo icon files/configuration are currently being used.
+2. Report the expected asset path.
+3. Report the required dimensions/formats for Android/iOS.
+4. Do not alter the existing icon to a fake substitute.
+
+Once the exact artwork is placed at the expected asset path, wire it into the existing Expo configuration without changing package/bundle identifiers.
+
+---
+
+# 2. COMMUNITY — VERIFY THE ACTUAL LAYOUT FIX
+
+The previous screenshot showed a severe layout bug where user information collapsed into an extremely narrow column.
+
+Verify the implemented fix against the actual component structure.
+
+The intended structure is:
+
+Avatar | User information | Action
+
+Verify that:
+
+* avatar has stable dimensions
+* action button has stable dimensions
+* user information receives the remaining width
+* name does not collapse into individual characters
+* username remains readable
+* long names truncate gracefully
+* card height remains compact
+* multiple search results render correctly
+* layout works on narrow Android screens
+* layout works on wider screens
+* no absolute positioning is causing the collapse
+* no query-specific styling exists
+
+Do not solve this with a hardcoded width for a particular username.
+
+---
+
+# 3. TEST COMMUNITY THROUGH THE REAL APP FLOW
+
+Use the actual authenticated API where credentials are available.
+
+Verify:
+
+1. Search for a real existing user.
+2. Verify result renders correctly.
+3. Verify Add Friend works.
+4. Verify Pending state.
+5. Verify existing Friend state.
+6. Verify multiple results.
+7. Verify no results.
+8. Verify API error state.
+
+If runtime testing is blocked by missing credentials/database state, report that explicitly instead of inventing test data.
+
+---
+
+# 4. TEST AI THROUGH THE REAL MOBILE FLOW
+
+Do NOT rely only on direct trend-engine tests.
+
+Trace and test:
+
+Mobile AI screen
+→ AIAssistantService
+→ API
+→ trend engine
+→ response
+→ mobile rendering
+
+Test:
+
+"house hunting"
+
+The final UI must show ideas genuinely about HOUSE HUNTING.
+
+It must NOT degrade into:
+
+* house
+* housework
+* generic houses
+* architecture
+* generic home content
+
+Then test:
+
+"apartment hunting"
+"gym transformation"
+"wedding photography"
+"Lagos nightlife"
+"iPhone photography"
+"university life"
+
+Verify that the COMPLETE semantic concept survives from the input field to the final generated output.
+
+---
+
+# 5. VERIFY ANALYZE IDEAS
+
+Test the actual Analyze Ideas UI.
+
+Verify:
+
+* relevance score is not a fake default
+* insufficient evidence is represented honestly
+* evidence is displayed correctly
+* topic relevance is distinct from format adaptation
+* related topics are not falsely presented as direct topic matches
+* opportunities explain how a trend can be adapted
+* angles are current and relevant
+
+Specifically verify that stale 2025 content does not appear.
+
+Do not merely replace 2025 with 2026.
+
+---
+
+# 6. VERIFY USERNAME EDITING
+
+Test through the actual Profile UI:
+
+Valid username
+→ save
+→ profile refresh
+→ community/search refresh
+
+Also test:
+
+* duplicate username
+* invalid characters
+* whitespace
+* empty username
+* API failure
+
+The backend must remain the source of truth.
+
+After success, verify that the new username is reflected wherever the old username was cached.
+
+---
+
+# 7. VERIFY LOADING SCREEN
+
+Verify that the loading screen is actually composed from React Native components.
+
+Confirm there is no screenshot being animated.
+
+Confirm there is no:
+
+* zooming screenshot
+* panning screenshot
+* Ken Burns effect
+* unnecessary artificial delay
+
+The animation should be subtle and premium.
+
+---
+
+# 8. STATIC VALIDATION
+
+Run:
+
+* mobile TypeScript
+* API TypeScript if relevant
+* web TypeScript if relevant
+* production web build
+* Expo web export
+* Metro startup
+* API startup/build
+* git diff --check
+
+Do not make unrelated fixes merely to get a clean check.
+
+If a pre-existing unrelated issue is encountered, report it separately.
+
+---
+
+# 9. OUTPUT
+
+Report:
+
+### A. Confirmed working
+
+List only things that were actually verified.
+
+### B. Blocked verification
+
+List anything that could not be tested and explain exactly why.
+
+### C. Remaining bugs
+
+List only genuine remaining issues.
+
+### D. Icon status
+
+Report:
+
+* current icon asset
+* expected new icon asset path
+* Expo configuration file
+* exact remaining action required to install the supplied camera-in-mirror artwork
+
+### E. Build status
+
+Report whether the project is ready for another Android APK build.
+
+IMPORTANT:
+
+Do not start an EAS build automatically.
+
+Wait until the verification report is complete.
