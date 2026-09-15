@@ -238,11 +238,11 @@ function FriendRow({ user }: { user: UserPublic }) {
         <GlassCard style={styles.friendCard}>
           <Avatar uri={user.avatarUrl} name={user.name ?? user.username} size="md" />
           <View style={styles.friendInfo}>
-            <Text style={[styles.friendName, { color: theme.text }]}>
+            <Text style={[styles.friendName, { color: theme.text }]} numberOfLines={1} ellipsizeMode="tail">
               {user.name ?? user.username ?? 'Unknown'}
             </Text>
             {user.username && (
-              <Text style={[styles.friendUsername, { color: theme.textMuted }]}>
+              <Text style={[styles.friendUsername, { color: theme.textMuted }]} numberOfLines={1} ellipsizeMode="tail">
                 @{user.username}
               </Text>
             )}
@@ -309,11 +309,11 @@ function DiscoverRow({
     <>
       <Avatar uri={user.avatarUrl} name={user.name ?? user.username} size="sm" />
       <View style={styles.discoverInfo}>
-        <Text style={[styles.friendName, { color: theme.text }]}>
+         <Text style={[styles.friendName, { color: theme.text }]} numberOfLines={1} ellipsizeMode="tail">
           {user.name ?? user.username ?? 'Unknown'}
         </Text>
         {user.username && (
-          <Text style={[styles.friendUsername, { color: theme.textMuted }]}>
+           <Text style={[styles.friendUsername, { color: theme.textMuted }]} numberOfLines={1} ellipsizeMode="tail">
             @{user.username}
           </Text>
         )}
@@ -419,9 +419,9 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 18,
   },
-  discoverIdentity: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 12 },
-  discoverInfo: { flex: 1, minWidth: 0, gap: 4 },
-  requestButton: { flexShrink: 0, minWidth: 68, alignItems: 'center', paddingHorizontal: 14, paddingVertical: 9, borderRadius: 20 },
+  discoverIdentity: { flexGrow: 1, flexShrink: 1, flexBasis: 0, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  discoverInfo: { flexGrow: 1, flexShrink: 1, flexBasis: 0, width: 0, minWidth: 0, gap: 4 },
+  requestButton: { flexGrow: 0, flexShrink: 0, minWidth: 68, alignItems: 'center', paddingHorizontal: 14, paddingVertical: 9, borderRadius: 20 },
   requestButtonText: { fontSize: 13, fontWeight: '700' },
   conversationCard: { flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 78 },
   conversationInfo: { flex: 1, gap: 4 },

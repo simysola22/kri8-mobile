@@ -78,6 +78,7 @@ export function useUpdateUser() {
       qc.setQueryData(QUERY_KEY, updated);
       void qc.invalidateQueries({ queryKey: ['users', 'search'] });
       void qc.invalidateQueries({ queryKey: ['social', 'user-search'] });
+      void qc.invalidateQueries({ queryKey: ['profile'] });
     },
   });
 }
@@ -106,14 +107,18 @@ export function useUsernameAvailability(username: string) {
         `${BASE}/api/users/username-availability?username=${encodeURIComponent(debouncedUsername)}`,
         { headers: { Authorization: `Bearer ${token}` } },
       );
-      const body = await response.json() as UsernameAvailability | { error?: string };
+       const body = await response.json() as unknown;
       if (!response.ok) {
+         const errorMessage =
+           body && typeof body === 'object' && 'error' in body && typeof body.error === 'string'
+             ? body.error
+             : 'Could not check username availability';
         throw new UserApiError(
-          typeof body.error === 'string' ? body.error : 'Could not check username availability',
+           errorMessage,
           response.status,
         );
       }
-      return body as UsernameAvailability;
+       return body as UsernameAvailability;
     },
   });
 }

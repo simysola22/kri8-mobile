@@ -904,6 +904,7 @@ components:
       properties:
         relevanceScore:
           type: number
+          nullable: true
         relatedTopics:
           type: array
           items:
@@ -916,11 +917,15 @@ components:
           type: array
           items:
             type: string
+        formatAdaptations:
+          type: array
+          items:
+            type: string
         suggestedAngles:
           type: array
           items:
             type: string
-      required: [relevanceScore, relatedTopics, relatedHashtags, contentOpportunities, suggestedAngles]
+      required: [relevanceScore, relatedTopics, relatedHashtags, contentOpportunities, formatAdaptations, suggestedAngles]
 
     InspirationRequest:
       type: object

@@ -267,10 +267,11 @@ export interface IdeaAnalysisRequest {
 }
 
 export interface IdeaAnalysisResult {
-  relevanceScore: number;
+  relevanceScore: number | null;
   relatedTopics: TrendingTopic[];
   relatedHashtags: TrendingHashtag[];
   contentOpportunities: string[];
+  formatAdaptations: string[];
   suggestedAngles: string[];
 }
 

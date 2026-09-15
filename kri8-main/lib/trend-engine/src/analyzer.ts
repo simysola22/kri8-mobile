@@ -52,6 +52,9 @@ function qualityWeight(dashboard: TrendDashboard): number {
   }
 }
 
+const FORMAT_TOPIC_PATTERN =
+  /\b(format|storytelling|hook|day[- ]in[- ]life|behind[- ]the[- ]scenes|short[- ]form|video essay|repurpos|challenge|reaction|vlog)\b/i;
+
 export function analyzeIdea(
   title: string,
   notes: string,
@@ -83,6 +86,11 @@ export function analyzeIdea(
     .slice(0, 5)
     .map(t => t.topic);
 
+  const formatTopics = dashboard.topics
+    .filter((topic) => FORMAT_TOPIC_PATTERN.test(`${topic.name} ${topic.category}`))
+    .slice(0, 3)
+    .map((topic) => topic);
+
   const relatedHashtags = hashtagScores
     .filter(h => h.score >= 0.35)
     .sort((a, b) => b.score - a.score)
@@ -99,45 +107,49 @@ export function analyzeIdea(
   const phraseCoverage = canonicalQuery
     ? Math.min(1, relatedTopics.some(topic => phraseOverlap(canonicalQuery, topic.name) >= 0.9) ? 1 : keywords.length / 6)
     : 0;
-  const relevanceScore = Math.min(
-    100,
-    Math.round(
-      quality * (
-        matchedTopicEvidence * 30 +
-        matchedHashtagEvidence * 20 +
-        phraseCoverage * 30
-      ),
-    ),
-  );
+  const hasDirectEvidence = relatedTopics.length > 0 || relatedHashtags.length > 0;
+  const rawScore =
+    quality *
+    (matchedTopicEvidence * 30 + matchedHashtagEvidence * 20 + phraseCoverage * 30);
+  const relevanceScore = hasDirectEvidence ? Math.min(100, Math.round(rawScore)) : null;
 
   const confidence =
-    relatedTopics.length === 0 && relatedHashtags.length === 0
+    !hasDirectEvidence
       ? "insufficient"
-      : relevanceScore >= 65 && dashboard.metricsQuality !== "fixture"
+      : relevanceScore !== null && relevanceScore >= 65 && dashboard.metricsQuality !== "fixture"
         ? "high"
-        : relevanceScore >= 35
+      : relevanceScore !== null && relevanceScore >= 35
           ? "medium"
           : "low";
   const scoringEvidence = [
     `Matched ${relatedTopics.length} trend topic(s) and ${relatedHashtags.length} hashtag(s) using phrase and token overlap.`,
     `Trend evidence quality: ${dashboard.metricsQuality}.`,
-    `Score combines match strength, phrase coverage, and the provider's evidence quality.`,
+    `Score combines direct subject-match strength, phrase coverage, and the provider's evidence quality.`,
   ];
-  if (relatedTopics.length === 0 && relatedHashtags.length === 0) {
-    scoringEvidence.push("No direct trend evidence matched this idea, so opportunities and angles were withheld.");
+  if (!hasDirectEvidence) {
+    scoringEvidence.push("No direct trend evidence matched this idea, so no numeric relevance score is shown.");
   }
 
   const contentOpportunities = relatedTopics.slice(0, 3).map((topic) =>
-    `Source trend: "${topic.name}". Why relevant: it overlaps with "${canonicalQuery}". Adaptation: frame the idea through ${topic.category.toLowerCase()} creator content. Creator mechanism: borrow the trend's recognizable framing while keeping the subject specific to "${canonicalQuery}".`,
+    `Source trend: "${topic.name}". Why relevant: it directly overlaps with "${canonicalQuery}". Adaptation: frame "${canonicalQuery}" through ${topic.category.toLowerCase()} creator content. Creator mechanism: borrow the trend's recognizable framing while keeping the subject specific.`,
+  );
+
+  const formatAdaptations = formatTopics.map((topic) =>
+    `Format signal: "${topic.name}". Topic relevance: indirect. Adaptation: borrow its ${topic.category.toLowerCase()} structure for "${canonicalQuery}" without presenting the format as a trend about the subject.`,
   );
 
   const suggestedAngles = relatedTopics.length > 0
     ? [
-        `A creator-ready ${relatedTopics[0].category.toLowerCase()} format for "${canonicalQuery}"`,
+        `A creator-ready ${relatedTopics[0].category.toLowerCase()} angle about "${canonicalQuery}"`,
         `What to show, test, or compare while exploring "${canonicalQuery}"`,
         `The practical mistakes creators make with "${canonicalQuery}" — and what to do instead`,
       ]
-    : [];
+    : formatTopics.length > 0
+      ? [
+          `Use the "${formatTopics[0].name}" structure to tell a specific story about "${canonicalQuery}"`,
+          `Show the decisions, proof, or trade-offs behind "${canonicalQuery}"`,
+        ]
+      : [];
 
   return {
     canonicalQuery,
@@ -147,6 +159,7 @@ export function analyzeIdea(
     relatedTopics,
     relatedHashtags,
     contentOpportunities,
+    formatAdaptations,
     suggestedAngles,
   };
 }

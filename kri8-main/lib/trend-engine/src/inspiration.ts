@@ -52,11 +52,17 @@ function fill(template: string, keyword: string): string {
   return template.replace(/{topic}/g, keyword).replace(/{outcome}/g, "10x results");
 }
 
+function normalizeCanonicalQuery(value: string): string {
+  return value.trim().replace(/\s+/g, " ");
+}
+
 function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every(item => typeof item === "string");
 }
 
-function parseInspirationResponse(value: unknown): Omit<InspirationResult, "source"> {
+function parseInspirationResponse(
+  value: unknown,
+): Omit<InspirationResult, "source" | "canonicalQuery"> {
   if (!value || typeof value !== "object") {
     throw new Error("AI provider returned an invalid response");
   }
@@ -83,21 +89,26 @@ async function generateWithOpenAI(
   title: string,
   notes: string,
   trendKeywords: string[],
-): Promise<Omit<InspirationResult, "source"> | null> {
+): Promise<Omit<InspirationResult, "source" | "canonicalQuery"> | null> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return null;
 
   try {
     const prompt = `You are a content strategy expert helping a creator turn an idea into a practical content plan.
-Idea title: "${title}"
+Canonical query: "${title}"
 Notes: "${notes || "none"}"
 Trending context: ${trendKeywords.slice(0, 5).join(", ")}
 
-Use the complete title as the primary subject. Preserve multi-word concepts as
-meaningful phrases. Infer the real-world meaning, audience intent, creator goal,
+Use the complete canonical query as the primary subject. Preserve every multi-word
+concept as one meaningful semantic unit. Never reduce a phrase to one of its
+individual words or substitute a related-looking word. For example, "house
+hunting" is about the activity of searching for a home, not generic houses,
+housework, home decoration, or architecture. Infer the real-world meaning,
+audience intent, creator goal,
 platform fit, and differentiated angles from the title and notes.
 Make suggestions specific, practical, and creator-ready rather than generic
 keyword commentary. Do not merely insert one keyword into a generic template.
+Every suggestion must remain clearly useful for the canonical query.
 Do not provide chain-of-thought, hidden reasoning, or analysis; return only the
 requested JSON object.
 
@@ -145,7 +156,7 @@ export async function generateInspiration(
 ): Promise<InspirationResult> {
   const trendKeywords = trends.flatMap(t => [t.keyword, ...t.relatedTopics.map(rt => rt.name)]);
   const primaryKeywords = extractKeywords(`${title} ${notes}`);
-  const canonicalQuery = title.trim().replace(/\s+/g, " ");
+  const canonicalQuery = normalizeCanonicalQuery(title);
   const keyword = canonicalQuery || primaryKeywords.slice(0, 6).join(" ") || "content";
 
   const aiResult = await generateWithOpenAI(title, notes, trendKeywords);

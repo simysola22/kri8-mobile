@@ -165,7 +165,7 @@ export default function AIScreen() {
                   Trend Relevance
                 </Text>
                 <Text style={[styles.relevanceScore, { color: theme.accent }]}>
-                  {analysis.relevanceScore}/100
+                  {analysis.relevanceScore === null ? '—' : `${analysis.relevanceScore}/100`}
                 </Text>
               </View>
               {analysis.relatedTopics.length > 0 && (
@@ -180,6 +180,9 @@ export default function AIScreen() {
               )}
               {analysis.contentOpportunities.length > 0 && (
                 <ResultGroup label="Opportunities" items={analysis.contentOpportunities} variant="success" />
+              )}
+              {analysis.formatAdaptations?.length > 0 && (
+                <ResultGroup label="Format Adaptations" items={analysis.formatAdaptations} variant="muted" />
               )}
               {analysis.suggestedAngles.length > 0 && (
                 <ResultGroup label="Angles" items={analysis.suggestedAngles} variant="accent" />
@@ -297,6 +300,7 @@ function hasAnalysisContent(result: TrendAnalysis): boolean {
   return result.relatedTopics.length > 0 ||
     result.relatedHashtags.length > 0 ||
     result.contentOpportunities.length > 0 ||
+    (result.formatAdaptations?.length ?? 0) > 0 ||
     result.suggestedAngles.length > 0;
 }
 

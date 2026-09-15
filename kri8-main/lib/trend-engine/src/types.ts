@@ -43,12 +43,13 @@ export interface KeywordTrend {
 
 export interface IdeaAnalysisResult {
   canonicalQuery: string;
-  relevanceScore: number;
+  relevanceScore: number | null;
   confidence: "high" | "medium" | "low" | "insufficient";
   scoringEvidence: string[];
   relatedTopics: TrendingTopic[];
   relatedHashtags: TrendingHashtag[];
   contentOpportunities: string[];
+  formatAdaptations: string[];
   suggestedAngles: string[];
 }
 

@@ -19,8 +19,6 @@ import { GlassButton } from '@/components/ui/GlassButton';
 import { clearQueue } from '@/stores/offlineQueue';
 
 const PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY ?? '';
-const KRI8_MARK = require('../assets/kri8-mark.png');
-
 // Keep the native splash visible until Clerk has loaded and the app tree is ready.
 void SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
@@ -48,35 +46,66 @@ function SetupScreen() {
 }
 
 function BrandLoader() {
-  const scale = React.useRef(new Animated.Value(1)).current;
+  const opacity = React.useRef(new Animated.Value(0)).current;
+  const scale = React.useRef(new Animated.Value(0.94)).current;
+  const ringScale = React.useRef(new Animated.Value(0.86)).current;
 
   useEffect(() => {
     void SplashScreen.hideAsync();
 
-    const pulse = Animated.loop(
+    const entrance = Animated.parallel([
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 420,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: Platform.OS !== 'web',
+      }),
+      Animated.spring(scale, {
+        toValue: 1,
+        damping: 16,
+        stiffness: 120,
+        mass: 0.8,
+        useNativeDriver: Platform.OS !== 'web',
+      }),
+      Animated.timing(ringScale, {
+        toValue: 1,
+        duration: 650,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: Platform.OS !== 'web',
+      }),
+    ]);
+    entrance.start();
+
+    const breathe = Animated.loop(
       Animated.sequence([
-        Animated.timing(scale, {
+        Animated.timing(ringScale, {
           toValue: 1.08,
-          duration: 900,
+          duration: 1600,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: Platform.OS !== 'web',
         }),
-        Animated.timing(scale, {
+        Animated.timing(ringScale, {
           toValue: 1,
-          duration: 900,
+          duration: 1600,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: Platform.OS !== 'web',
         }),
       ]),
     );
-    pulse.start();
+    breathe.start();
 
-    return () => pulse.stop();
-  }, [scale]);
+    return () => {
+      entrance.stop();
+      breathe.stop();
+    };
+  }, [opacity, ringScale, scale]);
 
   return (
-    <View style={styles.loading}>
-      <Animated.Image source={KRI8_MARK} resizeMode="contain" style={[styles.loadingMark, { transform: [{ scale }] }]} />
+    <View style={styles.loading} accessibilityLabel="Loading Kri8">
+      <Animated.View style={[styles.loadingRing, { opacity: opacity.interpolate({ inputRange: [0, 1], outputRange: [0, 0.22] }), transform: [{ scale: ringScale }] }]} />
+      <Animated.View style={[styles.loadingBadge, { opacity, transform: [{ scale }] }]}>
+        <Text style={styles.loadingWordmark}>kri8</Text>
+      </Animated.View>
     </View>
   );
 }
@@ -319,9 +348,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  loadingMark: {
-    width: 160,
-    height: 160,
+  loadingRing: {
+    position: 'absolute',
+    width: 144,
+    height: 144,
+    borderRadius: 72,
+    backgroundColor: '#FFFFFF',
+  },
+  loadingBadge: {
+    width: 128,
+    height: 128,
+    borderRadius: 64,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#FFFFFF',
+    shadowOpacity: 0.3,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 8,
+  },
+  loadingWordmark: {
+    color: '#1A1F35',
+    fontSize: 38,
+    fontWeight: '900',
+    letterSpacing: -2.2,
   },
   setupEmoji: {
     fontSize: 48,

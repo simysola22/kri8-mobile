@@ -24,7 +24,7 @@ type TrendDashboard = {
   isStatic: boolean;
   metricsQuality: "fixture" | "estimated" | "measured";
 };
-type AnalysisResult = { relevanceScore: number; relatedTopics: TrendingTopic[]; relatedHashtags: TrendingHashtag[]; contentOpportunities: string[]; suggestedAngles: string[] };
+type AnalysisResult = { relevanceScore: number | null; relatedTopics: TrendingTopic[]; relatedHashtags: TrendingHashtag[]; contentOpportunities: string[]; formatAdaptations?: string[]; suggestedAngles: string[] };
 type InspirationResult = { relatedIdeas: string[]; alternativeHooks: string[]; titleSuggestions: string[]; audienceQuestions: string[] };
 
 function ScoreBadge({ score, label }: { score: number; label: string }) {
@@ -302,15 +302,18 @@ export default function TrendsPage() {
                     <div className="flex items-center justify-between p-4 rounded-xl bg-white/5">
                       <div>
                         <p className="text-sm text-muted-foreground">Trend Relevance</p>
-                        <p className="text-3xl font-bold text-primary">{analyzeResult.relevanceScore}<span className="text-lg text-muted-foreground">/100</span></p>
+                        <p className="text-3xl font-bold text-primary">
+                          {analyzeResult.relevanceScore === null ? "—" : analyzeResult.relevanceScore}
+                          {analyzeResult.relevanceScore !== null && <span className="text-lg text-muted-foreground">/100</span>}
+                        </p>
                       </div>
                       <div className="w-16 h-16 rounded-full border-4 flex items-center justify-center"
                         style={{
-                          borderColor: analyzeResult.relevanceScore >= 70 ? '#10b981' : analyzeResult.relevanceScore >= 40 ? '#d4af37' : '#6b7280',
+                           borderColor: analyzeResult.relevanceScore !== null && analyzeResult.relevanceScore >= 70 ? '#10b981' : analyzeResult.relevanceScore !== null && analyzeResult.relevanceScore >= 40 ? '#d4af37' : '#6b7280',
                         }}
                       >
                         <div className="w-10 h-10 rounded-full bg-card flex items-center justify-center">
-                          <TrendingUp className={cn("h-5 w-5", analyzeResult.relevanceScore >= 70 ? "text-emerald-400" : analyzeResult.relevanceScore >= 40 ? "text-primary" : "text-muted-foreground")} />
+                           <TrendingUp className={cn("h-5 w-5", analyzeResult.relevanceScore !== null && analyzeResult.relevanceScore >= 70 ? "text-emerald-400" : analyzeResult.relevanceScore !== null && analyzeResult.relevanceScore >= 40 ? "text-primary" : "text-muted-foreground")} />
                         </div>
                       </div>
                     </div>
@@ -345,6 +348,20 @@ export default function TrendsPage() {
                             <li key={i} className="text-xs text-muted-foreground flex gap-2">
                               <span className="text-primary shrink-0">→</span>
                               <span>{opp}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {(analyzeResult.formatAdaptations?.length ?? 0) > 0 && (
+                      <div>
+                        <p className="text-sm font-medium mb-2">Format Adaptations</p>
+                        <ul className="space-y-1.5">
+                          {analyzeResult.formatAdaptations?.map((adaptation, i) => (
+                            <li key={i} className="text-xs text-muted-foreground flex gap-2">
+                              <span className="text-primary shrink-0">→</span>
+                              <span>{adaptation}</span>
                             </li>
                           ))}
                         </ul>

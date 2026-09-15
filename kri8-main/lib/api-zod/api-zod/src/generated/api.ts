@@ -602,7 +602,7 @@ export const AnalyzeIdeaBody = zod.object({
 })
 
 export const AnalyzeIdeaResponse = zod.object({
-  "relevanceScore": zod.number(),
+  "relevanceScore": zod.number().nullable(),
   "relatedTopics": zod.array(zod.object({
   "id": zod.string(),
   "name": zod.string(),
@@ -618,6 +618,7 @@ export const AnalyzeIdeaResponse = zod.object({
   "growthPercent": zod.number()
 })),
   "contentOpportunities": zod.array(zod.string()),
+  "formatAdaptations": zod.array(zod.string()),
   "suggestedAngles": zod.array(zod.string())
 })
 

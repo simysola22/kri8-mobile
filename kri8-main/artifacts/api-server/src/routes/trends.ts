@@ -60,8 +60,10 @@ router.post("/inspire", requireAuth, async (req: any, res): Promise<void> => {
     if (notes.length > 2000) { res.status(400).json({ error: "notes must be 2000 characters or fewer" }); return; }
 
     const provider = createTrendProvider();
-    const keywordTrends = await provider.getKeywordTrends([title]);
-    const result = await generateInspiration(title, notes, keywordTrends);
+    const canonicalQuery = title.replace(/\s+/g, " ");
+    const searchTerms = [canonicalQuery];
+    const keywordTrends = await provider.getKeywordTrends(searchTerms);
+    const result = await generateInspiration(canonicalQuery, notes, keywordTrends);
     res.json(result);
   } catch (err) {
     req.log.error({ err }, "Failed to generate inspiration");

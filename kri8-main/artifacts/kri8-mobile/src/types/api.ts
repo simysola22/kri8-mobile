@@ -172,12 +172,13 @@ export interface TrendCategory {
 
 export interface TrendAnalysis {
   canonicalQuery: string;
-  relevanceScore: number;
+  relevanceScore: number | null;
   confidence: 'high' | 'medium' | 'low' | 'insufficient';
   scoringEvidence: string[];
   relatedTopics: TrendTopic[];
   relatedHashtags: TrendHashtag[];
   contentOpportunities: string[];
+  formatAdaptations: string[];
   suggestedAngles: string[];
 }
 

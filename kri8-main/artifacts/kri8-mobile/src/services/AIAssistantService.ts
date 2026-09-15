@@ -103,7 +103,8 @@ export async function getAISuggestions(
 // ── Trend analysis ────────────────────────────────────────────
 
 export interface TrendAnalysis {
-  relevanceScore: number;
+  canonicalQuery: string;
+  relevanceScore: number | null;
   relatedTopics: Array<{
     id: string;
     name: string;
@@ -119,6 +120,7 @@ export interface TrendAnalysis {
     growthPercent: number;
   }>;
   contentOpportunities: string[];
+  formatAdaptations: string[];
   suggestedAngles: string[];
 }
 

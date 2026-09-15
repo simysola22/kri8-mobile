@@ -80,6 +80,10 @@ export default function ProfileScreen() {
   };
 
   const handleUsernameSave = async () => {
+    if (usernameDraft !== usernameDraft.trim()) {
+      setUsernameError('Remove leading or trailing spaces');
+      return;
+    }
     const normalizedUsername = usernameDraft.trim().toLowerCase();
     const validationError = validateUsername(normalizedUsername);
     if (validationError) {
@@ -112,14 +116,19 @@ export default function ProfileScreen() {
       problem: 'Kri8 problem report',
       contact: 'Kri8 support request',
       feedback: 'Kri8 app feedback',
-    }[kind];
+    }[kind as 'problem' | 'contact' | 'feedback'];
 
-    if (kind === 'faq' && SUPPORT_CONFIG.url) {
-      await Linking.openURL(SUPPORT_CONFIG.url);
-      return;
-    }
-    if (kind !== 'faq' && SUPPORT_CONFIG.email) {
-      await Linking.openURL(`mailto:${SUPPORT_CONFIG.email}?subject=${encodeURIComponent(subject)}`);
+    try {
+      if (kind === 'faq' && SUPPORT_CONFIG.url) {
+        await Linking.openURL(SUPPORT_CONFIG.url);
+        return;
+      }
+      if (kind !== 'faq' && SUPPORT_CONFIG.email) {
+        await Linking.openURL(`mailto:${SUPPORT_CONFIG.email}?subject=${encodeURIComponent(subject ?? 'Kri8 support')}`);
+        return;
+      }
+    } catch {
+      Alert.alert('Could not open support', 'Please try again or use the configured support destination later.');
       return;
     }
     Alert.alert(
@@ -348,10 +357,10 @@ export default function ProfileScreen() {
               maxLength={30}
               placeholder="your_username"
               placeholderTextColor={theme.textFaint}
-              style={[styles.modalInput, { color: theme.text, borderColor: usernameError ? theme.danger : theme.border, backgroundColor: theme.bgGlass }]}
+              style={[styles.modalInput, { color: theme.text, borderColor: usernameError ? '#F87171' : theme.border, backgroundColor: theme.bgGlass }]}
             />
             {usernameDraft.trim().length >= 3 && !usernameError && usernameDraft.trim().toLowerCase() !== user?.username && (
-              <Text style={[styles.availabilityText, { color: usernameAvailability.isFetching ? theme.textMuted : usernameAvailability.data?.available ? theme.success : theme.danger }]}>
+              <Text style={[styles.availabilityText, { color: usernameAvailability.isFetching ? theme.textMuted : usernameAvailability.data?.available ? theme.success : '#F87171' }]}>
                 {usernameAvailability.isFetching
                   ? 'Checking availability…'
                   : usernameAvailability.data?.available
@@ -359,7 +368,7 @@ export default function ProfileScreen() {
                     : usernameAvailability.data?.reason ?? 'Username is unavailable'}
               </Text>
             )}
-            {!!usernameError && <Text style={[styles.modalError, { color: theme.danger }]}>{usernameError}</Text>}
+            {!!usernameError && <Text style={[styles.modalError, { color: '#F87171' }]}>{usernameError}</Text>}
             <View style={styles.modalActions}>
               <GlassButton variant="secondary" onPress={() => setUsernameModalVisible(false)} style={styles.modalAction}>
                 Cancel
