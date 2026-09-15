@@ -1,0 +1,465 @@
+# KRI8 — EXECUTE VERIFICATION PASS NOW
+
+Execute the previously provided **verification-only** brief now.
+
+This is NOT a new implementation task.
+
+Do NOT make source-code changes unless a verification step itself requires a tiny correction to allow the test to run. If such a correction is genuinely necessary, STOP and report it before modifying anything.
+
+Do NOT refactor.
+Do NOT redesign.
+Do NOT change authentication.
+Do NOT change navigation.
+Do NOT change the database schema.
+Do NOT add features.
+Do NOT start an EAS build automatically.
+
+The purpose of this task is to establish whether the current implementation is actually ready for the next Android APK build.
+
+## IMPORTANT SECURITY REQUIREMENT
+
+All credentials are already configured through the Replit environment/secrets.
+
+DO NOT print, expose, copy, or include secret values in the verification report.
+
+Never output:
+
+* CLERK_SECRET_KEY
+* DATABASE_URL
+* OPENAI_API_KEY
+* YOUTUBE_API_KEY
+* EXPO_TOKEN
+* SESSION_SECRET
+
+You may report whether a required secret is present/configured, but NEVER print its value.
+
+---
+
+# STEP 1 — REPOSITORY STATE
+
+Before testing anything:
+
+Report:
+
+* current git branch
+* working tree status
+* whether uncommitted changes exist
+* whether the previous polish-pass files are present
+* whether there are unexpected modifications
+
+Do not modify the working tree.
+
+---
+
+# STEP 2 — CREATE ICON
+
+Inspect the current Expo configuration.
+
+Determine:
+
+* current app icon path
+* current adaptive icon path/configuration
+* Android icon configuration
+* iOS icon configuration
+* relevant app.json/app.config files
+
+The intended replacement is the new Create camera-in-mirror icon.
+
+The exact artwork is NOT currently stored in the repository.
+
+Therefore:
+
+* DO NOT invent a replacement
+* DO NOT generate a substitute
+* DO NOT change the icon to something else
+* DO NOT claim the new icon is installed
+
+Report the exact asset path that should be used once the artwork is placed into the repository.
+
+Report the required dimensions/formats.
+
+---
+
+# STEP 3 — LOADING SCREEN VERIFICATION
+
+Inspect the actual implementation.
+
+Confirm whether the loading screen now uses:
+
+* React Native Views
+* Text/components
+* opacity animation
+* scale animation
+* native layout
+
+Confirm that it does NOT use:
+
+* the old app icon as a fake loading screen
+* a screenshot of the web loading screen
+* zoom/pan animation
+* Ken Burns animation
+* artificial long delays
+
+If possible, launch the mobile app and visually verify the loading sequence.
+
+Report:
+
+PASS / FAIL / BLOCKED
+
+with evidence.
+
+---
+
+# STEP 4 — COMMUNITY VERIFICATION
+
+Use the actual application.
+
+Verify the Community search result layout.
+
+Test:
+
+1. Search for a real existing user.
+2. Verify the result card.
+3. Verify avatar.
+4. Verify display name.
+5. Verify username.
+6. Verify Add Friend.
+7. Verify Pending state.
+8. Verify existing Friend state.
+9. Verify multiple results.
+10. Verify no results.
+11. Verify API error handling.
+
+Specifically verify that the previous catastrophic layout bug is gone:
+
+* names must not render one character per line
+* user information must receive available horizontal space
+* action button must retain stable width
+* avatar must retain stable width
+* card must not become excessively tall
+* long names must truncate gracefully
+
+Test on the actual Android/native UI where possible.
+
+Do not create fake users merely to make the test pass.
+
+If the database has no suitable test users, report the exact blocker.
+
+---
+
+# STEP 5 — AI GET INSPIRED
+
+Test the ACTUAL mobile flow:
+
+AI screen
+→ Get Inspired
+→ input
+→ API
+→ trend engine
+→ response
+→ mobile rendering
+
+Test:
+
+* house hunting
+* apartment hunting
+* gym transformation
+* wedding photography
+* Lagos nightlife
+* iPhone photography
+* university life
+* photography
+
+For every multi-word query verify:
+
+canonicalQuery remains intact.
+
+For example:
+
+"house hunting"
+
+must not silently become:
+
+"house"
+
+The generated ideas must actually relate to house hunting.
+
+Do not merely inspect the backend function.
+
+Verify the final rendered mobile result.
+
+Report examples of the actual returned output.
+
+---
+
+# STEP 6 — OPENAI VERIFICATION
+
+If the OpenAI API is configured:
+
+Perform ONE controlled real generation request.
+
+Do not create a large number of requests.
+
+Report:
+
+* whether the request reached OpenAI
+* HTTP/result status
+* whether generation succeeded
+* whether the result respected canonicalQuery
+
+If the API returns quota/rate-limit errors such as 429, report the exact status and classify it as an external API/quota blocker rather than modifying the application.
+
+Do not expose the API key.
+
+---
+
+# STEP 7 — ANALYZE IDEAS
+
+Test the actual Analyze Ideas UI.
+
+Verify:
+
+* relevance score
+* insufficient-evidence behavior
+* evidence
+* direct topic relevance
+* format adaptation
+* related topics
+* opportunities
+* angles
+
+Test with:
+
+house hunting
+
+Verify that the system does NOT produce:
+
+* fake 50/100 defaults
+* unrelated topics presented as direct matches
+* stale 2025 content
+* generic "house" content
+
+If there is insufficient evidence, verify that the UI handles a null/insufficient-confidence score gracefully.
+
+It must not display:
+
+"null/100"
+
+or a broken empty score.
+
+---
+
+# STEP 8 — USERNAME EDITING
+
+Use the actual Profile UI.
+
+Test:
+
+1. valid username
+2. leading whitespace
+3. trailing whitespace
+4. invalid characters
+5. empty username
+6. duplicate username
+7. API failure
+8. successful update
+9. profile refresh
+10. community/search refresh
+
+Do not permanently alter a real user's username unless a safe test account is available.
+
+If no safe test account exists, inspect the complete mutation path and report that interactive mutation testing is blocked.
+
+---
+
+# STEP 9 — HELP / SUPPORT
+
+Verify the question-mark/help button.
+
+Confirm:
+
+* it opens the intended support/help destination
+* failure to open the destination is handled safely
+* no crash occurs
+* support destination is centrally configurable
+* no fake support email has been introduced
+
+Do not send any real support email.
+
+---
+
+# STEP 10 — API / AUTH
+
+Verify using the configured environment:
+
+* API starts
+* Clerk configuration is detected
+* protected endpoint rejects unauthenticated access
+* authenticated endpoint works where test credentials/session are available
+* database connection works
+* no fallback/demo authentication is introduced
+
+Do not expose credentials.
+
+---
+
+# STEP 11 — STATIC VALIDATION
+
+Run all applicable checks:
+
+* shared TypeScript
+* mobile TypeScript
+* API TypeScript
+* web TypeScript
+* API build
+* web production build
+* Expo web export
+* Metro startup
+* API startup
+* git diff --check
+
+Do not modify code just to make an unrelated pre-existing failure disappear.
+
+---
+
+# STEP 12 — DATABASE
+
+Verify that the configured database is reachable.
+
+Do NOT mutate production data.
+
+Do NOT create permanent test users, friendships, messages, or ideas.
+
+Only perform safe read-only checks.
+
+Report:
+
+* database connectivity
+* required tables available
+* whether authentication/user relations are usable
+
+---
+
+# STEP 13 — EAS / APK READINESS
+
+DO NOT start a new EAS build.
+
+Determine whether the repository is READY for an Android APK build.
+
+Criteria:
+
+READY only if:
+
+* TypeScript passes
+* API build passes
+* web build passes
+* Expo export passes
+* no git diff errors
+* Community layout is verified
+* loading screen is verified
+* AI flow is verified or clearly blocked only by external OpenAI quota
+* no critical runtime blocker remains
+* icon status is understood
+
+If something is blocked, distinguish:
+
+### CODE BLOCKER
+
+Application needs changes.
+
+### ENVIRONMENT BLOCKER
+
+Credentials/configuration/runtime environment prevents testing.
+
+### EXTERNAL SERVICE BLOCKER
+
+Third-party service such as OpenAI quota prevents testing.
+
+### VISUAL VERIFICATION BLOCKER
+
+The tooling cannot reliably verify the native UI.
+
+Do not confuse these categories.
+
+---
+
+# FINAL REPORT
+
+Return exactly these sections:
+
+## 1. VERIFIED — PASS
+
+Only include things actually tested and passed.
+
+## 2. BLOCKED
+
+For every blocked item:
+
+* what was attempted
+* why it was blocked
+* whether it is code, environment, external service, or tooling
+
+## 3. FAILURES / REMAINING BUGS
+
+Only genuine failures.
+
+## 4. CREATE ICON STATUS
+
+Include:
+
+* current icon
+* intended icon
+* current asset path
+* required replacement asset path
+* Expo configuration
+* whether replacement is installed
+
+## 5. COMMUNITY STATUS
+
+State whether the original screenshot/layout problem is confirmed fixed on native UI.
+
+## 6. AI STATUS
+
+State whether:
+
+"house hunting"
+
+survives correctly through the actual mobile flow.
+
+Include representative generated output, but do not expose credentials.
+
+## 7. PROFILE STATUS
+
+Username editing and Help/Support status.
+
+## 8. BUILD STATUS
+
+Report every validation command and PASS/FAIL result.
+
+## 9. APK READINESS
+
+Return exactly one:
+
+READY FOR APK BUILD
+
+or
+
+NOT READY FOR APK BUILD
+
+Then explain why.
+
+## 10. CHANGES MADE
+
+This verification pass should make ZERO source changes.
+
+If any change was unavoidable, list:
+
+* exact file
+* exact change
+* why it was unavoidable
+
+Otherwise explicitly state:
+
+"No source changes were made during verification."
+
+DO NOT START AN EAS BUILD.
