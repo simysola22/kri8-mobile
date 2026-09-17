@@ -1,0 +1,239 @@
+# KRI8 — RELEASE READINESS DECISION AFTER VERIFICATION
+
+The previous verification pass is complete.
+
+Do **not** restart the audit, rebuild the architecture, or modify application source code without identifying a genuine defect first.
+
+## VERIFIED STATE
+
+The previous environment confirmed:
+
+* Repository is clean.
+* No source changes were made during verification.
+* Dependencies and lockfile are present.
+* Metro starts successfully.
+* Expo web-compatible runtime receives `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY`.
+* Expo reaches the real Kri8 Clerk sign-in screen.
+* API starts successfully.
+* `/api/healthz` returns HTTP 200.
+* Database connectivity works.
+* Unauthenticated protected API requests return HTTP 401.
+* Multi-word AI concepts remain intact.
+* `house hunting` remains canonical.
+* Analyze Ideas supports `relevanceScore: null` when evidence is insufficient.
+* Loading screen is component-based.
+* Community narrow-column layout fix is structurally present.
+* Username validation architecture exists.
+* Help & Support architecture exists.
+* No new application source-code failure was identified.
+
+## CURRENT BLOCKERS
+
+### 1. Authenticated native runtime
+
+A real authenticated Clerk session could not be established through the available verification tools.
+
+Therefore these remain unverified:
+
+* authenticated mobile API requests
+* Community search
+* friend requests
+* messaging
+* profile loading
+* username update
+* Help & Support runtime
+* session persistence
+
+Do not mark these as PASS without a real authenticated runtime test.
+
+### 2. Missing icon artwork
+
+The intended camera-in-mirror artwork is not installed.
+
+Current asset remains:
+
+```text
+artifacts/kri8-mobile/assets/kri8-mark.png
+```
+
+Do not generate a substitute or change the existing icon configuration.
+
+### 3. OpenAI HTTP 429
+
+The one controlled OpenAI request returned HTTP 429.
+
+Do not repeatedly retry.
+
+Do not classify this as an application code failure unless a separate application defect is demonstrated.
+
+### 4. Native UI tooling limitation
+
+Expo web-compatible preview is available, but authenticated native-device interaction was not available.
+
+Keep this separate from application bugs.
+
+---
+
+# TASK
+
+Determine the most accurate release-readiness state without making unrelated changes.
+
+## STEP 1 — CHECK WHETHER THE NEW ENVIRONMENT HAS NATIVE ACCESS
+
+Inspect the current environment for:
+
+* an available Android emulator
+* an available connected Android device
+* Expo Go access
+* an available native preview mechanism
+* a way to establish a real Clerk sign-in session
+
+Do not install unrelated tooling or modify the project merely to force native access.
+
+If no native access exists, report:
+
+`BLOCKED — no authenticated native runtime available`
+
+## STEP 2 — AUTHENTICATED RUNTIME
+
+If a real native runtime is available:
+
+1. Start the existing Expo workflow.
+2. Sign in through the real Clerk UI.
+3. Confirm the session is accepted by the Kri8 API.
+4. Verify `/api/users/me`.
+5. Verify Community search and result rendering.
+6. Verify Profile loading.
+7. Verify Help & Support.
+8. Verify username editing only with a safe test account.
+9. Verify logout returns to the unauthenticated state.
+
+Do not use:
+
+* mock users
+* fake Clerk sessions
+* fake user IDs
+* development auth
+* auth fallbacks
+* timers
+* bypasses
+
+If authenticated runtime is unavailable, stop those tests and document the blocker.
+
+## STEP 3 — ICON DECISION
+
+Do not change the icon.
+
+Report:
+
+* current icon path
+* intended icon requirement
+* whether the intended artwork exists
+* whether it is installed
+
+The missing artwork is a content/asset blocker, not automatically a code blocker.
+
+## STEP 4 — OPENAI DECISION
+
+Do not make additional requests unless the user explicitly authorizes another controlled test.
+
+Keep the previous result:
+
+`EXTERNAL SERVICE BLOCKER — OpenAI HTTP 429`
+
+Do not alter AI behavior to hide the failure.
+
+## STEP 5 — STATIC INTEGRITY
+
+Run only the minimum checks needed to confirm the new environment has not changed source files:
+
+```bash
+git status --short
+git diff --check
+```
+
+Do not rerun the entire build matrix unless source files or dependencies changed.
+
+## STEP 6 — FINAL RELEASE CLASSIFICATION
+
+Use exactly one of these classifications:
+
+### READY FOR APK BUILD
+
+Only if:
+
+* no known application code blocker exists
+* the user explicitly accepts any remaining unverified runtime limitations
+* the user explicitly accepts the current icon or supplies the intended icon
+* OpenAI limitations are understood and accepted
+
+### NOT READY FOR APK BUILD
+
+Use this if the missing icon or unavailable authenticated runtime must be resolved before release.
+
+Do not start an EAS build.
+
+Do not generate an APK.
+
+---
+
+# FINAL OUTPUT
+
+Return:
+
+## 1. ENVIRONMENT ACCESS
+
+* native device/emulator availability
+* authenticated Clerk availability
+* Expo runtime availability
+
+## 2. VERIFIED ITEMS
+
+Only genuine passes.
+
+## 3. UNVERIFIED ITEMS
+
+Clearly distinguish blocked and not tested.
+
+## 4. BLOCKERS
+
+Classify each as:
+
+* CODE BLOCKER
+* ENVIRONMENT BLOCKER
+* CONTENT/ASSET BLOCKER
+* EXTERNAL SERVICE BLOCKER
+* VISUAL TOOLING BLOCKER
+
+## 5. RELEASE DECISION
+
+Return exactly:
+
+`READY FOR APK BUILD`
+
+or
+
+`NOT READY FOR APK BUILD`
+
+Explain the decision briefly.
+
+## 6. SOURCE CHANGES
+
+Confirm whether any source files changed.
+
+## ABSOLUTE RULES
+
+* Do not rebuild Kri8.
+* Do not redesign navigation.
+* Do not change Clerk.
+* Do not add mock authentication.
+* Do not add demo mode.
+* Do not reset the database.
+* Do not add fake users.
+* Do not generate the missing icon.
+* Do not spam OpenAI.
+* Do not start an EAS build.
+* Do not expose secrets.
+* Do not modify unrelated code.
+
+Prioritize correctness over speed.
