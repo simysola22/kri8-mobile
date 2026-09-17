@@ -1,0 +1,562 @@
+# KRI8 — CONTINUE VERIFICATION FROM PREVIOUS ENVIRONMENT
+
+We are continuing a **verification-only pass** on the Kri8 mobile application in a new Replit environment.
+
+The previous environment stopped working midway through the verification.
+
+IMPORTANT:
+
+**Do NOT restart the entire verification from scratch.**
+
+Use the completed results below as the verified state and continue from the exact point where the previous environment stopped.
+
+---
+
+# VERIFIED STATE FROM PREVIOUS ENVIRONMENT
+
+The previous environment completed the following inspection and validation.
+
+## SOURCE CHANGES
+
+No source-code changes were made during this verification pass.
+
+Dependencies were installed using the existing lockfile.
+
+The dependency setup temporarily added `postgresql-16` to `.replit`, but this was an environment-only change and the previous environment was reverting it.
+
+IMPORTANT:
+
+Do NOT reintroduce this `.replit` change unless it is genuinely required for the new environment.
+
+Do not modify source code merely because the environment needs dependencies.
+
+---
+
+# CURRENT ICON STATUS
+
+The intended new Create icon is the camera-in-mirror artwork.
+
+It is NOT currently installed in the repository.
+
+The application currently points to:
+
+`kri8-mark.png`
+
+for:
+
+* splash
+* app icon
+* Android adaptive foreground
+
+DO NOT invent a replacement icon.
+
+DO NOT generate a substitute.
+
+DO NOT change the existing icon.
+
+Simply report this as BLOCKED/REMAINING until the actual camera-in-mirror artwork is added to the repository.
+
+---
+
+# LOADING SCREEN — VERIFIED IMPLEMENTATION
+
+The mobile loading screen is now component-based.
+
+Previous inspection confirmed it uses:
+
+* React Native components
+* opacity animation
+* scale animation
+* ring animation
+
+It is NOT simply animating a screenshot.
+
+Do not replace or redesign it.
+
+Continue with runtime verification only.
+
+---
+
+# COMMUNITY LAYOUT — VERIFIED IMPLEMENTATION
+
+The Community result row was inspected.
+
+It now uses:
+
+* flexible remaining-width layout
+* fixed avatar sizing
+* fixed action-button sizing
+* flexible user-information area
+
+The previous bug was that the user information collapsed into an extremely narrow column.
+
+The structural fix is already implemented.
+
+Do NOT redesign this component.
+
+We now need to verify it on the actual native/runtime flow where possible.
+
+---
+
+# STATIC VALIDATION ALREADY PASSED
+
+The previous environment successfully ran:
+
+* shared TypeScript
+* mobile TypeScript
+* API TypeScript
+* web TypeScript
+* API build
+* web production build
+* Expo web export
+
+All passed.
+
+The web production build produced only:
+
+* sourcemap warnings
+* chunk-size warnings
+
+These were not treated as failures.
+
+Do NOT rerun the entire static validation unless the new environment requires it or something changed.
+
+---
+
+# DATABASE VERIFICATION ALREADY PASSED
+
+Database connectivity succeeded.
+
+Required tables were found.
+
+Current database state at the time of verification:
+
+* users: 8
+* ideas: 4
+* friendships: 0
+* messages: 0
+
+Because there are no friendship/message rows:
+
+Do NOT claim that real friend-request acceptance or messaging interaction states were verified.
+
+Those specific states are currently blocked by the lack of suitable persisted test data.
+
+Do not create permanent test data.
+
+---
+
+# CONTINUE FROM HERE
+
+The previous environment stopped while reverting the temporary `.replit` environment modification.
+
+Continue the verification from this point.
+
+---
+
+# STEP 1 — VERIFY CLEAN WORKING TREE
+
+Check:
+
+```bash
+git status --short
+git diff --check
+```
+
+Confirm that verification has not left source/environment changes behind.
+
+If `.replit` was changed only because of dependency setup, restore it to the repository's original state.
+
+Do NOT modify application source code.
+
+---
+
+# STEP 2 — START API
+
+Start the existing API using the repository's existing workflow.
+
+Verify:
+
+* API starts successfully
+* `/api/healthz` works
+* database connection works
+* Clerk configuration is detected
+
+Do not expose any secret values.
+
+---
+
+# STEP 3 — AUTH VERIFICATION
+
+Perform a safe unauthenticated request against a protected API endpoint.
+
+Expected:
+
+```text
+401 Unauthorized
+```
+
+Then, if the current environment has a valid authenticated test session already available, verify one protected endpoint successfully.
+
+Do NOT create mock authentication.
+
+Do NOT introduce fallback authentication.
+
+Do NOT modify Clerk configuration.
+
+If authenticated testing is unavailable, report:
+
+`BLOCKED — authenticated runtime session unavailable`
+
+Do not fake a pass.
+
+---
+
+# STEP 4 — METRO STARTUP
+
+Start the existing Expo/Metro workflow.
+
+Do not modify Expo configuration.
+
+Verify that Metro starts successfully and remains running long enough to establish startup health.
+
+Report:
+
+PASS / FAIL / BLOCKED
+
+---
+
+# STEP 5 — COMMUNITY RUNTIME VERIFICATION
+
+Use the real database/API.
+
+Search for an existing user.
+
+Verify that the Community result renders with:
+
+```text
+Avatar | User information | Action
+```
+
+Confirm:
+
+* name stays horizontal/readable
+* username is readable
+* avatar keeps stable width
+* action button keeps stable width
+* long names truncate rather than collapse
+* result card does not become abnormally tall
+
+If there are insufficient users for a meaningful search, report the limitation.
+
+Because the database currently has no friendship rows, do NOT claim that Pending/Friend/Accepted state transitions were verified.
+
+---
+
+# STEP 6 — AI GET INSPIRED END-TO-END
+
+This is one of the most important remaining checks.
+
+Do NOT only run direct trend-engine tests.
+
+Verify the complete flow:
+
+```text
+Mobile AI screen
+→ AIAssistantService
+→ API
+→ trend engine
+→ response
+→ mobile rendering
+```
+
+Test:
+
+```text
+house hunting
+```
+
+The final output must remain about:
+
+HOUSE HUNTING
+
+It must not degrade into:
+
+* house
+* housework
+* generic houses
+* architecture
+* generic home content
+
+Also test:
+
+```text
+apartment hunting
+gym transformation
+wedding photography
+Lagos nightlife
+iPhone photography
+university life
+```
+
+Verify that multi-word concepts remain intact.
+
+---
+
+# STEP 7 — OPENAI
+
+If OpenAI credentials are configured in the new environment:
+
+Perform ONLY ONE controlled real generation request.
+
+Do not spam the API.
+
+If it succeeds:
+
+report success.
+
+If it returns:
+
+```text
+429
+```
+
+report it as:
+
+`EXTERNAL SERVICE BLOCKER — OpenAI quota/rate limit`
+
+Do NOT modify the application to work around it.
+
+Do not expose the API key.
+
+---
+
+# STEP 8 — ANALYZE IDEAS
+
+Verify the actual Analyze Ideas flow.
+
+Use:
+
+```text
+house hunting
+```
+
+Check:
+
+* relevance score
+* insufficient evidence state
+* evidence
+* direct topic relevance
+* format adaptations
+* related topics
+* opportunities
+* angles
+
+Verify:
+
+* no fake 50/100 score
+* no stale 2025 output
+* no generic house degradation
+* no unrelated trend presented as a direct topic match
+* no broken `null/100` UI
+
+---
+
+# STEP 9 — USERNAME
+
+Inspect and, if safely possible, verify:
+
+* valid username
+* invalid username
+* whitespace
+* duplicate username
+* successful update
+* profile refresh
+* search/profile cache refresh
+
+Do not permanently modify a real production user's username unless there is a safe test account.
+
+If mutation testing is unsafe, inspect the complete code path and report it as partially blocked rather than changing production data.
+
+---
+
+# STEP 10 — HELP / SUPPORT
+
+Verify the question-mark/help button.
+
+Confirm:
+
+* destination opens correctly
+* failure is handled safely
+* no crash occurs
+* destination is centrally configurable
+* no fake support email has been hardcoded
+
+Do not send an actual email.
+
+---
+
+# STEP 11 — LOADING SCREEN RUNTIME CHECK
+
+Verify the native loading screen actually renders.
+
+Confirm:
+
+* no screenshot is being animated
+* no old app icon is being used as the loading-screen implementation
+* opacity/scale/ring animation works
+* no excessive artificial delay occurs
+
+Do not redesign it.
+
+---
+
+# STEP 12 — FINAL STATIC CHECK ONLY IF NECESSARY
+
+If the environment was restored cleanly and source files are unchanged, it is acceptable to rely on the previous successful static validation.
+
+However, if the new environment requires confirmation, run:
+
+```bash
+pnpm typecheck
+pnpm build
+pnpm --filter @kri8/api-server build
+pnpm --filter @kri8/mobile exec tsc --noEmit
+git diff --check
+```
+
+Use the repository's actual scripts if these exact commands do not exist.
+
+Do not modify code to fix unrelated environment issues.
+
+---
+
+# STEP 13 — APK READINESS
+
+DO NOT start an EAS build.
+
+Determine whether the project is:
+
+```text
+READY FOR APK BUILD
+```
+
+or:
+
+```text
+NOT READY FOR APK BUILD
+```
+
+Use these categories:
+
+### CODE BLOCKER
+
+A real application bug remains.
+
+### ENVIRONMENT BLOCKER
+
+The new Replit environment prevents verification.
+
+### EXTERNAL SERVICE BLOCKER
+
+A third-party service such as OpenAI prevents verification.
+
+### VISUAL TOOLING BLOCKER
+
+The available tooling cannot reliably verify the native UI.
+
+Do not confuse these categories.
+
+---
+
+# FINAL REPORT
+
+Return exactly:
+
+## 1. CONTINUATION STATUS
+
+What was already verified versus what was continued.
+
+## 2. VERIFIED — PASS
+
+Only genuinely verified items.
+
+## 3. BLOCKED
+
+For each blocked item:
+
+* test attempted
+* blocker
+* blocker category
+
+## 4. FAILURES / REMAINING BUGS
+
+Only real failures.
+
+## 5. ICON STATUS
+
+Include:
+
+* current icon asset
+* intended camera-in-mirror icon
+* current Expo configuration
+* expected replacement asset path
+* whether replacement is installed
+
+## 6. COMMUNITY STATUS
+
+State whether the original narrow-column result bug is confirmed fixed at runtime.
+
+## 7. AI STATUS
+
+State whether `house hunting` survives the complete mobile → API → engine → UI flow.
+
+## 8. PROFILE STATUS
+
+Username and Help/Support status.
+
+## 9. STATIC / RUNTIME CHECKS
+
+List each check and PASS/FAIL/BLOCKED.
+
+## 10. APK READINESS
+
+Return exactly:
+
+READY FOR APK BUILD
+
+or
+
+NOT READY FOR APK BUILD
+
+with the reason.
+
+## 11. SOURCE CHANGES
+
+The expected result is:
+
+`No source changes were made during verification.`
+
+If anything was changed, list the exact file and reason.
+
+---
+
+# ABSOLUTE RULES
+
+DO NOT:
+
+* rebuild the architecture
+* refactor unrelated code
+* change authentication
+* change navigation
+* modify the database schema
+* add demo data
+* add mock users
+* invent the new icon
+* start an EAS build
+* expose secrets
+* rewrite already-fixed functionality
+
+This is a continuation of verification, not a new implementation task.
+
+Prioritize correctness over speed.
