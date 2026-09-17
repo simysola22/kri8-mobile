@@ -1,0 +1,544 @@
+# KRI8 — FINAL VERIFICATION CONTINUATION / NEW ENVIRONMENT
+
+We are continuing Kri8 verification in a NEW Replit environment.
+
+A previous verification environment completed a substantial audit and stopped after producing the report below.
+
+**DO NOT restart the project, rebuild architecture, or redo already-completed work.**
+
+Your job is to continue from the checkpoint and resolve/verify only what is still genuinely outstanding.
+
+---
+
+# PREVIOUS VERIFICATION CHECKPOINT
+
+The previous environment verified:
+
+* API starts successfully
+* `/api/healthz` returns 200
+* database connectivity works
+* Clerk configuration is detected
+* unauthenticated protected API returns 401
+* web workflow starts
+* Metro starts
+* Expo web entrypoint loads
+* TypeScript/build validation passed
+* loading screen is component-based
+* Community narrow-column layout fix is structurally correct
+* multi-word AI concepts are preserved
+* `house hunting` is preserved through the API/trend engine
+* Analyze Ideas correctly supports insufficient evidence with `relevanceScore: null`
+* username validation/update architecture exists
+* Help & Support architecture exists
+* no hardcoded fake support destination exists
+* no source-code changes were made during verification
+
+The previous report explicitly states:
+
+`No new application source-code failure was identified.`
+
+Do not undo or redesign these fixes.
+
+---
+
+# CURRENT REMAINING BLOCKERS
+
+There are four main outstanding items.
+
+## 1. AUTHENTICATED NATIVE RUNTIME
+
+Previous verification could not obtain an authenticated Clerk session.
+
+Unauthenticated API verification passed:
+
+```text
+/api/users/me
+→ 401 Unauthorized
+```
+
+But authenticated runtime testing was blocked.
+
+We need to determine whether the NEW environment can now provide the configured Clerk environment variables to the actual Expo/Metro process.
+
+IMPORTANT:
+
+Clerk credentials are already configured in Replit Secrets.
+
+DO NOT print their values.
+
+DO NOT ask the user to paste secret values into chat.
+
+DO NOT create mock authentication.
+
+DO NOT add fallback authentication.
+
+DO NOT add development authentication.
+
+DO NOT add timers.
+
+DO NOT modify Clerk architecture.
+
+Verify that the Metro/Expo process actually receives the required public Clerk environment variable.
+
+If the environment requires restarting Metro after Secrets are loaded, restart it normally.
+
+---
+
+# 2. NATIVE MOBILE VERIFICATION
+
+Once the authenticated Expo runtime is available, verify:
+
+### Loading screen
+
+Confirm:
+
+* native component rendering
+* opacity animation
+* scale animation
+* ring animation
+* no screenshot-based animation
+* no artificial auth timer
+
+### Community
+
+Verify an authenticated user can:
+
+* open Community
+* search a user
+* render a result
+* see avatar
+* see name
+* see username
+* see action button
+
+Confirm the previous narrow-column fix works visually.
+
+If no friendship rows exist, do not claim friend-request transitions were tested.
+
+### Profile
+
+Verify:
+
+* profile loads
+* username editor opens
+* validation works
+* update works with a safe test account if available
+* profile refreshes after update
+
+Do not modify a real user's production username merely for testing.
+
+### Help & Support
+
+Verify:
+
+* help button opens
+* modal renders
+* FAQ destination is correct
+* support destination is correct
+* missing configuration does not crash the application
+
+Do not send an actual support email.
+
+---
+
+# 3. OPENAI
+
+Previous verification made exactly one controlled real OpenAI request.
+
+The integration reached OpenAI successfully but returned:
+
+```text
+HTTP 429
+```
+
+This was classified as:
+
+`EXTERNAL SERVICE BLOCKER — OpenAI quota/rate limit`
+
+Do NOT spam requests.
+
+Do NOT repeatedly retry.
+
+If the new environment has the same 429:
+
+report it as an external service blocker.
+
+If OpenAI succeeds once, verify the response is correctly rendered in the mobile AI screen.
+
+Test only a very small number of requests.
+
+---
+
+# 4. CAMERA-IN-MIRROR ICON
+
+The intended Create/Kri8 icon is:
+
+**camera facing a mirror / camera-in-mirror artwork**
+
+It is NOT currently installed.
+
+The current mobile configuration uses:
+
+```text
+artifacts/kri8-mobile/assets/kri8-mark.png
+```
+
+for:
+
+* splash
+* app icon
+* Android adaptive foreground
+
+DO NOT generate a substitute.
+
+DO NOT replace it with another design.
+
+DO NOT change the icon configuration until the actual intended artwork exists.
+
+If the artwork is supplied in this environment, identify its exact path and report it.
+
+If it is still absent, leave the existing icon unchanged and report:
+
+`BLOCKED — intended camera-in-mirror asset not installed`
+
+---
+
+# IMPORTANT API ROOT ISSUE
+
+The previous environment observed:
+
+```text
+GET /
+→ 404
+```
+
+when the web production bundle was not present at:
+
+```text
+artifacts/kri8/dist/public/index.html
+```
+
+The API health endpoint still worked.
+
+Do not automatically classify this as an API failure.
+
+Determine whether this is expected because the backend is being used as an API-only deployment.
+
+Do not restore frontend static serving unless the actual architecture requires it.
+
+The intended architecture is separate frontend/backend deployment.
+
+---
+
+# FIRST ACTIONS
+
+Before doing anything else:
+
+```bash
+git status --short
+git diff --check
+```
+
+Confirm there are no unintended source changes.
+
+Then inspect the current environment and determine:
+
+1. Is the repository clean?
+2. Are the expected dependencies installed?
+3. Is the Clerk public environment variable available to Expo/Metro?
+4. Can Metro start with the correct environment?
+5. Can an authenticated mobile session be established?
+
+---
+
+# DO NOT CHANGE SOURCE CODE YET
+
+This is still a verification pass.
+
+Only modify source if you discover a genuine application defect.
+
+Do not modify code to compensate for:
+
+* missing Replit environment configuration
+* missing secrets
+* missing test data
+* missing native device access
+* OpenAI quota
+* missing icon artwork
+
+Classify those as blockers instead.
+
+---
+
+# AUTHENTICATED TESTING PRIORITY
+
+The single highest-priority task is getting a real Clerk-authenticated Expo session working.
+
+If possible:
+
+```text
+Clerk
+↓
+Expo mobile runtime
+↓
+authenticated session
+↓
+Kri8 API
+↓
+database
+```
+
+Verify that authenticated API requests reach the backend.
+
+Do not create another auth implementation.
+
+Do not bypass Clerk.
+
+Do not inject a fake user ID.
+
+---
+
+# DATABASE
+
+Use the existing database.
+
+Do not reset it.
+
+Do not drop tables.
+
+Do not modify schemas.
+
+Do not insert permanent fake users.
+
+If safe temporary test data is absolutely necessary for verification, clearly identify it and remove it afterward.
+
+If there are still no friendship/message rows, report those flows as blocked rather than fabricating test results.
+
+---
+
+# AI VERIFICATION
+
+Verify both:
+
+### Template path
+
+These concepts must remain atomic:
+
+```text
+house hunting
+apartment hunting
+gym transformation
+wedding photography
+Lagos nightlife
+iPhone photography
+university life
+```
+
+Especially:
+
+```text
+house hunting
+```
+
+must never become:
+
+```text
+house
+```
+
+or unrelated concepts.
+
+### Analyze Ideas
+
+For:
+
+```text
+house hunting
+```
+
+verify:
+
+* canonical query remains `house hunting`
+* unsupported evidence produces `relevanceScore: null`
+* no arbitrary 50/100 score
+* no stale 2025 references
+* related topics are actually related
+* opportunities explain why the trend/topic is relevant
+* angles are current and actionable
+
+Do not solve this by simply replacing the string `2025` with `2026`.
+
+---
+
+# FINAL STATIC VALIDATION
+
+If source code remains unchanged and the previous validation is still applicable, do not waste time repeating everything.
+
+If necessary, run the repository's existing validation commands.
+
+At minimum verify:
+
+```bash
+git diff --check
+```
+
+and any relevant TypeScript/build checks.
+
+---
+
+# ABSOLUTE NO-GO RULES
+
+DO NOT:
+
+* rebuild Kri8
+* rewrite the architecture
+* change navigation
+* add another tab
+* replace Clerk
+* add mock auth
+* add demo mode
+* add auth fallbacks
+* add timers
+* add fake users
+* reset the database
+* generate the missing icon
+* spam OpenAI
+* start an EAS build
+* publish an APK
+* expose secrets
+* paste secret values into the report
+* modify unrelated code
+
+---
+
+# APK
+
+**DO NOT start an EAS build yet.**
+
+Only determine whether the project is ready.
+
+APK readiness requires:
+
+* authenticated mobile runtime verified, OR a clearly documented environment limitation
+* no known application blocker
+* intended icon asset installed, OR explicit user decision to ship current icon
+* AI flow verified as far as external service availability permits
+* Community/profile flows verified where runtime access permits
+
+---
+
+# FINAL REPORT
+
+Return:
+
+## 1. CONTINUATION STATUS
+
+What was inherited from the previous environment and what was newly verified.
+
+## 2. ENVIRONMENT STATUS
+
+* repository state
+* Metro
+* Expo
+* Clerk environment availability
+* API
+* database
+
+## 3. AUTH STATUS
+
+* unauthenticated API
+* authenticated API
+* Clerk mobile session
+* session persistence if testable
+
+## 4. COMMUNITY STATUS
+
+* layout
+* search
+* user result
+* friend state
+* messaging
+
+Clearly distinguish:
+
+`PASS`
+
+`BLOCKED`
+
+`NOT TESTED`
+
+Never turn an untested flow into PASS.
+
+## 5. AI STATUS
+
+* template generation
+* multi-word preservation
+* Analyze Ideas
+* OpenAI
+
+## 6. PROFILE STATUS
+
+* profile
+* username
+* Help & Support
+
+## 7. ICON STATUS
+
+State exactly:
+
+* current asset
+* intended asset
+* whether intended asset exists
+* whether installed
+
+## 8. REMAINING BLOCKERS
+
+Classify each as:
+
+* CODE BLOCKER
+* ENVIRONMENT BLOCKER
+* EXTERNAL SERVICE BLOCKER
+* CONTENT/ASSET BLOCKER
+* VISUAL TOOLING BLOCKER
+
+## 9. SOURCE CHANGES
+
+If no source was changed:
+
+`No source changes were made.`
+
+Otherwise list every changed file and reason.
+
+## 10. APK READINESS
+
+Return exactly one:
+
+`READY FOR APK BUILD`
+
+or
+
+`NOT READY FOR APK BUILD`
+
+Then explain the blockers.
+
+---
+
+# MOST IMPORTANT
+
+Do not interpret the previous verification report as a request to fix everything.
+
+It is a checkpoint.
+
+**Continue from the checkpoint.**
+
+The priority is:
+
+1. get authenticated Clerk mobile runtime working
+2. verify the real mobile flows
+3. verify AI end-to-end
+4. confirm remaining blockers
+5. determine APK readiness
+
+Do not build the APK until this verification is complete.
+
+Prioritize correctness over speed.
