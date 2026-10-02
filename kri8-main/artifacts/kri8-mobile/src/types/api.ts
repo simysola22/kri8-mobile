@@ -155,6 +155,12 @@ export interface TrendTopic {
   growthPercent: number;
   volume: number;
   platform: string;
+  sourceUrl?: string;
+  description?: string;
+  channelTitle?: string;
+  publishedAt?: string;
+  likes?: number;
+  comments?: number;
 }
 
 export interface TrendHashtag {
@@ -180,6 +186,18 @@ export interface TrendAnalysis {
   contentOpportunities: string[];
   formatAdaptations: string[];
   suggestedAngles: string[];
+  audienceFit?: string;
+  differentiation?: string;
+  recommendedHook?: string;
+  risks?: string[];
+}
+
+export interface TrendCreatorBreakdown {
+  openingHook: string;
+  structure: string[];
+  whyItMayWork: string[];
+  adaptationAngle: string;
+  evidenceNote: string;
 }
 
 export interface TrendInspiration {
@@ -189,6 +207,7 @@ export interface TrendInspiration {
   titleSuggestions: string[];
   audienceQuestions: string[];
   source?: 'openai' | 'template';
+  trendContextAvailable?: boolean;
 }
 
 export type ThemeName =

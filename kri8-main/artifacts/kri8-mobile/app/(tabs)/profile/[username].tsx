@@ -20,6 +20,18 @@ import type { PublicProfile } from '@/types';
 
 const BASE = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'https://kri8-obvh.onrender.com';
 
+class ProfileApiError extends Error {
+  readonly status: number;
+  readonly code?: string;
+
+  constructor(message: string, status: number, code?: string) {
+    super(message);
+    this.name = 'ProfileApiError';
+    this.status = status;
+    this.code = code;
+  }
+}
+
 export default function PublicProfileScreen() {
   const { username } = useLocalSearchParams<{ username: string }>();
   const theme = useActiveTheme();
@@ -27,17 +39,30 @@ export default function PublicProfileScreen() {
   const router = useRouter();
   const { getToken } = useAuth();
 
-  const { data: profile, isLoading } = useQuery({
-    queryKey: ['profile', username],
+  const normalizedUsername = Array.isArray(username) ? username[0] : username;
+  const { data: profile, isLoading, isFetching, error, refetch } = useQuery({
+    queryKey: ['profile', normalizedUsername?.toLowerCase()],
     queryFn: async () => {
       const token = await getToken();
-      const res = await fetch(`${BASE}/api/profile/${username}`, {
+      const res = await fetch(`${BASE}/api/profile/${encodeURIComponent(normalizedUsername!.trim().toLowerCase())}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error('Profile not found');
+      if (!res.ok) {
+        let body: { error?: unknown; code?: unknown } = {};
+        try {
+          body = await res.json() as typeof body;
+        } catch {
+          // Use the HTTP status when the server has no JSON response.
+        }
+        throw new ProfileApiError(
+          typeof body.error === 'string' ? body.error : res.status === 404 ? 'Profile not found' : 'Could not load this profile',
+          res.status,
+          typeof body.code === 'string' ? body.code : undefined,
+        );
+      }
       return res.json() as Promise<PublicProfile>;
     },
-    enabled: !!username,
+    enabled: !!normalizedUsername?.trim(),
   });
 
   if (isLoading) return <LoadingSpinner fullScreen />;
@@ -52,9 +77,25 @@ export default function PublicProfileScreen() {
 
       {!profile ? (
         <View style={styles.notFound}>
-          <Text style={[styles.notFoundText, { color: theme.textMuted }]}>
-            Profile not found
+          <Text style={[styles.notFoundText, { color: theme.text }]}>
+            {error instanceof ProfileApiError && error.code === 'PROFILE_PRIVATE'
+              ? 'This profile is private'
+              : error instanceof ProfileApiError && error.status >= 500
+                ? 'Profile could not load'
+                : 'Profile not found'}
           </Text>
+          <Text style={[styles.notFoundSubtext, { color: theme.textMuted }]}>
+            {error instanceof ProfileApiError && error.code === 'PROFILE_PRIVATE'
+              ? 'This creator has chosen not to share their ideas publicly.'
+              : error instanceof ProfileApiError && error.status >= 500
+                ? 'Check your connection and try again.'
+                : 'The username may have changed or the profile is no longer available.'}
+          </Text>
+          {error instanceof ProfileApiError && error.status >= 500 && (
+            <TouchableOpacity onPress={() => void refetch()} style={styles.retryButton}>
+              <Text style={[styles.retryText, { color: theme.accent }]}>Try again</Text>
+            </TouchableOpacity>
+          )}
         </View>
       ) : (
         <ScrollView
@@ -132,5 +173,8 @@ const styles = StyleSheet.create({
   ideaInsight: { fontSize: 13 },
   empty: { fontSize: 15, textAlign: 'center', paddingTop: 32 },
   notFound: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  notFoundText: { fontSize: 18 },
+  notFoundText: { fontSize: 20, fontWeight: '700', textAlign: 'center' },
+  notFoundSubtext: { fontSize: 14, lineHeight: 20, textAlign: 'center', marginTop: 8, paddingHorizontal: 30 },
+  retryButton: { marginTop: 18, paddingHorizontal: 20, paddingVertical: 10 },
+  retryText: { fontSize: 15, fontWeight: '700' },
 });

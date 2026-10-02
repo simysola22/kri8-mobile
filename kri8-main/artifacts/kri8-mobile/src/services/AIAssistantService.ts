@@ -75,9 +75,12 @@ export async function getAISuggestions(
 
   if (!hasContent) return {};
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 25_000);
   try {
     const res = await fetch(`${API_BASE}/api/trends/inspire`, {
       method: 'POST',
+      signal: controller.signal,
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -93,10 +96,18 @@ export async function getAISuggestions(
     }
 
     const data = await res.json() as InspirationResponse;
+    if (data.source !== 'openai') {
+      throw new Error('AI assistance is not available on this API server yet.');
+    }
 
     return parseSuggestions(data, context);
   } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('AI assistant timed out. Please try again.');
+    }
     throw error instanceof Error ? error : new Error('AI assistant request failed');
+  } finally {
+    clearTimeout(timeout);
   }
 }
 

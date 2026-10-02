@@ -92,8 +92,19 @@ export default function ProfileScreen() {
     }
 
     const isCurrentUsername = normalizedUsername === user?.username;
-    if (!isCurrentUsername && usernameAvailability.isFetching) {
+    if (!isCurrentUsername && (
+      usernameAvailability.isFetching ||
+      usernameAvailability.data?.username !== normalizedUsername
+    )) {
       setUsernameError('Checking username availability…');
+      return;
+    }
+    if (!isCurrentUsername && usernameAvailability.isError) {
+      setUsernameError(
+        usernameAvailability.error instanceof Error
+          ? usernameAvailability.error.message
+          : 'Could not check username availability. Try again.',
+      );
       return;
     }
     if (!isCurrentUsername && usernameAvailability.data?.available !== true) {
@@ -360,9 +371,11 @@ export default function ProfileScreen() {
               style={[styles.modalInput, { color: theme.text, borderColor: usernameError ? '#F87171' : theme.border, backgroundColor: theme.bgGlass }]}
             />
             {usernameDraft.trim().length >= 3 && !usernameError && usernameDraft.trim().toLowerCase() !== user?.username && (
-              <Text style={[styles.availabilityText, { color: usernameAvailability.isFetching ? theme.textMuted : usernameAvailability.data?.available ? theme.success : '#F87171' }]}>
-                {usernameAvailability.isFetching
+              <Text style={[styles.availabilityText, { color: usernameAvailability.isFetching || usernameAvailability.isError || usernameAvailability.data?.username !== usernameDraft.trim().toLowerCase() ? theme.textMuted : usernameAvailability.data?.available ? theme.success : '#F87171' }]}>
+                {usernameAvailability.isFetching || usernameAvailability.data?.username !== usernameDraft.trim().toLowerCase()
                   ? 'Checking availability…'
+                  : usernameAvailability.isError
+                    ? 'Could not check availability'
                   : usernameAvailability.data?.available
                     ? 'Username is available'
                     : usernameAvailability.data?.reason ?? 'Username is unavailable'}

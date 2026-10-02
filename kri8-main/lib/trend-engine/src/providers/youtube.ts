@@ -97,12 +97,18 @@ export class YouTubeTrendProvider implements TrendProvider {
 
   private extractTopics(videos: YouTubeVideo[]): TrendingTopic[] {
     return videos.slice(0, 10).map((v, i) => ({
-      id: v.id ?? v.id ?? `yt-${i}`,
-      name: (v.snippet?.title ?? "").slice(0, 60),
+      id: getVideoId(v) ?? `yt-${i}`,
+      name: v.snippet?.title ?? "",
       category: v.snippet?.categoryId ?? "General",
       growthPercent: 0,
       volume: Number(v.statistics?.viewCount ?? 0),
       platform: "youtube" as const,
+      sourceUrl: getVideoId(v) ? `https://www.youtube.com/watch?v=${getVideoId(v)}` : undefined,
+      description: v.snippet?.description,
+      channelTitle: v.snippet?.channelTitle,
+      publishedAt: v.snippet?.publishedAt,
+      likes: Number(v.statistics?.likeCount ?? 0),
+      comments: Number(v.statistics?.commentCount ?? 0),
     }));
   }
 
@@ -122,13 +128,22 @@ export class YouTubeTrendProvider implements TrendProvider {
 }
 
 interface YouTubeVideo {
-  id?: string;
+  id?: string | { videoId?: string };
   snippet?: {
     title?: string;
+    description?: string;
+    channelTitle?: string;
+    publishedAt?: string;
     tags?: string[];
     categoryId?: string;
   };
   statistics?: {
     viewCount?: string;
+    likeCount?: string;
+    commentCount?: string;
   };
+}
+
+function getVideoId(video: YouTubeVideo): string | undefined {
+  return typeof video.id === "string" ? video.id : video.id?.videoId;
 }

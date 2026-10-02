@@ -52,11 +52,22 @@ export function useIdeas(filters?: { search?: string; is_used?: boolean }) {
   const params = new URLSearchParams();
   if (filters?.search) params.set('search', filters.search);
   if (filters?.is_used !== undefined) params.set('is_used', String(filters.is_used));
-  const qs = params.toString();
 
-  return useQuery({
-    queryKey: ideaKeys.list(filters),
-    queryFn: () => apiFetch<Idea[]>(`/ideas${qs ? `?${qs}` : ''}`, getToken),
+  return useInfiniteQuery({
+    queryKey: ideaKeys.list({ ...filters, pageSize: 30 }),
+    initialPageParam: undefined as number | undefined,
+    queryFn: ({ pageParam }) => {
+      const pageParams = new URLSearchParams(params);
+      pageParams.set('limit', '30');
+      if (pageParam !== undefined) pageParams.set('cursor', String(pageParam));
+      return apiFetch<Idea[]>(`/ideas?${pageParams.toString()}`, getToken);
+    },
+    getNextPageParam: (lastPage) =>
+      lastPage.length === 30 ? lastPage[lastPage.length - 1]?.id : undefined,
+    placeholderData: (previousData) => previousData,
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
   });
 }
 

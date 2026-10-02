@@ -1,7 +1,7 @@
 import { Router } from "express";
 
 import { db, usersTable, ideasTable } from "@workspace/db";
-import { eq, and, isNull, sql, desc, ilike, or, lte, gt } from "drizzle-orm";
+import { eq, and, isNull, sql, desc, ilike, or, lte, lt, gt } from "drizzle-orm";
 import { z } from "zod";
 import { requireAuth, getOrCreateUser } from "./users";
 import { validateBody } from "../middlewares/validate";
@@ -147,7 +147,7 @@ router.get("/", requireAuth, async (req: any, res): Promise<void> => {
 
     // Cursor-based pagination using idea id
     if (cursor) {
-      conditions.push(lte(ideasTable.id, cursor) as any);
+      conditions.push(lt(ideasTable.id, cursor) as any);
     }
 
     const ideas = await db

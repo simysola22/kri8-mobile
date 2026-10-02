@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, usersTable, ideasTable } from "@workspace/db";
-import { eq, and, isNull } from "drizzle-orm";
+import { eq, and, isNull, sql } from "drizzle-orm";
 
 const router = Router();
 
@@ -52,23 +52,26 @@ async function getBranchesRecursive(ideaId: number): Promise<ReturnType<typeof s
 // GET /api/profile/:username — public profiles only; no auth required, no sensitive fields
 router.get("/:username", async (req: any, res): Promise<void> => {
   try {
-    const { username } = req.params;
+    const username = String(req.params.username ?? "").trim().toLowerCase();
+    if (!username) {
+      res.status(404).json({ error: "Profile not found", code: "PROFILE_NOT_FOUND" }); return;
+    }
 
     const users = await db
       .select()
       .from(usersTable)
-      .where(eq(usersTable.username, username))
+      .where(sql`lower(${usersTable.username}) = ${username}`)
       .limit(1);
 
     if (!users.length) {
-      res.status(404).json({ error: "Profile not found" }); return;
+      res.status(404).json({ error: "Profile not found", code: "PROFILE_NOT_FOUND" }); return;
     }
 
     const user = users[0];
 
     // Only expose profiles that the owner has set to public
     if (!user.isPublic) {
-      res.status(404).json({ error: "Profile not found" }); return;
+    res.status(404).json({ error: "This profile is private", code: "PROFILE_PRIVATE" }); return;
     }
 
     // Return only root ideas (no branches at the list level)

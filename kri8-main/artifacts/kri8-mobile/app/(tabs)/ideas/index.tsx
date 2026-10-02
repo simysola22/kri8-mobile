@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -22,12 +22,30 @@ export default function IdeasScreen() {
   const theme = useActiveTheme();
   const insets = useSafeAreaInsets();
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filterUsed, setFilterUsed] = useState<boolean | undefined>(undefined);
 
-  const { data: ideas, isLoading, refetch, isRefetching } = useIdeas({
-    search: search.length >= 2 ? search : undefined,
+  useEffect(() => {
+    const timeout = setTimeout(() => setDebouncedSearch(search.trim()), 250);
+    return () => clearTimeout(timeout);
+  }, [search]);
+
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    isRefetching,
+    hasNextPage,
+    isFetchingNextPage,
+    isPlaceholderData,
+    fetchNextPage,
+  } = useIdeas({
+    search: debouncedSearch.length >= 2 ? debouncedSearch : undefined,
     is_used: filterUsed,
   });
+  const ideas = data?.pages.flat() ?? [];
 
   return (
     <LinearGradient colors={theme.gradient} style={styles.root}>
@@ -86,6 +104,15 @@ export default function IdeasScreen() {
 
       {isLoading ? (
         <LoadingSpinner fullScreen />
+      ) : isError ? (
+        <View style={styles.listError}>
+          <Text style={[styles.emptyText, { color: theme.textMuted }]}>
+            {error instanceof Error ? error.message : 'Could not load your ideas.'}
+          </Text>
+          <TouchableOpacity onPress={() => void refetch()} style={styles.retryButton}>
+            <Text style={[styles.retryText, { color: theme.accent }]}>Try again</Text>
+          </TouchableOpacity>
+        </View>
       ) : (
         <FlatList
           data={ideas ?? []}
@@ -103,11 +130,19 @@ export default function IdeasScreen() {
           }
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => <IdeaRow idea={item} />}
+          ListHeaderComponent={isPlaceholderData ? (
+            <Text style={[styles.updatingText, { color: theme.textMuted }]}>Updating results…</Text>
+          ) : null}
+          onEndReached={() => {
+            if (!isPlaceholderData && hasNextPage && !isFetchingNextPage) void fetchNextPage();
+          }}
+          onEndReachedThreshold={0.45}
+          ListFooterComponent={isFetchingNextPage ? <LoadingSpinner size="small" style={{ marginVertical: 18 }} /> : null}
           ListEmptyComponent={
             <View style={styles.empty}>
                <Text style={[styles.emptyIcon, { color: theme.accent }]}>✦</Text>
               <Text style={[styles.emptyText, { color: theme.textMuted }]}>
-                {search ? 'No ideas match your search' : 'No ideas yet'}
+                {debouncedSearch.length >= 2 ? 'No ideas match your search' : 'No ideas yet'}
               </Text>
             </View>
           }
@@ -189,4 +224,8 @@ const styles = StyleSheet.create({
   empty: { alignItems: 'center', paddingTop: 88, gap: 14 },
   emptyIcon: { fontSize: 36, lineHeight: 44 },
   emptyText: { fontSize: 16, lineHeight: 22, textAlign: 'center' },
+  listError: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28, gap: 12 },
+  retryButton: { padding: 10 },
+  retryText: { fontSize: 15, fontWeight: '700' },
+  updatingText: { fontSize: 13, textAlign: 'center', paddingVertical: 10 },
 });

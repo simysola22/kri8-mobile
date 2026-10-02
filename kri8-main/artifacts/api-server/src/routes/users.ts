@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, usersTable } from "@workspace/db";
-import { eq, or, ilike, ne, and } from "drizzle-orm";
+import { eq, or, ilike, ne, and, sql } from "drizzle-orm";
 import { isDevMode } from "../middlewares/devAuthMiddleware";
 
 const router = Router();
@@ -125,7 +125,7 @@ router.patch("/me", requireAuth, async (req: any, res): Promise<void> => {
         .from(usersTable)
         .where(
           and(
-            eq(usersTable.username, normalizedUsername),
+            sql`lower(${usersTable.username}) = ${normalizedUsername}`,
             ne(usersTable.id, existing[0].id),
           ),
         )
@@ -191,7 +191,7 @@ router.get("/username-availability", requireAuth, async (req: any, res): Promise
       .from(usersTable)
       .where(
         and(
-          eq(usersTable.username, username),
+          sql`lower(${usersTable.username}) = ${username}`,
           meRows[0] ? ne(usersTable.id, meRows[0].id) : undefined,
         ),
       )

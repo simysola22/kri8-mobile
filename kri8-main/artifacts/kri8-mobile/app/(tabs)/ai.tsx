@@ -6,6 +6,10 @@ import {
   ScrollView,
   TextInput,
   RefreshControl,
+  Modal,
+  TouchableOpacity,
+  Linking,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,8 +18,8 @@ import { GlassCard } from '@/components/ui/GlassCard';
 import { GlassButton } from '@/components/ui/GlassButton';
 import { Badge } from '@/components/ui/Badge';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { useTrendsDashboard, useGetInspiration, useAnalyzeTrend } from '@/hooks/useTrends';
-import type { TrendInspiration, TrendAnalysis } from '@/types';
+import { useTrendsDashboard, useGetInspiration, useAnalyzeTrend, useTrendContentBreakdown } from '@/hooks/useTrends';
+import type { TrendInspiration, TrendAnalysis, TrendTopic } from '@/types';
 
 export default function AIScreen() {
   const theme = useActiveTheme();
@@ -26,22 +30,38 @@ export default function AIScreen() {
   const analyzeTrend = useAnalyzeTrend();
 
   const [analyzeTitle, setAnalyzeTitle] = useState('');
+  const [analyzeNotes, setAnalyzeNotes] = useState('');
   const [inspirationTitle, setInspirationTitle] = useState('');
+  const [inspirationNotes, setInspirationNotes] = useState('');
   const [inspiration, setInspiration] = useState<TrendInspiration | null>(null);
   const [analysis, setAnalysis] = useState<TrendAnalysis | null>(null);
+  const [selectedTopic, setSelectedTopic] = useState<TrendTopic | null>(null);
+  const {
+    data: trendBreakdown,
+    isLoading: isBreakdownLoading,
+    isError: isBreakdownError,
+    error: breakdownError,
+    refetch: refetchBreakdown,
+  } = useTrendContentBreakdown(selectedTopic);
 
   const runInspiration = () => {
     const title = inspirationTitle.trim();
     if (!title) return;
     setInspiration(null);
-    getInspiration.mutate({ title }, { onSuccess: (data) => setInspiration(data) });
+    getInspiration.mutate(
+      { title, notes: inspirationNotes.trim() || undefined },
+      { onSuccess: (data) => setInspiration(data) },
+    );
   };
 
   const runAnalysis = () => {
     const title = analyzeTitle.trim();
     if (!title) return;
     setAnalysis(null);
-    analyzeTrend.mutate({ title }, { onSuccess: (data) => setAnalysis(data) });
+    analyzeTrend.mutate(
+      { title, notes: analyzeNotes.trim() || undefined },
+      { onSuccess: (data) => setAnalysis(data) },
+    );
   };
 
   return (
@@ -88,6 +108,18 @@ export default function AIScreen() {
             placeholderTextColor={theme.textFaint}
             multiline
           />
+          <TextInput
+            style={[
+              styles.input,
+              styles.notesInput,
+              { backgroundColor: theme.bgGlassDeep, borderColor: theme.border, color: theme.text },
+            ]}
+            value={inspirationNotes}
+            onChangeText={setInspirationNotes}
+            placeholder="Add audience, platform, or constraints (optional)…"
+            placeholderTextColor={theme.textFaint}
+            multiline
+          />
           <GlassButton
             onPress={runInspiration}
             loading={getInspiration.isPending}
@@ -100,10 +132,13 @@ export default function AIScreen() {
           {inspiration && (
             <View style={styles.results}>
               <Text style={[styles.sourceLabel, { color: theme.textMuted }]}>
-                {inspiration.source === 'openai'
-                  ? 'Generated with OpenAI'
-                  : 'Generated from phrase-aware templates'}
+                {inspiration.source === 'openai' ? 'Generated with OpenAI' : 'Generated with AI'}
               </Text>
+              {inspiration.trendContextAvailable === false && (
+                <Text style={[styles.modalHint, { color: theme.textMuted }]}>
+                  Trend data was unavailable, so these suggestions use your idea and notes only.
+                </Text>
+              )}
               {inspiration.relatedIdeas.length > 0 && (
                 <ResultGroup label="Ideas" items={inspiration.relatedIdeas} variant="accent" />
               )}
@@ -149,6 +184,18 @@ export default function AIScreen() {
             placeholderTextColor={theme.textFaint}
             multiline
           />
+          <TextInput
+            style={[
+              styles.input,
+              styles.notesInput,
+              { backgroundColor: theme.bgGlassDeep, borderColor: theme.border, color: theme.text },
+            ]}
+            value={analyzeNotes}
+            onChangeText={setAnalyzeNotes}
+            placeholder="Add context, audience, or what you want to test (optional)…"
+            placeholderTextColor={theme.textFaint}
+            multiline
+          />
           <GlassButton
             onPress={runAnalysis}
             loading={analyzeTrend.isPending}
@@ -187,6 +234,18 @@ export default function AIScreen() {
               {analysis.suggestedAngles.length > 0 && (
                 <ResultGroup label="Angles" items={analysis.suggestedAngles} variant="accent" />
               )}
+              {analysis.audienceFit && (
+                <ResultGroup label="Audience Fit" items={[analysis.audienceFit]} variant="muted" />
+              )}
+              {analysis.differentiation && (
+                <ResultGroup label="How to Stand Out" items={[analysis.differentiation]} variant="accent" />
+              )}
+              {analysis.recommendedHook && (
+                <ResultGroup label="Recommended Hook" items={[analysis.recommendedHook]} variant="success" />
+              )}
+              {analysis.risks?.length ? (
+                <ResultGroup label="Risks to Check" items={analysis.risks} variant="muted" />
+              ) : null}
               <View style={styles.evidenceCard}>
                 <Text style={[styles.groupLabel, { color: theme.textMuted }]}>Evidence</Text>
                 <Text style={[styles.evidenceTitle, { color: theme.text }]}>
@@ -239,21 +298,120 @@ export default function AIScreen() {
                   ))}
                 </View>
                 {trends.topics.slice(0, 5).map((topic) => (
-                  <GlassCard key={topic.id} style={styles.topicCard}>
+                  <TouchableOpacity
+                    key={topic.id}
+                    activeOpacity={0.84}
+                    onPress={() => setSelectedTopic(topic)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Open details for ${topic.name}`}
+                  >
+                  <GlassCard style={styles.topicCard}>
                     <Text style={[styles.topicTitle, { color: theme.text }]}>
                       {topic.name}
                     </Text>
                     <Text style={[styles.topicDesc, { color: theme.textMuted }]}>
-                       {topic.category} · {formatTopicSignal(topic.growthPercent, trends.metricsQuality)} · {topic.platform}
+                       {topic.category} · {formatTopicSignal(topic.growthPercent, trends.metricsQuality)} · {topic.platform} · Tap for details
                     </Text>
                   </GlassCard>
+                  </TouchableOpacity>
                 ))}
               </>
             )}
           </View>
         ) : null}
       </ScrollView>
+
+      <Modal
+        visible={selectedTopic !== null}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setSelectedTopic(null)}
+      >
+        <View style={styles.modalBackdrop}>
+          <ScrollView
+            style={[styles.modalCard, { backgroundColor: theme.bg, borderColor: theme.border }]}
+            contentContainerStyle={styles.modalCardContent}
+            showsVerticalScrollIndicator
+          >
+            <Text style={[styles.modalTitle, { color: theme.text }]}>{selectedTopic?.name}</Text>
+            <Text style={[styles.modalMeta, { color: theme.textMuted }]}>
+              {selectedTopic?.platform} · {selectedTopic?.category}
+              {selectedTopic?.channelTitle ? ` · ${selectedTopic.channelTitle}` : ''}
+            </Text>
+            <View style={styles.metricRow}>
+              <Metric label="Views" value={formatMetric(selectedTopic?.volume)} />
+              <Metric label="Likes" value={formatMetric(selectedTopic?.likes)} />
+              <Metric label="Comments" value={formatMetric(selectedTopic?.comments)} />
+            </View>
+            {selectedTopic?.description ? (
+              <Text style={[styles.modalDescription, { color: theme.textMuted }]}>
+                {selectedTopic.description}
+              </Text>
+            ) : (
+              <Text style={[styles.modalDescription, { color: theme.textMuted }]}>
+                Source details are limited for this trend. Open the source to inspect the original content.
+              </Text>
+            )}
+            {isBreakdownLoading && (
+              <View style={styles.breakdownLoading}>
+                <LoadingSpinner size="small" />
+                <Text style={[styles.modalHint, { color: theme.textMuted }]}>
+                  Analyzing the public video details…
+                </Text>
+              </View>
+            )}
+            {isBreakdownError && (
+              <View style={styles.breakdownError}>
+                <Text style={[styles.modalDescription, { color: theme.textMuted }]}>
+                  {getErrorMessage(breakdownError, 'Could not analyze this video.')}
+                </Text>
+                <GlassButton variant="secondary" onPress={() => void refetchBreakdown()}>
+                  Retry breakdown
+                </GlassButton>
+              </View>
+            )}
+            {trendBreakdown && (
+              <View style={styles.breakdown}>
+                <ResultGroup label="Opening Hook (inferred)" items={[trendBreakdown.openingHook]} variant="success" />
+                <ResultGroup label="Likely Structure (inferred)" items={trendBreakdown.structure} variant="accent" />
+                <ResultGroup label="Why It May Work" items={trendBreakdown.whyItMayWork} variant="muted" />
+                <ResultGroup label="Adapt It for Your Audience" items={[trendBreakdown.adaptationAngle]} variant="accent" />
+                <Text style={[styles.modalHint, { color: theme.textMuted }]}>{trendBreakdown.evidenceNote}</Text>
+              </View>
+            )}
+            <Text style={[styles.modalHint, { color: theme.textMuted }]}>
+              Metrics come from the configured trend provider. Hook and structure recommendations are kept separate from measured metrics.
+            </Text>
+            {selectedTopic?.sourceUrl && (
+              <GlassButton
+                variant="secondary"
+                fullWidth
+                onPress={() => {
+                  void Linking.openURL(selectedTopic.sourceUrl!).catch(() => {
+                    Alert.alert('Could not open video', 'Check that YouTube is available on this device and try again.');
+                  });
+                }}
+              >
+                Open source video
+              </GlassButton>
+            )}
+            <GlassButton variant="ghost" fullWidth onPress={() => setSelectedTopic(null)}>
+              Close
+            </GlassButton>
+          </ScrollView>
+        </View>
+      </Modal>
     </LinearGradient>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  const theme = useActiveTheme();
+  return (
+    <View style={styles.metric}>
+      <Text style={[styles.metricValue, { color: theme.text }]}>{value}</Text>
+      <Text style={[styles.metricLabel, { color: theme.textMuted }]}>{label}</Text>
+    </View>
   );
 }
 
@@ -352,6 +510,7 @@ const styles = StyleSheet.create({
     minHeight: 76,
     lineHeight: 21,
   },
+  notesInput: { minHeight: 58 },
   results: { gap: 16, marginTop: 6 },
   sourceLabel: { fontSize: 12, fontWeight: '600', letterSpacing: 0.2 },
   relevanceRow: {
@@ -368,6 +527,20 @@ const styles = StyleSheet.create({
   topicCard: { gap: 7 },
   topicTitle: { fontSize: 17, fontWeight: '600' },
   topicDesc: { fontSize: 13, lineHeight: 19 },
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
+  modalCard: { borderTopLeftRadius: 26, borderTopRightRadius: 26, borderWidth: 1, maxHeight: '88%', width: '100%' },
+  modalCardContent: { padding: 22, gap: 14 },
+  modalTitle: { fontSize: 23, fontWeight: '800', lineHeight: 29 },
+  modalMeta: { fontSize: 13, lineHeight: 19, textTransform: 'capitalize' },
+  metricRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8 },
+  metric: { alignItems: 'center', gap: 3, minWidth: 80 },
+  metricValue: { fontSize: 18, fontWeight: '800' },
+  metricLabel: { fontSize: 12 },
+  modalDescription: { fontSize: 14, lineHeight: 21 },
+  modalHint: { fontSize: 12, lineHeight: 18 },
+  breakdownLoading: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  breakdownError: { gap: 8 },
+  breakdown: { gap: 16 },
   errorCard: { gap: 12, borderColor: 'rgba(248,113,113,0.35)' },
   errorText: { fontSize: 14, lineHeight: 20 },
   emptyText: { fontSize: 14, lineHeight: 20 },
@@ -380,4 +553,11 @@ function formatTopicSignal(growthPercent: number, quality: string): string {
   if (quality === 'measured') return `+${growthPercent}% growth`;
   if (quality === 'estimated') return 'Estimated trend signal';
   return 'Reference signal';
+}
+
+function formatMetric(value: number | undefined): string {
+  if (value === undefined || Number.isNaN(value)) return '—';
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
+  return String(value);
 }

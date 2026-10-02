@@ -17,6 +17,7 @@ import type { TrendProvider } from "./types.js";
 export * from "./types.js";
 export * from "./analyzer.js";
 export * from "./inspiration.js";
+export * from "./ai-insights.js";
 export { MockTrendProvider } from "./providers/mock.js";
 export { YouTubeTrendProvider } from "./providers/youtube.js";
 

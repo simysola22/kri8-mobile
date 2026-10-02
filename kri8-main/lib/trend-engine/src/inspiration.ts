@@ -1,56 +1,9 @@
 /**
  * Creator Inspiration Engine
  *
- * Template-based by default. Set OPENAI_API_KEY to upgrade to AI-powered
- * generation (uses the official OpenAI API — not Replit-specific).
- *
- * To add custom AI providers, implement the AIProvider interface.
+ * Uses OpenAI for generation and fails explicitly when it is unavailable.
  */
-import { extractKeywords } from "./analyzer.js";
 import type { KeywordTrend, InspirationResult } from "./types.js";
-
-const HOOK_TEMPLATES = [
-  "Why most creators get {topic} completely wrong (and what actually works)",
-  "I tried {topic} for 30 days — here's exactly what happened",
-  "The {topic} strategy that 10x'd my channel in 60 days",
-  "Nobody is talking about this {topic} method (but they should be)",
-  "How I went from 0 to results with {topic} — full breakdown",
-  "The honest truth about {topic} that gurus won't tell you",
-  "Stop doing {topic} this way — do this instead",
-  "I interviewed 100 creators about {topic} — here's what I learned",
-];
-
-const TITLE_PATTERNS = [
-  "{topic}: A Practical Creator Guide",
-  "How to Master {topic} (Step-by-Step)",
-  "{topic} for Beginners — Everything You Need to Know",
-  "The REAL Way to Use {topic} as a Creator",
-  "I Tested Every {topic} Method — Here Are the Results",
-];
-
-const AUDIENCE_QUESTION_TEMPLATES = [
-  "What's the biggest challenge you face with {topic}?",
-  "Have you tried {topic} yet? What stopped you?",
-  "Which part of {topic} confuses you the most?",
-  "Would you pay for a course on {topic}? Why or why not?",
-  "What result would make {topic} worth your time?",
-];
-
-const IDEA_TEMPLATES = [
-  "Behind-the-scenes: how I built my {topic} process from scratch",
-  "{topic} case study — what I wish I knew when I started",
-  "Tools I use for {topic} (and why I switched from the popular ones)",
-  "The {topic} mistake I wish I avoided sooner",
-  "Comparing the top 5 {topic} strategies — which one actually wins?",
-  "What to check before committing to {topic}",
-  "Day-in-the-life: what {topic} really looks like for a solo creator",
-  "Collaborating on {topic} — what I learned from working with other creators",
-  "{topic} myths vs. reality — what I learned",
-];
-
-function fill(template: string, keyword: string): string {
-  return template.replace(/{topic}/g, keyword).replace(/{outcome}/g, "10x results");
-}
 
 function normalizeCanonicalQuery(value: string): string {
   return value.trim().replace(/\s+/g, " ");
@@ -58,6 +11,17 @@ function normalizeCanonicalQuery(value: string): string {
 
 function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every(item => typeof item === "string");
+}
+
+function cleanStringArray(value: unknown, field: string): string[] {
+  if (!isStringArray(value)) {
+    throw new Error(`AI provider returned invalid ${field}`);
+  }
+  const cleaned = [...new Set(value.map(item => item.trim()).filter(Boolean))];
+  if (cleaned.length < 3) {
+    throw new Error(`AI provider returned too few ${field}`);
+  }
+  return cleaned;
 }
 
 function parseInspirationResponse(
@@ -68,31 +32,26 @@ function parseInspirationResponse(
   }
 
   const result = value as Record<string, unknown>;
-  const fields = ["relatedIdeas", "alternativeHooks", "titleSuggestions", "audienceQuestions"];
-  if (!fields.every(field => isStringArray(result[field]))) {
-    throw new Error("AI provider returned an invalid response shape");
-  }
-
   return {
-    relatedIdeas: result.relatedIdeas as string[],
-    alternativeHooks: result.alternativeHooks as string[],
-    titleSuggestions: result.titleSuggestions as string[],
-    audienceQuestions: result.audienceQuestions as string[],
+    relatedIdeas: cleanStringArray(result.relatedIdeas, "relatedIdeas"),
+    alternativeHooks: cleanStringArray(result.alternativeHooks, "alternativeHooks"),
+    titleSuggestions: cleanStringArray(result.titleSuggestions, "titleSuggestions"),
+    audienceQuestions: cleanStringArray(result.audienceQuestions, "audienceQuestions"),
   };
-}
-
-function pickN<T>(arr: T[], n: number): T[] {
-  return [...arr].sort(() => Math.random() - 0.5).slice(0, n);
 }
 
 async function generateWithOpenAI(
   title: string,
   notes: string,
   trendKeywords: string[],
-): Promise<Omit<InspirationResult, "source" | "canonicalQuery"> | null> {
+): Promise<Omit<InspirationResult, "source" | "canonicalQuery">> {
   const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) return null;
+  if (!apiKey) {
+    throw new Error("OPENAI_API_KEY is not configured");
+  }
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20_000);
   try {
     const prompt = `You are a content strategy expert helping a creator turn an idea into a practical content plan.
 Canonical query: "${title}"
@@ -126,6 +85,7 @@ Keep everything short, punchy, and creator-focused. No markdown, pure JSON.`;
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
       },
+      signal: controller.signal,
       body: JSON.stringify({
         model: "gpt-4o-mini",
         messages: [{ role: "user", content: prompt }],
@@ -143,9 +103,23 @@ Keep everything short, punchy, and creator-focused. No markdown, pure JSON.`;
       throw new Error("AI provider returned an empty response");
     }
 
-    return parseInspirationResponse(JSON.parse(content));
+    const parsed = parseInspirationResponse(JSON.parse(content));
+    if (
+      parsed.relatedIdeas.length === 0 ||
+      parsed.alternativeHooks.length === 0 ||
+      parsed.titleSuggestions.length === 0 ||
+      parsed.audienceQuestions.length === 0
+    ) {
+      throw new Error("AI provider returned incomplete inspiration");
+    }
+    return parsed;
   } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error("AI provider timed out");
+    }
     throw error instanceof Error ? error : new Error("AI provider request failed");
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
@@ -155,24 +129,8 @@ export async function generateInspiration(
   trends: KeywordTrend[],
 ): Promise<InspirationResult> {
   const trendKeywords = trends.flatMap(t => [t.keyword, ...t.relatedTopics.map(rt => rt.name)]);
-  const primaryKeywords = extractKeywords(`${title} ${notes}`);
   const canonicalQuery = normalizeCanonicalQuery(title);
-  const keyword = canonicalQuery || primaryKeywords.slice(0, 6).join(" ") || "content";
 
   const aiResult = await generateWithOpenAI(title, notes, trendKeywords);
-  if (aiResult) return { ...aiResult, canonicalQuery: keyword, source: "openai" };
-
-  const relatedIdeas = pickN(IDEA_TEMPLATES, 10).map(t => fill(t, keyword));
-  const alternativeHooks = pickN(HOOK_TEMPLATES, 5).map(t => fill(t, keyword));
-  const titleSuggestions = TITLE_PATTERNS.map(t => fill(t, keyword));
-  const audienceQuestions = pickN(AUDIENCE_QUESTION_TEMPLATES, 5).map(t => fill(t, keyword));
-
-  return {
-    canonicalQuery: keyword,
-    relatedIdeas,
-    alternativeHooks,
-    titleSuggestions,
-    audienceQuestions,
-    source: "template",
-  };
+  return { ...aiResult, canonicalQuery, source: "openai" };
 }

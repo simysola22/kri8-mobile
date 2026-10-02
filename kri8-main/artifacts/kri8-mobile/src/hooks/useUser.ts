@@ -120,6 +120,10 @@ export function useUsernameAvailability(username: string) {
       }
        return body as UsernameAvailability;
     },
+    placeholderData: (previousData) =>
+      previousData?.username === debouncedUsername ? previousData : undefined,
+    retry: 1,
+    staleTime: 15_000,
   });
 }
 

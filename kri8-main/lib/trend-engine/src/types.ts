@@ -5,6 +5,12 @@ export interface TrendingTopic {
   growthPercent: number;
   volume: number;
   platform: "youtube" | "tiktok" | "instagram" | "twitter" | "mock";
+  sourceUrl?: string;
+  description?: string;
+  channelTitle?: string;
+  publishedAt?: string;
+  likes?: number;
+  comments?: number;
 }
 
 export interface TrendingHashtag {
@@ -51,6 +57,10 @@ export interface IdeaAnalysisResult {
   contentOpportunities: string[];
   formatAdaptations: string[];
   suggestedAngles: string[];
+  audienceFit?: string;
+  differentiation?: string;
+  recommendedHook?: string;
+  risks?: string[];
 }
 
 export interface InspirationResult {
