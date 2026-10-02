@@ -315,13 +315,26 @@ paths:
     get:
       operationId: getPublicProfile
       tags: [users]
-      summary: Get a user's public profile and ideas
+      summary: Get a user's public profile and first page of public ideas
       parameters:
         - name: username
           in: path
           required: true
           schema:
             type: string
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
       responses:
         "200":
           description: Public profile
@@ -331,6 +344,40 @@ paths:
                 $ref: "#/components/schemas/PublicProfile"
         "404":
           description: Not found
+
+  /profile/{username}/ideas:
+    get:
+      operationId: getPublicProfileIdeas
+      tags: [users]
+      summary: Get a page of public ideas for a profile
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+      responses:
+        "200":
+          description: Public ideas page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicProfileIdeasPage"
+        "404":
+          description: Profile not found or private
 
   /social/friends:
     get:
@@ -736,8 +783,44 @@ components:
         ideas:
           type: array
           items:
-            $ref: "#/components/schemas/IdeaDetail"
-      required: [user, ideas]
+            $ref: "#/components/schemas/PublicIdea"
+        nextCursor:
+          type: integer
+          nullable: true
+      required: [user, ideas, nextCursor]
+
+    PublicProfileIdeasPage:
+      type: object
+      properties:
+        ideas:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicIdea"
+        nextCursor:
+          type: integer
+          nullable: true
+      required: [ideas, nextCursor]
+
+    PublicIdea:
+      type: object
+      description: Explicit public projection; excludes owner, private notes, dates, and branch records.
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        insight:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        isUsed:
+          type: boolean
+        branchCount:
+          type: integer
+          description: Number of direct same-owner branches, shown in the existing public gallery.
+      required: [id, title, insight, createdAt, isUsed, branchCount]
 
     FriendRequest:
       type: object

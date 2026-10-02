@@ -10,7 +10,14 @@
  * Required OAuth scopes (read-only): none — uses API key for public data
  * Rate limits: 10,000 units/day free tier
  */
-import type { TrendDashboard, TrendingTopic, TrendingHashtag, KeywordTrend, TrendProvider } from "../types.js";
+import type {
+  TrendDashboard,
+  TrendingTopic,
+  TrendingHashtag,
+  KeywordTrend,
+  TrendProvider,
+  TrendSnapshot,
+} from "../types.js";
 
 const YOUTUBE_API_BASE = "https://www.googleapis.com/youtube/v3";
 
@@ -23,23 +30,38 @@ export class YouTubeTrendProvider implements TrendProvider {
   }
 
   async getDashboard(): Promise<TrendDashboard> {
-    const [trending, categories] = await Promise.all([
-      this.fetchTrendingVideos(),
-      this.fetchVideoCategories(),
-    ]);
+    const trending = await this.fetchTrendingVideos();
+    const fetchedAt = new Date().toISOString();
 
     const topics = this.extractTopics(trending);
-    const hashtags = this.extractHashtags(trending);
+    const snapshots: TrendSnapshot[] = trending.flatMap((video, index) => {
+      const id = getVideoId(video);
+      const topic = video.snippet?.title?.trim();
+      if (!id || !topic) return [];
+      return [{
+        topic,
+        platform: "youtube",
+        capturedAt: fetchedAt,
+        views: parseNonnegativeCount(video.statistics?.viewCount),
+        likes: parseNonnegativeCount(video.statistics?.likeCount),
+        comments: parseNonnegativeCount(video.statistics?.commentCount),
+        rank: index + 1,
+      }];
+    });
 
     return {
       topics,
-      hashtags,
-      categories,
+      // YouTube snippet.tags are keywords, not measured hashtag usage or volume.
+      hashtags: [],
+      // This API response contains popular videos, not category growth history.
+      categories: [],
       provider: this.name,
       source: this.name,
-      fetchedAt: new Date().toISOString(),
+      fetchedAt,
       isStatic: false,
-      metricsQuality: "estimated",
+      metricsQuality: "measured",
+      dataKind: "popular_content",
+      snapshots,
     };
   }
 
@@ -48,12 +70,12 @@ export class YouTubeTrendProvider implements TrendProvider {
       keywords.map(async (keyword) => {
         const results = await this.searchVideos(keyword);
         const topics = this.extractTopics(results);
-        const hashtags = this.extractHashtags(results);
         return {
           keyword,
-          trendScore: Math.min(100, topics.length * 25 + (results.length > 0 ? 25 : 0)),
+          // Search results are ranked by views, but do not provide historical growth or query volume.
+          trendScore: null,
           relatedTopics: topics.slice(0, 3),
-          relatedHashtags: hashtags.slice(0, 3),
+          relatedHashtags: [],
         };
       })
     );
@@ -67,9 +89,7 @@ export class YouTubeTrendProvider implements TrendProvider {
     url.searchParams.set("maxResults", "50");
     url.searchParams.set("key", this.apiKey);
 
-    const res = await fetch(url.toString());
-    if (!res.ok) throw new Error(`YouTube API error: ${res.status}`);
-    const data = (await res.json()) as { items?: YouTubeVideo[] };
+    const data = await this.fetchJson<{ items?: YouTubeVideo[] }>(url);
     return data.items ?? [];
   }
 
@@ -82,49 +102,52 @@ export class YouTubeTrendProvider implements TrendProvider {
     url.searchParams.set("maxResults", "20");
     url.searchParams.set("key", this.apiKey);
 
-    const res = await fetch(url.toString());
-    if (!res.ok) throw new Error(`YouTube API error: ${res.status}`);
-    const data = (await res.json()) as { items?: YouTubeVideo[] };
+    const data = await this.fetchJson<{ items?: YouTubeVideo[] }>(url);
     return data.items ?? [];
   }
 
-  private async fetchVideoCategories(): Promise<import("../types.js").ContentCategory[]> {
-    return [
-      { name: "Technology & AI", growthPercent: 0, topContent: [] },
-      { name: "Creator Strategy", growthPercent: 0, topContent: [] },
-    ];
+  private async fetchJson<T>(url: URL): Promise<T> {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10_000);
+    try {
+      const response = await fetch(url.toString(), { signal: controller.signal });
+      if (!response.ok) throw new Error(`YouTube provider request failed (${response.status})`);
+      return await response.json() as T;
+    } catch (error) {
+      if (error instanceof Error && error.message.startsWith("YouTube provider request failed")) {
+        throw error;
+      }
+      if (controller.signal.aborted || (error instanceof Error && error.name === "AbortError")) {
+        throw new Error("YouTube provider timed out");
+      }
+      throw new Error("YouTube provider request failed");
+    } finally {
+      clearTimeout(timeout);
+    }
   }
 
   private extractTopics(videos: YouTubeVideo[]): TrendingTopic[] {
-    return videos.slice(0, 10).map((v, i) => ({
-      id: getVideoId(v) ?? `yt-${i}`,
-      name: v.snippet?.title ?? "",
-      category: v.snippet?.categoryId ?? "General",
-      growthPercent: 0,
-      volume: Number(v.statistics?.viewCount ?? 0),
-      platform: "youtube" as const,
-      sourceUrl: getVideoId(v) ? `https://www.youtube.com/watch?v=${getVideoId(v)}` : undefined,
-      description: v.snippet?.description,
-      channelTitle: v.snippet?.channelTitle,
-      publishedAt: v.snippet?.publishedAt,
-      likes: Number(v.statistics?.likeCount ?? 0),
-      comments: Number(v.statistics?.commentCount ?? 0),
-    }));
+    return videos.flatMap((video) => {
+      const id = getVideoId(video);
+      const name = video.snippet?.title?.trim();
+      if (!id || !name) return [];
+      return [{
+        id,
+        name,
+        category: "People & Blogs",
+        growthPercent: null,
+        volume: parseNonnegativeCount(video.statistics?.viewCount),
+        platform: "youtube" as const,
+        sourceUrl: `https://www.youtube.com/watch?v=${id}`,
+        description: video.snippet?.description,
+        channelTitle: video.snippet?.channelTitle,
+        publishedAt: video.snippet?.publishedAt,
+        likes: parseNonnegativeCount(video.statistics?.likeCount),
+        comments: parseNonnegativeCount(video.statistics?.commentCount),
+      }];
+    }).slice(0, 10);
   }
 
-  private extractHashtags(videos: YouTubeVideo[]): TrendingHashtag[] {
-    const tagMap = new Map<string, number>();
-    for (const v of videos) {
-      for (const tag of (v.snippet?.tags ?? [])) {
-        const normalized = tag.startsWith("#") ? tag : `#${tag}`;
-        tagMap.set(normalized, (tagMap.get(normalized) ?? 0) + 1);
-      }
-    }
-    return [...tagMap.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 15)
-      .map(([tag, count]) => ({ tag, platform: "youtube", volume: count * 10000, growthPercent: 0 }));
-  }
 }
 
 interface YouTubeVideo {
@@ -146,4 +169,10 @@ interface YouTubeVideo {
 
 function getVideoId(video: YouTubeVideo): string | undefined {
   return typeof video.id === "string" ? video.id : video.id?.videoId;
+}
+
+function parseNonnegativeCount(value: string | undefined): number | null {
+  if (value === undefined || !/^\d+$/.test(value)) return null;
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) ? parsed : null;
 }

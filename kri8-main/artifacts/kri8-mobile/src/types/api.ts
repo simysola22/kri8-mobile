@@ -96,9 +96,19 @@ export interface MarkUsedInput {
   usedDate?: string;
 }
 
+export interface PublicIdea {
+  id: number;
+  title: string;
+  insight: string | null;
+  createdAt: string;
+  isUsed: boolean;
+  branchCount: number;
+}
+
 export interface PublicProfile {
   user: UserPublic;
-  ideas: IdeaDetail[];
+  ideas: PublicIdea[];
+  nextCursor: number | null;
 }
 
 export interface FriendRequest {

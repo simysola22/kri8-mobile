@@ -1,101 +1,241 @@
-import { Router } from "express";
+import { Router, type Request, type Response } from "express";
 import { db, usersTable, ideasTable } from "@workspace/db";
-import { eq, and, isNull, sql } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNull, lt, sql } from "drizzle-orm";
 
-const router = Router();
-
-function serializePublicUser(user: typeof usersTable.$inferSelect) {
-  return {
-    id: user.id,
-    name: user.name ?? null,
-    username: user.username ?? null,
-    bio: user.bio ?? null,
-    avatarUrl: user.avatarUrl ?? null,
-  };
+export interface PublicProfileUser {
+  id: number;
+  name: string | null;
+  username: string | null;
+  bio: string | null;
+  avatarUrl: string | null;
 }
 
-function serializeIdea(idea: typeof ideasTable.$inferSelect) {
-  return {
-    id: idea.id,
-    userId: idea.userId,
-    title: idea.title,
-    insight: idea.insight,
-    origin: idea.origin,
-    notes: idea.notes,
-    videoEditingNotes: idea.videoEditingNotes,
-    createdDate: idea.createdDate,
-    usedDate: idea.usedDate,
-    customDate: idea.customDate,
-    isUsed: idea.isUsed,
-    parentIdeaId: idea.parentIdeaId,
-    branchCount: idea.branchCount,
-    createdAt: idea.createdAt.toISOString(),
-    updatedAt: idea.updatedAt.toISOString(),
-  };
+export interface PublicIdea {
+  id: number;
+  title: string;
+  insight: string | null;
+  createdAt: string;
+  isUsed: boolean;
+  /** Direct child count is public because the existing public gallery displays it. */
+  branchCount: number;
 }
 
-async function getBranchesRecursive(ideaId: number): Promise<ReturnType<typeof serializeIdea>[]> {
-  const branches = await db
-    .select()
-    .from(ideasTable)
-    .where(eq(ideasTable.parentIdeaId, ideaId));
-
-  const result = [];
-  for (const branch of branches) {
-    result.push(serializeIdea(branch));
-    const subBranches = await getBranchesRecursive(branch.id);
-    result.push(...subBranches);
-  }
-  return result;
+export interface PublicIdeaPage {
+  user?: PublicProfileUser;
+  ideas: PublicIdea[];
+  nextCursor: number | null;
 }
 
-// GET /api/profile/:username — public profiles only; no auth required, no sensitive fields
-router.get("/:username", async (req: any, res): Promise<void> => {
-  try {
-    const username = String(req.params.username ?? "").trim().toLowerCase();
-    if (!username) {
-      res.status(404).json({ error: "Profile not found", code: "PROFILE_NOT_FOUND" }); return;
-    }
+interface ProfileOwner extends PublicProfileUser {
+  isPublic: boolean;
+}
 
-    const users = await db
-      .select()
+export interface PublicProfileRepository {
+  findUser(username: string): Promise<ProfileOwner | null>;
+  listIdeas(userId: number, cursor: number | undefined, limit: number): Promise<PublicIdeaPage>;
+}
+
+const DEFAULT_LIMIT = 20;
+const MAX_LIMIT = 50;
+const USERNAME_PATTERN = /^[a-z0-9_]{3,30}$/;
+
+const databaseRepository: PublicProfileRepository = {
+  async findUser(username) {
+    const rows = await db
+      .select({
+        id: usersTable.id,
+        name: usersTable.name,
+        username: usersTable.username,
+        bio: usersTable.bio,
+        avatarUrl: usersTable.avatarUrl,
+        isPublic: usersTable.isPublic,
+      })
       .from(usersTable)
       .where(sql`lower(${usersTable.username}) = ${username}`)
       .limit(1);
+    return rows[0] ?? null;
+  },
 
-    if (!users.length) {
-      res.status(404).json({ error: "Profile not found", code: "PROFILE_NOT_FOUND" }); return;
-    }
-
-    const user = users[0];
-
-    // Only expose profiles that the owner has set to public
-    if (!user.isPublic) {
-    res.status(404).json({ error: "This profile is private", code: "PROFILE_PRIVATE" }); return;
-    }
-
-    // Return only root ideas (no branches at the list level)
-    const rootIdeas = await db
-      .select()
+  async listIdeas(userId, cursor, limit) {
+    const conditions = [
+      eq(ideasTable.userId, userId),
+      isNull(ideasTable.parentIdeaId),
+      ...(cursor === undefined ? [] : [lt(ideasTable.id, cursor)]),
+    ];
+    const rows = await db
+      .select({
+        id: ideasTable.id,
+        title: ideasTable.title,
+        insight: ideasTable.insight,
+        createdAt: ideasTable.createdAt,
+        isUsed: ideasTable.isUsed,
+      })
       .from(ideasTable)
-      .where(and(eq(ideasTable.userId, user.id), isNull(ideasTable.parentIdeaId)));
+      .where(and(...conditions))
+      .orderBy(desc(ideasTable.id))
+      .limit(limit + 1);
 
-    const ideasWithBranches = await Promise.all(
-      rootIdeas.map(async (idea) => {
-        const branches = await getBranchesRecursive(idea.id);
-        return { ...serializeIdea(idea), branches };
-      }),
-    );
+    const hasMore = rows.length > limit;
+    const page = rows.slice(0, limit);
+    const childCounts = new Map<number, number>();
+    if (page.length > 0) {
+      const counts = await db
+        .select({
+          parentId: ideasTable.parentIdeaId,
+          total: count(),
+        })
+        .from(ideasTable)
+        .where(and(
+          eq(ideasTable.userId, userId),
+          inArray(ideasTable.parentIdeaId, page.map((idea) => idea.id)),
+        ))
+        .groupBy(ideasTable.parentIdeaId);
+      for (const row of counts) {
+        if (row.parentId !== null) childCounts.set(row.parentId, row.total);
+      }
+    }
 
-    // Only return public-safe fields — no email, clerkUserId, themePreference
-    res.json({
-      user: serializePublicUser(user),
-      ideas: ideasWithBranches,
-    });
-  } catch (err) {
-    req.log.error({ err }, "Failed to get public profile");
-    res.status(500).json({ error: "Internal server error" });
+    const ideas: PublicIdea[] = page.map((idea) => ({
+      id: idea.id,
+      title: idea.title,
+      insight: idea.insight,
+      createdAt: idea.createdAt.toISOString(),
+      isUsed: idea.isUsed,
+      branchCount: childCounts.get(idea.id) ?? 0,
+    }));
+
+    return {
+      ideas,
+      nextCursor: hasMore && page.length > 0 ? page[page.length - 1].id : null,
+    };
+  },
+};
+
+function parsePagination(query: Record<string, unknown>):
+  | { ok: true; cursor: number | undefined; limit: number }
+  | { ok: false } {
+  const rawLimit = query.limit;
+  const rawCursor = query.cursor;
+  if (Array.isArray(rawLimit) || Array.isArray(rawCursor)) return { ok: false };
+
+  let limit = DEFAULT_LIMIT;
+  if (rawLimit !== undefined) {
+    if (typeof rawLimit !== "string" || !/^[1-9]\d*$/.test(rawLimit)) return { ok: false };
+    limit = Number(rawLimit);
+    if (!Number.isSafeInteger(limit) || limit > MAX_LIMIT) return { ok: false };
   }
-});
 
-export default router;
+  let cursor: number | undefined;
+  if (rawCursor !== undefined) {
+    if (typeof rawCursor !== "string" || !/^[1-9]\d*$/.test(rawCursor)) return { ok: false };
+    cursor = Number(rawCursor);
+    if (!Number.isSafeInteger(cursor)) return { ok: false };
+  }
+  return { ok: true, cursor, limit };
+}
+
+function serializePublicUser(user: ProfileOwner): PublicProfileUser {
+  return {
+    id: user.id,
+    name: user.name,
+    username: user.username,
+    bio: user.bio,
+    avatarUrl: user.avatarUrl,
+  };
+}
+
+function serializePublicIdea(idea: PublicIdea): PublicIdea {
+  return {
+    id: idea.id,
+    title: idea.title,
+    insight: idea.insight,
+    createdAt: idea.createdAt,
+    isUsed: idea.isUsed,
+    branchCount: idea.branchCount,
+  };
+}
+
+function serializePublicIdeaPage(page: PublicIdeaPage): PublicIdeaPage {
+  return {
+    ideas: page.ideas.map(serializePublicIdea),
+    nextCursor: page.nextCursor,
+  };
+}
+
+export function createPublicProfileRouter(
+  repository: PublicProfileRepository = databaseRepository,
+) {
+  const router = Router();
+
+  async function resolvePublicUser(
+    usernameParam: unknown,
+    res: Response,
+  ): Promise<ProfileOwner | null> {
+    const username = typeof usernameParam === "string"
+      ? usernameParam.trim().toLowerCase()
+      : "";
+    if (!USERNAME_PATTERN.test(username)) {
+      res.status(404).json({ error: "Profile not found", code: "PROFILE_NOT_FOUND" });
+      return null;
+    }
+
+    const user = await repository.findUser(username);
+    if (!user) {
+      res.status(404).json({ error: "Profile not found", code: "PROFILE_NOT_FOUND" });
+      return null;
+    }
+    if (!user.isPublic) {
+      res.status(404).json({ error: "This profile is private", code: "PROFILE_PRIVATE" });
+      return null;
+    }
+    return user;
+  }
+
+  router.get("/:username/ideas", async (
+    req: Request<{ username: string }>,
+    res: Response,
+  ): Promise<void> => {
+    try {
+      const pagination = parsePagination(req.query as Record<string, unknown>);
+      if (!pagination.ok) {
+        res.status(400).json({ error: "Invalid pagination parameters" });
+        return;
+      }
+      const user = await resolvePublicUser(req.params.username, res);
+      if (!user) return;
+      res.json(serializePublicIdeaPage(
+        await repository.listIdeas(user.id, pagination.cursor, pagination.limit),
+      ));
+    } catch (err) {
+      req.log.error({ err }, "Failed to get public profile ideas");
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  router.get("/:username", async (
+    req: Request<{ username: string }>,
+    res: Response,
+  ): Promise<void> => {
+    try {
+      const pagination = parsePagination(req.query as Record<string, unknown>);
+      if (!pagination.ok) {
+        res.status(400).json({ error: "Invalid pagination parameters" });
+        return;
+      }
+      const user = await resolvePublicUser(req.params.username, res);
+      if (!user) return;
+      const page = await repository.listIdeas(user.id, pagination.cursor, pagination.limit);
+      res.json({
+        user: serializePublicUser(user),
+        ...serializePublicIdeaPage(page),
+      });
+    } catch (err) {
+      req.log.error({ err }, "Failed to get public profile");
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  return router;
+}
+
+export default createPublicProfileRouter();

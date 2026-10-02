@@ -4,15 +4,7 @@
  * Contextual AI assistance that works invisibly while the user types.
  * Does NOT create a separate AI page — suggestions feel automatic and in-context.
  *
- * Suggests:
- *  - Better titles
- *  - Hooks
- *  - Descriptions
- *  - Tags
- *  - Content categories
- *  - Posting platforms
- *  - Posting times
- *  - Alternative wording
+ * Suggests titles and hooks using the existing inspiration API contract.
  */
 
 const API_BASE = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'https://kri8-obvh.onrender.com';
@@ -36,18 +28,6 @@ export interface AISuggestions {
   title?: string;
   /** Hook / attention-grabbing opening line. */
   hook?: string;
-  /** Rewritten description for clarity. */
-  description?: string;
-  /** Suggested tags. */
-  tags?: string[];
-  /** Content category (e.g. "Educational", "Entertainment"). */
-  category?: string;
-  /** Recommended posting platforms (e.g. ["YouTube", "TikTok"]). */
-  platforms?: string[];
-  /** Recommended posting time (e.g. "Tuesday 6 PM"). */
-  postingTime?: string;
-  /** Alternative wording options. */
-  alternatives?: string[];
 }
 
 export interface AssistantContext {
@@ -78,6 +58,7 @@ export async function getAISuggestions(
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 25_000);
   try {
+    const canonicalQuery = context.title?.trim() || context.insight?.trim() || '';
     const res = await fetch(`${API_BASE}/api/trends/inspire`, {
       method: 'POST',
       signal: controller.signal,
@@ -86,7 +67,7 @@ export async function getAISuggestions(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        title: context.title?.trim() ?? '',
+        title: canonicalQuery,
         notes: buildPrompt(context),
       }),
     });
@@ -168,38 +149,32 @@ function buildPrompt(context: AssistantContext): string {
   return parts.join('\n');
 }
 
-function parseSuggestions(
+export function parseSuggestions(
   data: InspirationResponse,
   context: AssistantContext,
 ): AISuggestions {
   const result: AISuggestions = {};
+  const focused = (field: keyof AISuggestions) =>
+    !context.focus?.length || context.focus.includes(field);
 
-  const suggestedTitle = data.titleSuggestions?.find(
-    (suggestion) => suggestion.trim() && suggestion.trim() !== context.title?.trim(),
-  );
-  if (suggestedTitle) {
-    result.title = suggestedTitle;
+  if (focused('title')) {
+    const suggestedTitle = data.titleSuggestions?.find(
+      (suggestion) => suggestion.trim() && suggestion.trim() !== context.title?.trim(),
+    );
+    if (suggestedTitle) result.title = suggestedTitle.trim();
   }
 
-  if (data.alternativeHooks?.[0]) {
-    result.hook = data.alternativeHooks[0];
+  if (focused('hook') && data.alternativeHooks?.[0]) {
+    result.hook = data.alternativeHooks[0].trim();
   }
-
-  // The existing inspiration contract returns related ideas rather than
-  // rewritten descriptions; expose the first related idea as an optional
-  // notes suggestion without fabricating a new response shape.
-  if (data.relatedIdeas?.[0]) {
-    result.description = data.relatedIdeas[0];
-  }
-
   return result;
 }
 
 /** Response shape returned by the existing POST /api/trends/inspire route. */
 interface InspirationResponse {
-  relatedIdeas?: string[];
-  alternativeHooks?: string[];
-  titleSuggestions?: string[];
-  audienceQuestions?: string[];
-  source?: 'openai' | 'template';
+  relatedIdeas: string[];
+  alternativeHooks: string[];
+  titleSuggestions: string[];
+  audienceQuestions: string[];
+  source: 'openai';
 }

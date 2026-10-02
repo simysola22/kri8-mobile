@@ -9,14 +9,13 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '@clerk/expo';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { useActiveTheme } from '@/stores/theme';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import type { PublicProfile } from '@/types';
+import type { PublicProfile, UserPublic } from '@/types';
 
 const BASE = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'https://kri8-obvh.onrender.com';
 
@@ -32,21 +31,26 @@ class ProfileApiError extends Error {
   }
 }
 
+type PublicProfilePage = Pick<PublicProfile, 'ideas' | 'nextCursor'> & {
+  user?: UserPublic;
+};
+
 export default function PublicProfileScreen() {
   const { username } = useLocalSearchParams<{ username: string }>();
   const theme = useActiveTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { getToken } = useAuth();
 
   const normalizedUsername = Array.isArray(username) ? username[0] : username;
-  const { data: profile, isLoading, isFetching, error, refetch } = useQuery({
+  const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage, error, refetch } = useInfiniteQuery({
     queryKey: ['profile', normalizedUsername?.toLowerCase()],
-    queryFn: async () => {
-      const token = await getToken();
-      const res = await fetch(`${BASE}/api/profile/${encodeURIComponent(normalizedUsername!.trim().toLowerCase())}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+    initialPageParam: null as number | null,
+    queryFn: async ({ pageParam }): Promise<PublicProfilePage> => {
+      const handle = encodeURIComponent(normalizedUsername!.trim().toLowerCase());
+      const endpoint = pageParam === null
+        ? `${BASE}/api/profile/${handle}?limit=20`
+        : `${BASE}/api/profile/${handle}/ideas?cursor=${pageParam}&limit=20`;
+      const res = await fetch(endpoint);
       if (!res.ok) {
         let body: { error?: unknown; code?: unknown } = {};
         try {
@@ -60,10 +64,13 @@ export default function PublicProfileScreen() {
           typeof body.code === 'string' ? body.code : undefined,
         );
       }
-      return res.json() as Promise<PublicProfile>;
+      return res.json() as Promise<PublicProfilePage>;
     },
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     enabled: !!normalizedUsername?.trim(),
   });
+  const profileUser = data?.pages[0]?.user;
+  const ideas = data?.pages.flatMap((page) => page.ideas) ?? [];
 
   if (isLoading) return <LoadingSpinner fullScreen />;
 
@@ -75,7 +82,7 @@ export default function PublicProfileScreen() {
         </TouchableOpacity>
       </View>
 
-      {!profile ? (
+      {!profileUser ? (
         <View style={styles.notFound}>
           <Text style={[styles.notFoundText, { color: theme.text }]}>
             {error instanceof ProfileApiError && error.code === 'PROFILE_PRIVATE'
@@ -107,21 +114,21 @@ export default function PublicProfileScreen() {
         >
           <GlassCard style={styles.headerCard}>
             <Avatar
-              uri={profile.user.avatarUrl}
-              name={profile.user.name ?? profile.user.username}
+              uri={profileUser.avatarUrl}
+              name={profileUser.name ?? profileUser.username}
               size="xl"
             />
             <Text style={[styles.name, { color: theme.text }]}>
-              {profile.user.name ?? '@' + profile.user.username}
+              {profileUser.name ?? '@' + profileUser.username}
             </Text>
-            {profile.user.username && (
+            {profileUser.username && (
               <Text style={[styles.handle, { color: theme.textMuted }]}>
-                @{profile.user.username}
+                @{profileUser.username}
               </Text>
             )}
-            {profile.user.bio && (
+            {profileUser.bio && (
               <Text style={[styles.bio, { color: theme.textMuted }]}>
-                {profile.user.bio}
+                {profileUser.bio}
               </Text>
             )}
           </GlassCard>
@@ -130,7 +137,7 @@ export default function PublicProfileScreen() {
             Public Ideas
           </Text>
 
-          {profile.ideas.map((idea) => (
+          {ideas.map((idea) => (
             <GlassCard key={idea.id} style={styles.ideaCard}>
               <Text style={[styles.ideaTitle, { color: theme.text }]}>
                 {idea.title}
@@ -147,10 +154,21 @@ export default function PublicProfileScreen() {
             </GlassCard>
           ))}
 
-          {profile.ideas.length === 0 && (
+          {ideas.length === 0 && (
             <Text style={[styles.empty, { color: theme.textFaint }]}>
               No public ideas yet.
             </Text>
+          )}
+          {hasNextPage && (
+            <TouchableOpacity
+              disabled={isFetchingNextPage}
+              onPress={() => void fetchNextPage()}
+              style={styles.loadMore}
+            >
+              <Text style={[styles.loadMoreText, { color: theme.accent }]}>
+                {isFetchingNextPage ? 'Loading…' : 'Load more ideas'}
+              </Text>
+            </TouchableOpacity>
           )}
         </ScrollView>
       )}
@@ -172,6 +190,8 @@ const styles = StyleSheet.create({
   ideaTitle: { fontSize: 16, fontWeight: '600' },
   ideaInsight: { fontSize: 13 },
   empty: { fontSize: 15, textAlign: 'center', paddingTop: 32 },
+  loadMore: { alignSelf: 'center', paddingVertical: 12, paddingHorizontal: 20 },
+  loadMoreText: { fontSize: 15, fontWeight: '700' },
   notFound: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   notFoundText: { fontSize: 20, fontWeight: '700', textAlign: 'center' },
   notFoundSubtext: { fontSize: 14, lineHeight: 20, textAlign: 'center', marginTop: 8, paddingHorizontal: 30 },
