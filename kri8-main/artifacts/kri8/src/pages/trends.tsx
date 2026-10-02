@@ -11,9 +11,9 @@ import { useGetTrendDashboard, useAnalyzeIdea, useInspireIdea, getGetTrendDashbo
 import { TrendingUp, Lightbulb, Sparkles, Hash, BarChart3, Search, ChevronUp, ChevronDown, Minus, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type TrendingTopic = { id: string; name: string; category: string; growthPercent: number; volume: number; platform: string };
-type TrendingHashtag = { tag: string; platform: string; volume: number; growthPercent: number };
-type ContentCategory = { name: string; growthPercent: number; topContent: string[] };
+type TrendingTopic = { id: string; name: string; category: string; growthPercent: number | null; volume: number | null; platform: string };
+type TrendingHashtag = { tag: string; platform: string; volume: number | null; growthPercent: number | null };
+type ContentCategory = { name: string; growthPercent: number | null; topContent: string[] };
 type TrendDashboard = {
   topics: TrendingTopic[];
   hashtags: TrendingHashtag[];
@@ -23,6 +23,7 @@ type TrendDashboard = {
   fetchedAt: string | null;
   isStatic: boolean;
   metricsQuality: "fixture" | "estimated" | "measured";
+  dataKind: "fixture" | "popular_content" | "historical_trends";
 };
 type AnalysisResult = { relevanceScore: number | null; relatedTopics: TrendingTopic[]; relatedHashtags: TrendingHashtag[]; contentOpportunities: string[]; formatAdaptations?: string[]; suggestedAngles: string[] };
 type InspirationResult = { relatedIdeas: string[]; alternativeHooks: string[]; titleSuggestions: string[]; audienceQuestions: string[] };
@@ -32,13 +33,15 @@ function ScoreBadge({ score, label }: { score: number; label: string }) {
   return <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", color)}>{label}: {score}%</span>;
 }
 
-function GrowthIndicator({ rate, label }: { rate: number; label: string }) {
+function GrowthIndicator({ rate, label }: { rate: number | null; label: string }) {
+  if (rate === null) return <span className="text-muted-foreground text-xs">Growth unavailable</span>;
   if (rate > 5) return <span className="flex items-center gap-0.5 text-emerald-400 text-xs"><ChevronUp className="h-3 w-3" />{label} +{rate.toFixed(0)}%</span>;
   if (rate < -5) return <span className="flex items-center gap-0.5 text-red-400 text-xs"><ChevronDown className="h-3 w-3" />{label} {Math.abs(rate).toFixed(0)}%</span>;
   return <span className="flex items-center gap-0.5 text-muted-foreground text-xs"><Minus className="h-3 w-3" />{label}: stable</span>;
 }
 
-function formatCount(n: number) {
+function formatCount(n: number | null) {
+  if (n === null) return "Unavailable";
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`;
   return String(n);
@@ -51,16 +54,19 @@ function errorMessage(error: unknown): string {
 }
 
 function trendMetricLabel(quality: TrendDashboard["metricsQuality"]): string {
-  return quality === "measured" ? "Growth" : "Estimated activity";
+  if (quality === "fixture") return "Sample fixture";
+  if (quality === "estimated") return "Estimated activity";
+  return "Measured growth";
 }
 
 function trendMetadata(d: TrendDashboard): string {
-  if (d.isStatic) return "Fixture data · Last updated: unavailable";
+  if (d.metricsQuality === "fixture" || d.isStatic) return "Sample fixture data · Not a live measurement";
   const retrieved = d.fetchedAt
     ? `Retrieved ${new Date(d.fetchedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
     : "Retrieval time unavailable";
-  const quality = d.metricsQuality === "measured" ? "Measured metrics" : "Estimated metrics";
-  return `${d.source || d.provider} · ${retrieved} · ${quality}`;
+  const quality = d.metricsQuality === "measured" ? "Measured source metrics" : "Estimated metrics";
+  const dataKind = d.dataKind === "popular_content" ? "Popular content; historical growth unavailable" : "Historical trend data";
+  return `${d.source || d.provider} · ${retrieved} · ${quality} · ${dataKind}`;
 }
 
 export default function TrendsPage() {
@@ -181,7 +187,7 @@ export default function TrendsPage() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               <p className="font-medium text-sm">{topic.name}</p>
-                              <ScoreBadge score={topic.growthPercent} label={trendMetricLabel(d.metricsQuality)} />
+                              <GrowthIndicator rate={topic.growthPercent} label={trendMetricLabel(d.metricsQuality)} />
                               <Badge variant="outline" className="border-white/20 text-xs text-muted-foreground">{topic.category}</Badge>
                             </div>
                             <div className="flex items-center gap-2 mt-1">

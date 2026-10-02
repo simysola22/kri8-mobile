@@ -99,12 +99,11 @@ export default function CaptureScreen() {
   }, [draft.draft]);
 
   const applySuggestion = useCallback(
-    (field: 'title' | 'hook' | 'description') => {
+    (field: 'title' | 'hook') => {
       const value = ai.suggestions[field];
       if (!value || typeof value !== 'string') return;
       if (field === 'title') setTitle(value);
-      else if (field === 'hook') setInsight(value);
-      else setNotes(value);
+      else setInsight(value);
       ai.acceptSuggestion(field);
     },
     [ai],
@@ -305,14 +304,6 @@ export default function CaptureScreen() {
                       label="Hook"
                       value={ai.suggestions.hook}
                       onApply={() => applySuggestion('hook')}
-                      theme={theme}
-                    />
-                  )}
-                  {ai.suggestions.description && (
-                    <SuggestionRow
-                      label="Notes"
-                      value={ai.suggestions.description}
-                      onApply={() => applySuggestion('description')}
                       theme={theme}
                     />
                   )}

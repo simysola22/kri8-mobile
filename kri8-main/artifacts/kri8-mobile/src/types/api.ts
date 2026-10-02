@@ -100,9 +100,7 @@ export interface PublicIdea {
   id: number;
   title: string;
   insight: string | null;
-  createdAt: string;
   isUsed: boolean;
-  branchCount: number;
 }
 
 export interface PublicProfile {
@@ -156,14 +154,15 @@ export interface TrendDashboard {
   fetchedAt: string | null;
   isStatic: boolean;
   metricsQuality: 'fixture' | 'estimated' | 'measured';
+  dataKind: 'fixture' | 'popular_content' | 'historical_trends';
 }
 
 export interface TrendTopic {
   id: string;
   name: string;
   category: string;
-  growthPercent: number;
-  volume: number;
+  growthPercent: number | null;
+  volume: number | null;
   platform: string;
   sourceUrl?: string;
   description?: string;
@@ -176,13 +175,13 @@ export interface TrendTopic {
 export interface TrendHashtag {
   tag: string;
   platform: string;
-  volume: number;
-  growthPercent: number;
+  volume: number | null;
+  growthPercent: number | null;
 }
 
 export interface TrendCategory {
   name: string;
-  growthPercent: number;
+  growthPercent: number | null;
   topContent: string[];
 }
 
@@ -216,7 +215,7 @@ export interface TrendInspiration {
   alternativeHooks: string[];
   titleSuggestions: string[];
   audienceQuestions: string[];
-  source?: 'openai' | 'template';
+  source: 'openai';
   trendContextAvailable?: boolean;
 }
 

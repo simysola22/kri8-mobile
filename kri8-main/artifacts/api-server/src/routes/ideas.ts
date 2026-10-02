@@ -1,12 +1,10 @@
-import { Router } from "express";
+import { Router, type RequestHandler } from "express";
 
 import { db, usersTable, ideasTable } from "@workspace/db";
 import { eq, and, isNull, sql, desc, ilike, or, lte, lt, gt } from "drizzle-orm";
 import { z } from "zod";
 import { requireAuth, getOrCreateUser } from "./users";
 import { validateBody } from "../middlewares/validate";
-
-const router = Router();
 
 function serializeIdea(idea: typeof ideasTable.$inferSelect) {
   return {
@@ -29,17 +27,24 @@ function serializeIdea(idea: typeof ideasTable.$inferSelect) {
 }
 
 // Replace N+1 recursive fetch with a single recursive CTE
-async function getBranchesFlat(ideaId: number): Promise<ReturnType<typeof serializeIdea>[]> {
-  const result = await db.execute(sql`
+async function getBranchesFlat(
+  ideaId: number,
+  userId: number,
+  database: typeof db = db,
+): Promise<ReturnType<typeof serializeIdea>[]> {
+  const result = await database.execute(sql`
     WITH RECURSIVE branch_tree AS (
-      SELECT * FROM ideas WHERE parent_idea_id = ${ideaId}
+      SELECT * FROM ideas WHERE parent_idea_id = ${ideaId} AND user_id = ${userId}
       UNION ALL
       SELECT i.* FROM ideas i
       INNER JOIN branch_tree bt ON i.parent_idea_id = bt.id
+      WHERE i.user_id = ${userId}
     )
     SELECT * FROM branch_tree ORDER BY created_at ASC
   `);
-  return result.rows.map((row: any) => ({
+  return result.rows
+    .filter((row: any) => Number(row.user_id) === userId)
+    .map((row: any) => ({
     id: row.id,
     userId: row.user_id,
     title: row.title,
@@ -55,20 +60,20 @@ async function getBranchesFlat(ideaId: number): Promise<ReturnType<typeof serial
     branchCount: row.branch_count ?? 0,
     createdAt: new Date(row.created_at).toISOString(),
     updatedAt: new Date(row.updated_at).toISOString(),
-  }));
+    }));
 }
 
 // Per-user autoMarkUsed cooldown (in-memory, resets on server restart)
 const autoMarkCooldown = new Map<number, number>();
 const AUTO_MARK_INTERVAL_MS = 60_000; // run at most once per minute per user
 
-async function autoMarkUsed(userId: number) {
+async function autoMarkUsed(userId: number, database: typeof db = db) {
   const last = autoMarkCooldown.get(userId) ?? 0;
   if (Date.now() - last < AUTO_MARK_INTERVAL_MS) return;
   autoMarkCooldown.set(userId, Date.now());
 
   const today = new Date().toISOString().split("T")[0];
-  await db
+  await database
     .update(ideasTable)
     .set({ isUsed: true, usedDate: today, updatedAt: new Date() })
     .where(
@@ -89,7 +94,7 @@ const createIdeaSchema = z.object({
   notes: z.string().max(10000).optional(),
   videoEditingNotes: z.string().max(10000).optional(),
   customDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-});
+}).strict();
 
 const updateIdeaSchema = z.object({
   title: z.string().min(1).max(500).optional(),
@@ -100,27 +105,68 @@ const updateIdeaSchema = z.object({
   customDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
   usedDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
   isUsed: z.boolean().optional(),
-});
+}).strict().refine((value) => Object.keys(value).length > 0, "At least one field is required");
 
 const createBranchSchema = z.object({
   title: z.string().min(1).max(500),
   insight: z.string().max(2000).optional(),
   notes: z.string().max(10000).optional(),
   videoEditingNotes: z.string().max(10000).optional(),
-});
+}).strict();
+
+const markUsedSchema = z.object({
+  usedDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+}).strict();
+
+function parsePositiveId(value: unknown): number | null {
+  if (typeof value !== "string" || !/^[1-9]\d*$/.test(value)) return null;
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) ? parsed : null;
+}
+
+interface IdeasRouterDependencies {
+  database?: typeof db;
+  authenticate?: RequestHandler;
+  getUser?: typeof getOrCreateUser;
+}
+
+export function createIdeasRouter(dependencies: IdeasRouterDependencies = {}) {
+const router = Router();
+const database = dependencies.database ?? db;
+const authenticate = dependencies.authenticate ?? requireAuth;
+const getUser = dependencies.getUser ?? getOrCreateUser;
 
 // GET /api/ideas — paginated, DB-level search and filter
-router.get("/", requireAuth, async (req: any, res): Promise<void> => {
+router.get("/", authenticate, async (req: any, res): Promise<void> => {
   try {
     const clerkUserId = req.clerkUserId as string;
-    const user = await getOrCreateUser(clerkUserId, "");
+    const user = await getUser(clerkUserId, "");
 
     // Throttled auto-mark — runs at most once per minute per user
-    autoMarkUsed(user.id).catch(() => {});
+    autoMarkUsed(user.id, database).catch(() => {});
 
     const { search, is_used, parent_id } = req.query;
-    const limit = Math.min(parseInt(req.query.limit as string) || 100, 200);
-    const cursor = req.query.cursor ? parseInt(req.query.cursor as string) : undefined;
+    const rawLimit = req.query.limit;
+    const limit = rawLimit === undefined ? 100 : parsePositiveId(rawLimit);
+    const cursor = req.query.cursor === undefined ? undefined : parsePositiveId(req.query.cursor);
+    if (
+      limit === null || limit > 200 ||
+      (req.query.cursor !== undefined && cursor === null) ||
+      (is_used !== undefined && is_used !== "true" && is_used !== "false") ||
+      (search !== undefined && (typeof search !== "string" || search.length > 200)) ||
+      Array.isArray(parent_id) || Array.isArray(rawLimit) || Array.isArray(req.query.cursor)
+    ) {
+      res.status(400).json({ error: "Invalid query parameters" });
+      return;
+    }
+    if (
+      parent_id !== undefined && parent_id !== null &&
+      parent_id !== "" && parent_id !== "null" &&
+      parsePositiveId(parent_id) === null
+    ) {
+      res.status(400).json({ error: "Invalid parent_id" });
+      return;
+    }
 
     const conditions: ReturnType<typeof eq>[] = [eq(ideasTable.userId, user.id) as any];
 
@@ -130,7 +176,7 @@ router.get("/", requireAuth, async (req: any, res): Promise<void> => {
     if (parent_id === "null" || parent_id === "") {
       conditions.push(isNull(ideasTable.parentIdeaId) as any);
     } else if (parent_id !== undefined && parent_id !== null) {
-      conditions.push(eq(ideasTable.parentIdeaId, parseInt(parent_id as string)) as any);
+      conditions.push(eq(ideasTable.parentIdeaId, parsePositiveId(parent_id)!) as any);
     }
 
     // Push search down to DB — avoids fetching all rows
@@ -150,7 +196,7 @@ router.get("/", requireAuth, async (req: any, res): Promise<void> => {
       conditions.push(lt(ideasTable.id, cursor) as any);
     }
 
-    const ideas = await db
+    const ideas = await database
       .select()
       .from(ideasTable)
       .where(and(...(conditions as any[])))
@@ -165,15 +211,15 @@ router.get("/", requireAuth, async (req: any, res): Promise<void> => {
 });
 
 // POST /api/ideas
-router.post("/", requireAuth, validateBody(createIdeaSchema), async (req: any, res): Promise<void> => {
+router.post("/", authenticate, validateBody(createIdeaSchema), async (req: any, res): Promise<void> => {
   try {
     const clerkUserId = req.clerkUserId as string;
-    const user = await getOrCreateUser(clerkUserId, "");
+    const user = await getUser(clerkUserId, "");
 
     const { title, insight, origin, notes, videoEditingNotes, customDate } = req.body;
     const today = new Date().toISOString().split("T")[0];
 
-    const [idea] = await db
+    const [idea] = await database
       .insert(ideasTable)
       .values({
         userId: user.id,
@@ -195,16 +241,16 @@ router.post("/", requireAuth, validateBody(createIdeaSchema), async (req: any, r
 });
 
 // GET /api/ideas/stats — push aggregates to SQL
-router.get("/stats", requireAuth, async (req: any, res): Promise<void> => {
+router.get("/stats", authenticate, async (req: any, res): Promise<void> => {
   try {
     const clerkUserId = req.clerkUserId as string;
-    const user = await getOrCreateUser(clerkUserId, "");
+    const user = await getUser(clerkUserId, "");
 
     const today = new Date();
     const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
     const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
-    const statsResult = await db.execute(sql`
+    const statsResult = await database.execute(sql`
       SELECT
         COUNT(*)::int                                              AS total,
         COUNT(*) FILTER (WHERE is_used = true)::int               AS used,
@@ -234,14 +280,18 @@ router.get("/stats", requireAuth, async (req: any, res): Promise<void> => {
 });
 
 // GET /api/ideas/recent
-router.get("/recent", requireAuth, async (req: any, res): Promise<void> => {
+router.get("/recent", authenticate, async (req: any, res): Promise<void> => {
   try {
     const clerkUserId = req.clerkUserId as string;
-    const user = await getOrCreateUser(clerkUserId, "");
+    const user = await getUser(clerkUserId, "");
 
-    const limit = Math.min(parseInt(req.query.limit as string) || 5, 20);
+    const limit = req.query.limit === undefined ? 5 : parsePositiveId(req.query.limit);
+    if (limit === null || limit > 20) {
+      res.status(400).json({ error: "Invalid limit" });
+      return;
+    }
 
-    const ideas = await db
+    const ideas = await database
       .select()
       .from(ideasTable)
       .where(eq(ideasTable.userId, user.id))
@@ -256,13 +306,13 @@ router.get("/recent", requireAuth, async (req: any, res): Promise<void> => {
 });
 
 // GET /api/ideas/calendar?month=YYYY-MM
-router.get("/calendar", requireAuth, async (req: any, res): Promise<void> => {
+router.get("/calendar", authenticate, async (req: any, res): Promise<void> => {
   try {
     const clerkUserId = req.clerkUserId as string;
-    const user = await getOrCreateUser(clerkUserId, "");
+    const user = await getUser(clerkUserId, "");
 
     const month = String(req.query.month ?? "");
-    if (!/^\d{4}-\d{2}$/.test(month)) {
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
       res.status(400).json({ error: "month must be YYYY-MM" }); return;
     }
 
@@ -271,7 +321,7 @@ router.get("/calendar", requireAuth, async (req: any, res): Promise<void> => {
     const endDate = new Date(year, mo, 0);
     const end = endDate.toISOString().split("T")[0];
 
-    const ideas = await db
+    const ideas = await database
       .select()
       .from(ideasTable)
       .where(
@@ -294,15 +344,15 @@ router.get("/calendar", requireAuth, async (req: any, res): Promise<void> => {
 });
 
 // GET /api/ideas/:id
-router.get("/:id", requireAuth, async (req: any, res): Promise<void> => {
+router.get("/:id", authenticate, async (req: any, res): Promise<void> => {
   try {
     const clerkUserId = req.clerkUserId as string;
-    const user = await getOrCreateUser(clerkUserId, "");
+    const user = await getUser(clerkUserId, "");
 
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) { res.status(400).json({ error: "Invalid idea id" }); return; }
+    const id = parsePositiveId(req.params.id);
+    if (id === null) { res.status(400).json({ error: "Invalid idea id" }); return; }
 
-    const ideas = await db
+    const ideas = await database
       .select()
       .from(ideasTable)
       .where(and(eq(ideasTable.id, id), eq(ideasTable.userId, user.id)))
@@ -313,7 +363,7 @@ router.get("/:id", requireAuth, async (req: any, res): Promise<void> => {
     }
 
     const idea = ideas[0];
-    const branches = await getBranchesFlat(idea.id);
+    const branches = await getBranchesFlat(idea.id, user.id, database);
 
     res.json({ ...serializeIdea(idea), branches });
   } catch (err) {
@@ -323,15 +373,15 @@ router.get("/:id", requireAuth, async (req: any, res): Promise<void> => {
 });
 
 // PATCH /api/ideas/:id
-router.patch("/:id", requireAuth, validateBody(updateIdeaSchema), async (req: any, res): Promise<void> => {
+router.patch("/:id", authenticate, validateBody(updateIdeaSchema), async (req: any, res): Promise<void> => {
   try {
     const clerkUserId = req.clerkUserId as string;
-    const user = await getOrCreateUser(clerkUserId, "");
+    const user = await getUser(clerkUserId, "");
 
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) { res.status(400).json({ error: "Invalid idea id" }); return; }
+    const id = parsePositiveId(req.params.id);
+    if (id === null) { res.status(400).json({ error: "Invalid idea id" }); return; }
 
-    const existing = await db
+    const existing = await database
       .select({ id: ideasTable.id })
       .from(ideasTable)
       .where(and(eq(ideasTable.id, id), eq(ideasTable.userId, user.id)))
@@ -353,10 +403,10 @@ router.patch("/:id", requireAuth, validateBody(updateIdeaSchema), async (req: an
     if (usedDate !== undefined) updates.usedDate = usedDate ?? null;
     if (isUsed !== undefined) updates.isUsed = isUsed;
 
-    const [updated] = await db
+    const [updated] = await database
       .update(ideasTable)
       .set(updates)
-      .where(eq(ideasTable.id, id))
+      .where(and(eq(ideasTable.id, id), eq(ideasTable.userId, user.id)))
       .returning();
 
     res.json(serializeIdea(updated));
@@ -367,15 +417,15 @@ router.patch("/:id", requireAuth, validateBody(updateIdeaSchema), async (req: an
 });
 
 // DELETE /api/ideas/:id
-router.delete("/:id", requireAuth, async (req: any, res): Promise<void> => {
+router.delete("/:id", authenticate, async (req: any, res): Promise<void> => {
   try {
     const clerkUserId = req.clerkUserId as string;
-    const user = await getOrCreateUser(clerkUserId, "");
+    const user = await getUser(clerkUserId, "");
 
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) { res.status(400).json({ error: "Invalid idea id" }); return; }
+    const id = parsePositiveId(req.params.id);
+    if (id === null) { res.status(400).json({ error: "Invalid idea id" }); return; }
 
-    const existing = await db
+    const existing = await database
       .select({ id: ideasTable.id, parentIdeaId: ideasTable.parentIdeaId })
       .from(ideasTable)
       .where(and(eq(ideasTable.id, id), eq(ideasTable.userId, user.id)))
@@ -386,22 +436,28 @@ router.delete("/:id", requireAuth, async (req: any, res): Promise<void> => {
     }
 
     // Delete this idea and all descendants in one CTE
-    await db.execute(sql`
+    await database.execute(sql`
       WITH RECURSIVE to_delete AS (
-        SELECT id FROM ideas WHERE id = ${id}
+        SELECT id FROM ideas WHERE id = ${id} AND user_id = ${user.id}
         UNION ALL
         SELECT i.id FROM ideas i
         INNER JOIN to_delete td ON i.parent_idea_id = td.id
+        WHERE i.user_id = ${user.id}
       )
-      DELETE FROM ideas WHERE id IN (SELECT id FROM to_delete)
+      DELETE FROM ideas
+      WHERE user_id = ${user.id}
+        AND id IN (SELECT id FROM to_delete)
     `);
 
     // Decrement parent branch count
     if (existing[0].parentIdeaId) {
-      await db
+      await database
         .update(ideasTable)
         .set({ branchCount: sql`GREATEST(${ideasTable.branchCount} - 1, 0)`, updatedAt: new Date() })
-        .where(eq(ideasTable.id, existing[0].parentIdeaId));
+        .where(and(
+          eq(ideasTable.id, existing[0].parentIdeaId),
+          eq(ideasTable.userId, user.id),
+        ));
     }
 
     res.status(204).send();
@@ -412,16 +468,16 @@ router.delete("/:id", requireAuth, async (req: any, res): Promise<void> => {
 });
 
 // GET /api/ideas/:id/branches — ownership check required before listing branches
-router.get("/:id/branches", requireAuth, async (req: any, res): Promise<void> => {
+router.get("/:id/branches", authenticate, async (req: any, res): Promise<void> => {
   try {
     const clerkUserId = req.clerkUserId as string;
-    const user = await getOrCreateUser(clerkUserId, "");
+    const user = await getUser(clerkUserId, "");
 
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) { res.status(400).json({ error: "Invalid idea id" }); return; }
+    const id = parsePositiveId(req.params.id);
+    if (id === null) { res.status(400).json({ error: "Invalid idea id" }); return; }
 
     // Verify the root idea belongs to the authenticated user
-    const root = await db
+    const root = await database
       .select({ id: ideasTable.id })
       .from(ideasTable)
       .where(and(eq(ideasTable.id, id), eq(ideasTable.userId, user.id)))
@@ -431,7 +487,7 @@ router.get("/:id/branches", requireAuth, async (req: any, res): Promise<void> =>
       res.status(404).json({ error: "Idea not found" }); return;
     }
 
-    const branches = await getBranchesFlat(id);
+    const branches = await getBranchesFlat(id, user.id, database);
     res.json(branches);
   } catch (err) {
     req.log.error({ err }, "Failed to list branches");
@@ -440,17 +496,17 @@ router.get("/:id/branches", requireAuth, async (req: any, res): Promise<void> =>
 });
 
 // POST /api/ideas/:id/branches
-router.post("/:id/branches", requireAuth, validateBody(createBranchSchema), async (req: any, res): Promise<void> => {
+router.post("/:id/branches", authenticate, validateBody(createBranchSchema), async (req: any, res): Promise<void> => {
   try {
     const clerkUserId = req.clerkUserId as string;
-    const user = await getOrCreateUser(clerkUserId, "");
+    const user = await getUser(clerkUserId, "");
 
-    const parentId = parseInt(req.params.id);
-    if (isNaN(parentId)) { res.status(400).json({ error: "Invalid idea id" }); return; }
+    const parentId = parsePositiveId(req.params.id);
+    if (parentId === null) { res.status(400).json({ error: "Invalid idea id" }); return; }
 
     const { title, insight, notes, videoEditingNotes } = req.body;
 
-    const parent = await db
+    const parent = await database
       .select({ id: ideasTable.id })
       .from(ideasTable)
       .where(and(eq(ideasTable.id, parentId), eq(ideasTable.userId, user.id)))
@@ -462,7 +518,7 @@ router.post("/:id/branches", requireAuth, validateBody(createBranchSchema), asyn
 
     const today = new Date().toISOString().split("T")[0];
 
-    const [branch] = await db
+    const [branch] = await database
       .insert(ideasTable)
       .values({
         userId: user.id,
@@ -475,10 +531,10 @@ router.post("/:id/branches", requireAuth, validateBody(createBranchSchema), asyn
       })
       .returning();
 
-    await db
+    await database
       .update(ideasTable)
       .set({ branchCount: sql`${ideasTable.branchCount} + 1`, updatedAt: new Date() })
-      .where(eq(ideasTable.id, parentId));
+      .where(and(eq(ideasTable.id, parentId), eq(ideasTable.userId, user.id)));
 
     res.status(201).json(serializeIdea(branch));
   } catch (err) {
@@ -488,18 +544,18 @@ router.post("/:id/branches", requireAuth, validateBody(createBranchSchema), asyn
 });
 
 // POST /api/ideas/:id/mark-used
-router.post("/:id/mark-used", requireAuth, async (req: any, res): Promise<void> => {
+router.post("/:id/mark-used", authenticate, validateBody(markUsedSchema), async (req: any, res): Promise<void> => {
   try {
     const clerkUserId = req.clerkUserId as string;
-    const user = await getOrCreateUser(clerkUserId, "");
+    const user = await getUser(clerkUserId, "");
 
-    const id = parseInt(req.params.id);
-    if (isNaN(id)) { res.status(400).json({ error: "Invalid idea id" }); return; }
+    const id = parsePositiveId(req.params.id);
+    if (id === null) { res.status(400).json({ error: "Invalid idea id" }); return; }
 
     const { usedDate } = req.body;
     const today = new Date().toISOString().split("T")[0];
 
-    const [updated] = await db
+    const [updated] = await database
       .update(ideasTable)
       .set({ isUsed: true, usedDate: usedDate || today, updatedAt: new Date() })
       .where(and(eq(ideasTable.id, id), eq(ideasTable.userId, user.id)))
@@ -516,4 +572,8 @@ router.post("/:id/mark-used", requireAuth, async (req: any, res): Promise<void> 
   }
 });
 
+return router;
+}
+
+const router = createIdeasRouter();
 export default router;

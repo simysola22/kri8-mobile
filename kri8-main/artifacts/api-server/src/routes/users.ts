@@ -1,10 +1,21 @@
 import { Router } from "express";
 import { db, usersTable } from "@workspace/db";
 import { eq, or, ilike, ne, and, sql } from "drizzle-orm";
+import { z } from "zod";
 import { isDevMode } from "../middlewares/devAuthMiddleware";
+import { validateBody } from "../middlewares/validate";
+import { searchLimiter } from "../middlewares/rateLimit";
 
 const router = Router();
 const USERNAME_PATTERN = /^[a-zA-Z0-9_]{3,30}$/;
+const profileUpdateSchema = z.object({
+  name: z.string().max(120).nullable().optional(),
+  username: z.string().trim().toLowerCase().regex(USERNAME_PATTERN).optional(),
+  themePreference: z.string().min(1).max(32).optional(),
+  bio: z.string().max(500).nullable().optional(),
+  avatarUrl: z.string().max(2048).nullable().optional(),
+  isPublic: z.boolean().optional(),
+}).strict().refine((value) => Object.keys(value).length > 0, "At least one field is required");
 
 function normalizeUsername(value: unknown): string {
   return typeof value === "string" ? value.trim().toLowerCase() : "";
@@ -95,7 +106,7 @@ router.get("/me", requireAuth, async (req: any, res): Promise<void> => {
 });
 
 // PATCH /api/users/me
-router.patch("/me", requireAuth, async (req: any, res): Promise<void> => {
+router.patch("/me", requireAuth, validateBody(profileUpdateSchema), async (req: any, res): Promise<void> => {
   try {
     const clerkUserId: string = req.clerkUserId;
     const existing = await db
@@ -209,9 +220,13 @@ router.get("/username-availability", requireAuth, async (req: any, res): Promise
 });
 
 // GET /api/users/search?q=
-router.get("/search", requireAuth, async (req: any, res): Promise<void> => {
+router.get("/search", requireAuth, searchLimiter, async (req: any, res): Promise<void> => {
   try {
     const q = String(req.query.q ?? "").trim();
+    if (q.length > 60 || Array.isArray(req.query.q)) {
+      res.status(400).json({ error: "Search query must be 60 characters or fewer" });
+      return;
+    }
     if (!q || q.length < 2) {
       res.json([]);
       return;
@@ -234,6 +249,7 @@ router.get("/search", requireAuth, async (req: any, res): Promise<void> => {
             ilike(usersTable.name, `%${q}%`),
             ilike(usersTable.username, `%${q}%`),
           ),
+          eq(usersTable.isPublic, true),
           myId !== undefined ? ne(usersTable.id, myId) : undefined,
         ),
       )

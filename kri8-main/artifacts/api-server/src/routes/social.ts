@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, type RequestHandler } from "express";
 import { db, usersTable, friendshipsTable, messagesTable } from "@workspace/db";
 import { eq, or, and, lt, gt, desc, sql, inArray } from "drizzle-orm";
 import { z } from "zod";
@@ -6,10 +6,8 @@ import { validateBody } from "../middlewares/validate";
 import { sseLimiter } from "../middlewares/rateLimit";
 import { requireAuth } from "./users";
 
-const router = Router();
-
-async function getDbUser(clerkUserId: string) {
-  const rows = await db.select().from(usersTable).where(eq(usersTable.clerkUserId, clerkUserId)).limit(1);
+async function getDbUser(clerkUserId: string, database: typeof db = db) {
+  const rows = await database.select().from(usersTable).where(eq(usersTable.clerkUserId, clerkUserId)).limit(1);
   return rows[0] ?? null;
 }
 
@@ -28,20 +26,36 @@ function toFriendRequest(row: typeof friendshipsTable.$inferSelect, requester: a
 }
 
 const sendMessageSchema = z.object({
-  content: z.string().min(1).max(2000),
-});
+  content: z.string().trim().min(1).max(2000),
+}).strict();
 
 const respondSchema = z.object({
   status: z.enum(["accepted", "rejected"]),
-});
+}).strict();
+
+function parsePositiveId(value: unknown): number | null {
+  if (typeof value !== "string" || !/^[1-9]\d*$/.test(value)) return null;
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) ? parsed : null;
+}
+
+interface SocialRouterDependencies {
+  database?: typeof db;
+  authenticate?: RequestHandler;
+}
+
+export function createSocialRouter(dependencies: SocialRouterDependencies = {}) {
+const router = Router();
+const database = dependencies.database ?? db;
+const authenticate = dependencies.authenticate ?? requireAuth;
 
 // GET /api/social/friends
-router.get("/friends", requireAuth, async (req: any, res): Promise<void> => {
+router.get("/friends", authenticate, async (req: any, res): Promise<void> => {
   try {
-    const me = await getDbUser(req.clerkUserId);
+    const me = await getDbUser(req.clerkUserId, database);
     if (!me) { res.status(401).json({ error: "User not found" }); return; }
 
-    const rows = await db
+    const rows = await database
       .select()
       .from(friendshipsTable)
       .where(or(eq(friendshipsTable.requesterId, me.id), eq(friendshipsTable.addresseeId, me.id)));
@@ -53,7 +67,7 @@ router.get("/friends", requireAuth, async (req: any, res): Promise<void> => {
     const usersMap = new Map<number, typeof usersTable.$inferSelect>();
     if (userIds.size > 0) {
       const ids = [...userIds];
-      const users = await db.select().from(usersTable).where(inArray(usersTable.id, ids));
+      const users = await database.select().from(usersTable).where(inArray(usersTable.id, ids));
       for (const u of users) usersMap.set(u.id, u);
     }
     usersMap.set(me.id, me);
@@ -85,18 +99,21 @@ router.get("/friends", requireAuth, async (req: any, res): Promise<void> => {
 });
 
 // POST /api/social/friends/:userId
-router.post("/friends/:userId", requireAuth, async (req: any, res): Promise<void> => {
+router.post("/friends/:userId", authenticate, async (req: any, res): Promise<void> => {
   try {
-    const me = await getDbUser(req.clerkUserId);
+    const me = await getDbUser(req.clerkUserId, database);
     if (!me) { res.status(401).json({ error: "User not found" }); return; }
 
-    const addresseeId = Number(req.params.userId);
-    if (isNaN(addresseeId) || addresseeId === me.id) { res.status(400).json({ error: "Invalid user" }); return; }
+    const addresseeId = parsePositiveId(req.params.userId);
+    if (addresseeId === null || addresseeId === me.id) { res.status(400).json({ error: "Invalid user" }); return; }
 
-    const addresseeRows = await db.select().from(usersTable).where(eq(usersTable.id, addresseeId)).limit(1);
-    if (!addresseeRows[0]) { res.status(404).json({ error: "User not found" }); return; }
+    const addresseeRows = await database.select().from(usersTable).where(eq(usersTable.id, addresseeId)).limit(1);
+    if (!addresseeRows[0] || !addresseeRows[0].isPublic) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
 
-    const existing = await db.select().from(friendshipsTable).where(
+    const existing = await database.select().from(friendshipsTable).where(
       or(
         and(eq(friendshipsTable.requesterId, me.id), eq(friendshipsTable.addresseeId, addresseeId)),
         and(eq(friendshipsTable.requesterId, addresseeId), eq(friendshipsTable.addresseeId, me.id)),
@@ -105,7 +122,7 @@ router.post("/friends/:userId", requireAuth, async (req: any, res): Promise<void
 
     if (existing[0]) { res.status(409).json({ error: "Request already exists" }); return; }
 
-    const [row] = await db.insert(friendshipsTable).values({
+    const [row] = await database.insert(friendshipsTable).values({
       requesterId: me.id,
       addresseeId,
       status: "pending",
@@ -119,26 +136,32 @@ router.post("/friends/:userId", requireAuth, async (req: any, res): Promise<void
 });
 
 // PATCH /api/social/friends/:requestId/respond
-router.patch("/friends/:requestId/respond", requireAuth, validateBody(respondSchema), async (req: any, res): Promise<void> => {
+router.patch("/friends/:requestId/respond", authenticate, validateBody(respondSchema), async (req: any, res): Promise<void> => {
   try {
-    const me = await getDbUser(req.clerkUserId);
+    const me = await getDbUser(req.clerkUserId, database);
     if (!me) { res.status(401).json({ error: "User not found" }); return; }
 
-    const requestId = Number(req.params.requestId);
+    const requestId = parsePositiveId(req.params.requestId);
+    if (requestId === null) { res.status(400).json({ error: "Invalid requestId" }); return; }
     const { status } = req.body as { status: "accepted" | "rejected" };
 
-    const rows = await db.select().from(friendshipsTable).where(
+    const rows = await database.select().from(friendshipsTable).where(
       and(eq(friendshipsTable.id, requestId), eq(friendshipsTable.addresseeId, me.id), eq(friendshipsTable.status, "pending"))
     ).limit(1);
 
     if (!rows[0]) { res.status(404).json({ error: "Request not found" }); return; }
 
-    const [updated] = await db.update(friendshipsTable)
+    const [updated] = await database.update(friendshipsTable)
       .set({ status, updatedAt: new Date() })
-      .where(eq(friendshipsTable.id, requestId))
+      .where(and(
+        eq(friendshipsTable.id, requestId),
+        eq(friendshipsTable.addresseeId, me.id),
+        eq(friendshipsTable.status, "pending"),
+      ))
       .returning();
+    if (!updated) { res.status(404).json({ error: "Request not found" }); return; }
 
-    const requesterRows = await db.select().from(usersTable).where(eq(usersTable.id, updated.requesterId)).limit(1);
+    const requesterRows = await database.select().from(usersTable).where(eq(usersTable.id, updated.requesterId)).limit(1);
     res.json(toFriendRequest(updated, requesterRows[0]!, me));
   } catch (err) {
     req.log.error({ err }, "Failed to respond to friend request");
@@ -147,18 +170,18 @@ router.patch("/friends/:requestId/respond", requireAuth, validateBody(respondSch
 });
 
 // GET /api/social/messages/:userId — paginated, cursor-based
-router.get("/messages/:userId", requireAuth, async (req: any, res): Promise<void> => {
+router.get("/messages/:userId", authenticate, async (req: any, res): Promise<void> => {
   try {
-    const me = await getDbUser(req.clerkUserId);
+    const me = await getDbUser(req.clerkUserId, database);
     if (!me) { res.status(401).json({ error: "User not found" }); return; }
 
-    const partnerId = Number(req.params.userId);
-    if (!Number.isInteger(partnerId) || partnerId <= 0 || partnerId === me.id) {
+    const partnerId = parsePositiveId(req.params.userId);
+    if (partnerId === null || partnerId === me.id) {
       res.status(400).json({ error: "Invalid userId" });
       return;
     }
 
-    const friendship = await db
+    const friendship = await database
       .select({ id: friendshipsTable.id })
       .from(friendshipsTable)
       .where(
@@ -183,8 +206,16 @@ router.get("/messages/:userId", requireAuth, async (req: any, res): Promise<void
       return;
     }
 
-    const limit = Math.min(Number(req.query.limit ?? 50), 100);
-    const before = req.query.before ? Number(req.query.before) : undefined;
+    const limit = req.query.limit === undefined ? 50 : parsePositiveId(req.query.limit);
+    const before = req.query.before === undefined ? undefined : parsePositiveId(req.query.before);
+    if (
+      limit === null || limit > 100 ||
+      (req.query.before !== undefined && before === null) ||
+      Array.isArray(req.query.limit) || Array.isArray(req.query.before)
+    ) {
+      res.status(400).json({ error: "Invalid pagination parameters" });
+      return;
+    }
 
     const conditions: any[] = [
       or(
@@ -192,9 +223,9 @@ router.get("/messages/:userId", requireAuth, async (req: any, res): Promise<void
         and(eq(messagesTable.senderId, partnerId), eq(messagesTable.receiverId, me.id)),
       ),
     ];
-    if (before) conditions.push(lt(messagesTable.id, before));
+    if (before !== undefined && before !== null) conditions.push(lt(messagesTable.id, before));
 
-    const messages = await db
+    const messages = await database
       .select()
       .from(messagesTable)
       .where(and(...conditions))
@@ -202,7 +233,7 @@ router.get("/messages/:userId", requireAuth, async (req: any, res): Promise<void
       .limit(limit);
 
     // Mark received messages as read in background
-    db.update(messagesTable)
+    database.update(messagesTable)
       .set({ isRead: true })
       .where(and(eq(messagesTable.senderId, partnerId), eq(messagesTable.receiverId, me.id), eq(messagesTable.isRead, false)))
       .catch(() => {});
@@ -222,17 +253,17 @@ router.get("/messages/:userId", requireAuth, async (req: any, res): Promise<void
 });
 
 // POST /api/social/messages/:userId
-router.post("/messages/:userId", requireAuth, validateBody(sendMessageSchema), async (req: any, res): Promise<void> => {
+router.post("/messages/:userId", authenticate, validateBody(sendMessageSchema), async (req: any, res): Promise<void> => {
   try {
-    const me = await getDbUser(req.clerkUserId);
+    const me = await getDbUser(req.clerkUserId, database);
     if (!me) { res.status(401).json({ error: "User not found" }); return; }
 
-    const receiverId = Number(req.params.userId);
-    if (isNaN(receiverId)) { res.status(400).json({ error: "Invalid userId" }); return; }
+    const receiverId = parsePositiveId(req.params.userId);
+    if (receiverId === null || receiverId === me.id) { res.status(400).json({ error: "Invalid userId" }); return; }
     const { content } = req.body as { content: string };
 
     // Only friends may message each other
-    const friendship = await db
+    const friendship = await database
       .select({ id: friendshipsTable.id })
       .from(friendshipsTable)
       .where(
@@ -250,7 +281,7 @@ router.post("/messages/:userId", requireAuth, validateBody(sendMessageSchema), a
       return;
     }
 
-    const [msg] = await db.insert(messagesTable).values({
+    const [msg] = await database.insert(messagesTable).values({
       senderId: me.id,
       receiverId,
       content: content.trim(),
@@ -294,9 +325,9 @@ function notifySseClients(userId: number, data: object) {
 }
 
 // GET /api/social/messages/:userId/stream — SSE for real-time messages
-router.get("/messages/:userId/stream", requireAuth, sseLimiter, async (req: any, res): Promise<void> => {
+router.get("/messages/:userId/stream", authenticate, sseLimiter, async (req: any, res): Promise<void> => {
   try {
-    const me = await getDbUser(req.clerkUserId);
+    const me = await getDbUser(req.clerkUserId, database);
     if (!me) { res.status(401).json({ error: "User not found" }); return; }
 
     // SSE headers
@@ -328,12 +359,12 @@ router.get("/messages/:userId/stream", requireAuth, sseLimiter, async (req: any,
 });
 
 // GET /api/social/conversations
-router.get("/conversations", requireAuth, async (req: any, res): Promise<void> => {
+router.get("/conversations", authenticate, async (req: any, res): Promise<void> => {
   try {
-    const me = await getDbUser(req.clerkUserId);
+    const me = await getDbUser(req.clerkUserId, database);
     if (!me) { res.status(401).json({ error: "User not found" }); return; }
 
-    const rawConvos = await db.execute(sql`
+    const rawConvos = await database.execute(sql`
       SELECT * FROM (
         SELECT DISTINCT ON (partner_id)
           partner_id,
@@ -361,7 +392,7 @@ router.get("/conversations", requireAuth, async (req: any, res): Promise<void> =
 
     const partnerIds = rows.map(r => r.partner_id);
     const partnerUsers = partnerIds.length > 0
-      ? await db.select().from(usersTable).where(inArray(usersTable.id, partnerIds))
+      ? await database.select().from(usersTable).where(inArray(usersTable.id, partnerIds))
       : [];
 
     const userMap = new Map(partnerUsers.map(u => [u.id, u]));
@@ -380,4 +411,8 @@ router.get("/conversations", requireAuth, async (req: any, res): Promise<void> =
   }
 });
 
+return router;
+}
+
+const router = createSocialRouter();
 export default router;

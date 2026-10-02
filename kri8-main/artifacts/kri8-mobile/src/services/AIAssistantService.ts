@@ -6,6 +6,7 @@
  *
  * Suggests titles and hooks using the existing inspiration API contract.
  */
+import type { TrendAnalysis as ApiTrendAnalysis } from '@/types';
 
 const API_BASE = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'https://kri8-obvh.onrender.com';
 
@@ -94,27 +95,7 @@ export async function getAISuggestions(
 
 // ── Trend analysis ────────────────────────────────────────────
 
-export interface TrendAnalysis {
-  canonicalQuery: string;
-  relevanceScore: number | null;
-  relatedTopics: Array<{
-    id: string;
-    name: string;
-    category: string;
-    growthPercent: number;
-    volume: number;
-    platform: string;
-  }>;
-  relatedHashtags: Array<{
-    tag: string;
-    platform: string;
-    volume: number;
-    growthPercent: number;
-  }>;
-  contentOpportunities: string[];
-  formatAdaptations: string[];
-  suggestedAngles: string[];
-}
+export type TrendAnalysis = ApiTrendAnalysis;
 
 /**
  * Analyze an idea against current trends.
@@ -172,9 +153,11 @@ export function parseSuggestions(
 
 /** Response shape returned by the existing POST /api/trends/inspire route. */
 interface InspirationResponse {
+  canonicalQuery: string;
   relatedIdeas: string[];
   alternativeHooks: string[];
   titleSuggestions: string[];
   audienceQuestions: string[];
   source: 'openai';
+  trendContextAvailable: boolean;
 }

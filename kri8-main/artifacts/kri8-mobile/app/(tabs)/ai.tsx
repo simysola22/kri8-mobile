@@ -468,13 +468,15 @@ function formatTrendMetadata(trends: {
   fetchedAt: string | null;
   isStatic: boolean;
   metricsQuality: string;
+  dataKind: string;
 }): string {
-  if (trends.isStatic) return 'Fixture data · Last updated: unavailable';
+  if (trends.metricsQuality === 'fixture' || trends.isStatic) return 'Sample fixture data · Not a live measurement';
   const retrieved = trends.fetchedAt
     ? `Retrieved ${new Date(trends.fetchedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
     : 'Retrieval time unavailable';
-  const quality = trends.metricsQuality === 'measured' ? 'Measured metrics' : 'Estimated metrics';
-  return `${trends.source || trends.provider} · ${retrieved} · ${quality}`;
+  const quality = trends.metricsQuality === 'measured' ? 'Measured source metrics' : 'Estimated metrics';
+  const dataKind = trends.dataKind === 'popular_content' ? 'Popular content; historical growth unavailable' : 'Historical trend data';
+  return `${trends.source || trends.provider} · ${retrieved} · ${quality} · ${dataKind}`;
 }
 
 function ErrorNotice({ message, onRetry }: { message: string; onRetry: () => void }) {
@@ -549,14 +551,16 @@ const styles = StyleSheet.create({
   evidenceItem: { fontSize: 13, lineHeight: 19 },
 });
 
-function formatTopicSignal(growthPercent: number, quality: string): string {
+function formatTopicSignal(growthPercent: number | null, quality: string): string {
+  if (growthPercent === null) return 'Growth unavailable';
+  if (quality === 'fixture') return `Sample fixture: ${growthPercent}%`;
   if (quality === 'measured') return `+${growthPercent}% growth`;
   if (quality === 'estimated') return 'Estimated trend signal';
-  return 'Reference signal';
+  return 'Growth unavailable';
 }
 
-function formatMetric(value: number | undefined): string {
-  if (value === undefined || Number.isNaN(value)) return '—';
+function formatMetric(value: number | null | undefined): string {
+  if (value === undefined || value === null || Number.isNaN(value)) return 'Unavailable';
   if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
   if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
   return String(value);

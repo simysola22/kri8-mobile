@@ -1,0 +1,99 @@
+Continue from the current checkpoint. Do NOT restart the work and do NOT undo the changes already made.
+
+First, inspect the current git diff and the files changed in the checkpoint. Determine exactly what was completed and what remains from the previous production-hardening task.
+
+Then continue with the remaining work in this priority order:
+
+1. CRITICAL — Public profile security
+
+* Audit `artifacts/api-server/src/routes/profile.ts`.
+* Create an explicit public-user DTO and public-idea DTO.
+* Ensure private/internal idea fields can never leak.
+* Specifically verify that `userId`, `notes`, `videoEditingNotes`, `customDate`, `usedDate`, `parentIdeaId`, internal timestamps, and internal branch metadata are excluded.
+* Do not serialize database objects directly.
+* Audit recursive branches for the same problem.
+
+2. Public profile client
+
+* Audit `artifacts/kri8-mobile/app/(tabs)/profile/[username].tsx`.
+* Remove unnecessary Clerk Authorization headers from genuinely public profile requests.
+* Preserve authentication everywhere it is actually required.
+
+3. Security/authorization tests
+   Add real API-level regression tests for:
+
+* public profile access
+* private profile rejection
+* nonexistent profile
+* sanitized public idea response
+* cross-user idea access rejection
+* ownership checks
+* messages/friendships authorization where missing
+
+4. API security audit
+   Inspect every API route for:
+
+* authentication
+* ownership
+* authorization
+* input validation
+* unsafe database-row serialization
+
+Do not assume unchanged routes are secure.
+
+5. AI
+   Review the AI changes already made in this checkpoint.
+
+Verify that:
+
+* AI responses are validated server-side
+* malformed AI responses are rejected
+* provider errors are distinguishable
+* quota errors are handled correctly
+* no fake/template AI results are silently returned
+* TypeScript interfaces accurately represent the data actually returned
+
+Pay special attention to `AIAssistantService.ts` and remove any semantic field mismatches.
+
+6. Trends
+   Review the trend changes already made.
+
+Ensure:
+
+* unavailable growth is `null`, not `0`
+* measured vs estimated vs unavailable data is distinguishable
+* no fabricated metrics exist
+* the UI does not display unavailable metrics as real measurements
+* trend scoring only uses evidence that actually exists
+
+7. Rate limiting
+   Add reasonable protection to expensive AI endpoints if the existing backend architecture supports it.
+
+8. Biometric/authentication audit
+   Inspect the biometric implementation and replace brittle numeric constants with proper Expo constants where applicable.
+
+9. Tests
+   Run all existing tests and add missing tests for the changes above.
+
+10. Verification
+    Run:
+
+* TypeScript checks
+* lint
+* backend tests
+* relevant mobile checks
+* build checks where practical
+
+Do not hide failures with `any`, `@ts-ignore`, disabled lint rules, or skipped tests.
+
+IMPORTANT:
+
+* Preserve all good work already completed in the checkpoint.
+* Do not perform a massive architecture rewrite.
+* Do not delete working functionality.
+* Do not create fake tests.
+* Do not expose or print secrets.
+* Before making changes, inspect the current diff.
+* At the end, report exactly what was completed, what was not completed, and every test/check that actually passed or failed.
+
+The goal is to finish the hardening pass, not merely make the code compile.

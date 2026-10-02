@@ -15,6 +15,7 @@ import { YouTubeTrendProvider } from "./providers/youtube.js";
 import type { TrendProvider } from "./types.js";
 
 export * from "./types.js";
+export * from "./ai-contracts.js";
 export * from "./analyzer.js";
 export * from "./inspiration.js";
 export * from "./ai-insights.js";
@@ -40,6 +41,9 @@ export function createTrendProvider(): TrendProvider {
     }
     _provider = new YouTubeTrendProvider(apiKey);
   } else if (name === "mock") {
+    if (process.env.NODE_ENV !== "development" && process.env.NODE_ENV !== "test") {
+      throw new Error("TREND_PROVIDER=mock is only allowed in development and tests");
+    }
     _provider = new MockTrendProvider();
   } else {
     throw new Error(`Unsupported TREND_PROVIDER "${name}". Expected "youtube" or "mock"`);

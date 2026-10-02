@@ -76,6 +76,7 @@ export class MockTrendProvider implements TrendProvider {
       fetchedAt: null,
       isStatic: true,
       metricsQuality: "fixture",
+      dataKind: "fixture",
     };
   }
 

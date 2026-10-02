@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from "express";
 import { db, usersTable, ideasTable } from "@workspace/db";
-import { and, count, desc, eq, inArray, isNull, lt, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, lt, sql } from "drizzle-orm";
 
 export interface PublicProfileUser {
   id: number;
@@ -14,10 +14,7 @@ export interface PublicIdea {
   id: number;
   title: string;
   insight: string | null;
-  createdAt: string;
   isUsed: boolean;
-  /** Direct child count is public because the existing public gallery displays it. */
-  branchCount: number;
 }
 
 export interface PublicIdeaPage {
@@ -67,7 +64,6 @@ const databaseRepository: PublicProfileRepository = {
         id: ideasTable.id,
         title: ideasTable.title,
         insight: ideasTable.insight,
-        createdAt: ideasTable.createdAt,
         isUsed: ideasTable.isUsed,
       })
       .from(ideasTable)
@@ -77,31 +73,11 @@ const databaseRepository: PublicProfileRepository = {
 
     const hasMore = rows.length > limit;
     const page = rows.slice(0, limit);
-    const childCounts = new Map<number, number>();
-    if (page.length > 0) {
-      const counts = await db
-        .select({
-          parentId: ideasTable.parentIdeaId,
-          total: count(),
-        })
-        .from(ideasTable)
-        .where(and(
-          eq(ideasTable.userId, userId),
-          inArray(ideasTable.parentIdeaId, page.map((idea) => idea.id)),
-        ))
-        .groupBy(ideasTable.parentIdeaId);
-      for (const row of counts) {
-        if (row.parentId !== null) childCounts.set(row.parentId, row.total);
-      }
-    }
-
-    const ideas: PublicIdea[] = page.map((idea) => ({
+    const ideas = page.map((idea): PublicIdea => ({
       id: idea.id,
       title: idea.title,
       insight: idea.insight,
-      createdAt: idea.createdAt.toISOString(),
       isUsed: idea.isUsed,
-      branchCount: childCounts.get(idea.id) ?? 0,
     }));
 
     return {
@@ -149,9 +125,7 @@ function serializePublicIdea(idea: PublicIdea): PublicIdea {
     id: idea.id,
     title: idea.title,
     insight: idea.insight,
-    createdAt: idea.createdAt,
     isUsed: idea.isUsed,
-    branchCount: idea.branchCount,
   };
 }
 

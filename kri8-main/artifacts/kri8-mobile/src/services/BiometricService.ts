@@ -73,9 +73,9 @@ export async function authenticateWithBiometrics(
       return { success: true, canFallback: false };
     }
 
-    // Device cancelled or error — check if we can still offer PIN fallback
-    const canFallback =
-      result.error === 'user_fallback' || result.error === 'system_cancel';
+    // Expo reports an available device-passcode fallback only when the user
+    // explicitly selects that option; system cancellation is not a fallback.
+    const canFallback = result.error === 'user_fallback';
 
     return {
       success: false,
