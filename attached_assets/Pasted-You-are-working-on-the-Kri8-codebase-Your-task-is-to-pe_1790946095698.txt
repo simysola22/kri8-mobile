@@ -1,0 +1,436 @@
+You are working on the Kri8 codebase. Your task is to perform a production-hardening pass based on a full code review.
+
+IMPORTANT:
+
+* Inspect the existing codebase before changing anything.
+* Do not blindly rewrite or restructure working parts of Kri8.
+* Preserve existing functionality and UI unless a change is necessary for security, correctness, reliability, or maintainability.
+* Do not create fake/mock behavior to make tests pass.
+* Do not expose secrets, API keys, tokens, or environment variables.
+* Prefer small, coherent changes that can be reviewed and reverted.
+* After each major area, verify that the existing architecture still builds correctly.
+
+## 1. CRITICAL: Fix public profile data exposure
+
+Audit:
+
+`artifacts/api-server/src/routes/profile.ts`
+
+The public profile endpoint currently serializes internal idea fields through the same serializer used internally.
+
+Create a dedicated public serializer/DTO.
+
+The public profile API must expose ONLY information intentionally designed to be public.
+
+Do NOT expose internal/private fields such as:
+
+* userId
+* notes
+* videoEditingNotes
+* customDate
+* usedDate
+* parentIdeaId
+* internal timestamps
+* internal branch metadata
+* database-specific/internal fields
+
+Do not simply delete fields from the database model. Create a separate `serializePublicIdea()` so future additions to the internal idea schema cannot accidentally become public.
+
+Audit recursive branches as well. Unless the existing product specification explicitly requires public branches, do not expose them from the public profile endpoint.
+
+Preserve the existing public profile functionality.
+
+## 2. Fix public-profile authentication semantics
+
+Inspect:
+
+`artifacts/kri8-mobile/app/(tabs)/profile/[username].tsx`
+
+The public profile endpoint does not require authentication, so the mobile client should not unnecessarily fetch a Clerk token and attach an Authorization header.
+
+Remove unnecessary authentication from public-profile requests while preserving authenticated behavior elsewhere.
+
+## 3. Add regression/security tests
+
+Create tests that prove:
+
+1. Public profile works for a public user.
+2. Private profiles cannot be viewed publicly.
+3. Nonexistent profiles return the appropriate response.
+4. Public profile responses contain only the intended public user fields.
+5. Public profile responses contain only the intended public idea fields.
+6. `notes` never appears in a public idea response.
+7. `videoEditingNotes` never appears.
+8. `userId` never appears.
+9. `parentIdeaId` never appears.
+10. Other internal fields cannot leak through recursive branches.
+11. A user cannot access another user's private ideas through any protected endpoint.
+12. Existing authenticated users can still access their own ideas normally.
+
+Do not write tests that merely inspect implementation details. Test the actual API response contract.
+
+## 4. Establish canonical AI schemas
+
+Audit:
+
+* `artifacts/kri8-mobile/src/services/AIAssistantService.ts`
+* `artifacts/api-server/src/routes/`
+* AI insight/trend analysis files
+* related types/interfaces
+
+Create canonical schemas using the validation system already used by the project, preferably Zod if available.
+
+The backend should validate AI output before returning it to the mobile client.
+
+The mobile client should not have to guess whether an AI response is valid.
+
+Clearly distinguish:
+
+* valid response
+* malformed AI response
+* provider failure
+* timeout
+* quota/credit exhaustion
+* authentication/provider errors
+
+Do not silently fabricate AI results.
+
+## 5. Fix the AI contract mismatch
+
+Audit the `AISuggestions` interface and parser.
+
+There is currently a semantic mismatch where a related idea can be assigned to a field representing a description.
+
+Do not map unrelated AI fields merely to satisfy a TypeScript interface.
+
+Either:
+
+A. implement genuine description generation, or
+B. remove the unsupported field from the contract until it is actually implemented.
+
+Do the same for any other fields that the interface promises but the implementation does not genuinely provide, including:
+
+* tags
+* category
+* platforms
+* postingTime
+* alternatives
+* title
+* hook
+* description
+
+The API contract must represent reality.
+
+## 6. Fix trend-data semantics
+
+Audit the trend engine.
+
+Never use `0` to mean "unknown".
+
+For metrics such as growth percentage:
+
+```ts
+number | null
+```
+
+should be used when the value is unavailable.
+
+For example:
+
+* `35` = measured/calculated 35% growth
+* `0` = measured zero growth
+* `null` = growth unavailable
+
+Apply the same principle to other metrics where appropriate.
+
+Do not claim trend intelligence that the available data cannot support.
+
+## 7. Improve trend scoring without inventing data
+
+Audit the current trend scoring implementation.
+
+Separate:
+
+* measured data
+* estimated data
+* unavailable data
+
+Do not manufacture engagement, velocity, growth, or popularity values.
+
+Where enough real data exists, build a transparent weighted trend score using factors such as:
+
+* recency
+* engagement
+* volume
+* velocity
+* cross-platform evidence
+
+But only include a factor when the underlying data actually exists.
+
+Document how the score is calculated.
+
+## 8. Improve trend architecture for future historical data
+
+Do not implement an unnecessarily large system yet, but structure the trend engine so historical snapshots can eventually be stored.
+
+The eventual architecture should support:
+
+```text
+topic
+platform
+capturedAt
+views
+likes
+comments
+rank
+```
+
+This will eventually allow Kri8 to calculate actual velocity rather than treating a single API response as a trend measurement.
+
+Do not pretend historical velocity exists until historical data is actually available.
+
+## 9. Improve relevance matching
+
+Audit:
+
+`lib/trend-engine/src/analyzer.ts`
+
+Preserve the existing phrase/canonical-query improvements.
+
+Improve the matching architecture so it can eventually combine:
+
+* lexical/keyword similarity
+* normalized phrase matching
+* semantic similarity
+* trend metadata
+
+Do not introduce embeddings just for the sake of using embeddings.
+
+Keep the current implementation deterministic and explainable unless there is a clear benefit to adding semantic embeddings.
+
+## 10. Consolidate recursive idea handling
+
+Audit the current idea branch implementation.
+
+The codebase has recursive branch traversal in multiple places.
+
+Identify opportunities to reuse a single safe implementation instead of maintaining multiple versions.
+
+Be particularly careful about:
+
+* N+1 database queries
+* recursion depth
+* unauthorized access
+* public/private data boundaries
+
+Do not change behavior unnecessarily.
+
+## 11. Public-profile scalability
+
+Do not allow a public profile request to become arbitrarily expensive as users accumulate thousands of ideas.
+
+If practical within the current architecture, introduce pagination for public ideas.
+
+A reasonable structure is:
+
+```text
+GET /api/profile/:username
+```
+
+for public profile metadata, followed by:
+
+```text
+GET /api/profile/:username/ideas
+```
+
+for paginated public ideas.
+
+However, do not perform a massive API redesign if the existing codebase makes a smaller safe change preferable. Document the recommendation if it should be implemented later.
+
+## 12. Repository hygiene
+
+Inspect the repository structure carefully.
+
+Determine whether the project is intentionally a monorepo or accidentally contains nested copies of the project.
+
+Do not blindly move files.
+
+Identify:
+
+* duplicated source trees
+* development-only screenshots
+* temporary prompts
+* obsolete artifacts
+* unnecessary agent memory files
+* generated files that should be ignored
+
+Clean only what is clearly safe.
+
+Do not delete anything that may be required by the build.
+
+## 13. Biometric authentication
+
+Audit the biometric implementation.
+
+Avoid brittle numeric authentication-type values where Expo/constants already provide named constants.
+
+Test/document:
+
+* biometric unavailable
+* authentication success
+* authentication failure
+* cancellation
+* background → foreground
+* app restart
+* logout
+* account switching
+* device without biometrics
+
+Do not weaken authentication behavior.
+
+## 14. API security
+
+Audit every API route for:
+
+* authentication
+* authorization
+* ownership checks
+* input validation
+* ID validation
+* rate limiting where appropriate
+* accidental sensitive-data serialization
+
+Pay particular attention to:
+
+* ideas
+* messages
+* friendships
+* profiles
+* AI endpoints
+* trend endpoints
+
+A valid Clerk session must NOT automatically mean the user can access another user's resource.
+
+Use explicit ownership/authorization checks.
+
+## 15. AI endpoint abuse protection
+
+Inspect expensive AI endpoints.
+
+Add reasonable rate limiting/throttling where the existing backend architecture supports it.
+
+Do not hard-code an arbitrary business quota unless the existing product requirements specify one.
+
+The goal is to prevent accidental loops, automated abuse, and uncontrolled AI expenditure.
+
+## 16. Automated test coverage
+
+Create or improve tests for:
+
+### Authentication
+
+* unauthenticated request → 401
+* authenticated request → succeeds
+* invalid session → rejected
+
+### Authorization
+
+* owner → allowed
+* another user → rejected
+
+### Ideas
+
+* create
+* read
+* update
+* delete
+* branches
+* search
+* ownership
+
+### Profiles
+
+* public
+* private
+* nonexistent
+* sanitized response
+
+### AI
+
+* valid AI response
+* malformed response
+* missing fields
+* provider failure
+* timeout
+* quota exhaustion
+
+### Trends
+
+* valid source data
+* empty result
+* unavailable source
+* missing metrics
+* no fake growth values
+
+### Messaging
+
+* authorized conversation
+* unauthorized conversation
+* invalid IDs
+* friendship/permission enforcement
+
+## 17. CI/build verification
+
+After implementation:
+
+* run TypeScript checks
+* run lint if configured
+* run backend tests
+* run relevant mobile checks
+* run the production build if practical
+
+Fix actual errors rather than suppressing them.
+
+Do not use `any`, `@ts-ignore`, disabled lint rules, or test skips as shortcuts unless there is a documented technical reason.
+
+## 18. Final audit
+
+Before finishing, perform another security-oriented review of all changed endpoints.
+
+Specifically search for serializers that return database rows directly.
+
+Look for patterns such as:
+
+```ts
+res.json(databaseRow)
+```
+
+or:
+
+```ts
+return { ...databaseObject }
+```
+
+where sensitive fields could accidentally escape.
+
+Replace unsafe serialization with explicit DTOs where necessary.
+
+## Expected output
+
+At the end, provide:
+
+1. A concise summary of every change made.
+2. Files changed.
+3. Security issues fixed.
+4. Tests added.
+5. Tests/checks run and their results.
+6. Any issues that remain.
+7. Any recommended future work that was intentionally NOT implemented.
+
+Most importantly:
+
+**Do not claim something is implemented unless it actually exists in the code.**
+
+The objective is not to make Kri8 look production-ready.
+
+The objective is to make the current Kri8 implementation genuinely safer, more correct, more testable, and easier to scale.
